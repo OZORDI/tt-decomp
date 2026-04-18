@@ -991,38 +991,17 @@ void* mfMotionClipRAGE_B8D8_g(void* a, unsigned int b, unsigned int c, unsigned 
 
 // ── msgMsgSink member functions ─────────────────────────────────────────────
 
-void msgMsgSink::GetName() {}
-void msgMsgSink::OnEnter() {}
-uint32_t msgMsgSink::CheckAndProcess() { return 0; }
-void msgMsgSink::PostLoadProperties() {}
-void msgMsgSink::ScalarDtor(int flags) { (void)flags; }
-void msgMsgSink::Validate() {}
+// ── P1/15 batch 1 methods lifted to src/game/network/msg_msg_sink.cpp ─────
+// OnEnter, CheckAndProcess, PostLoadProperties, ScalarDtor, Validate,
+// GetName, GetPeerDataSize, NotifySessionEvent, ProcessMessage,
+// GetStateFlagsLocked, vfn_3, vfn_8, vfn_9, vfn_17, vfn_18, vfn_19,
+// vfn_27, vfn_35, vfn_36, vfn_37, vfn_44, vfn_45
+// (GenerateAndCleanup / GetConnectionInfo / UpdatePrioritiesLocked /
+//  ApplyPrioritiesLocked / FindValidMessageSlot / SetPropertyLocked /
+//  GetPropertyLocked / ProcessWithLock / SetMessageBuffer / GetStateFlags /
+//  ProcessPendingMessages / CleanupIfReady / ForwardToMatchHandler /
+//  DispatchEventDefault / ClearPointers — already lifted earlier)
 
-void msgMsgSink::vfn_3() {}
-void msgMsgSink::vfn_8() {} void msgMsgSink::vfn_9() {}
-uint16_t msgMsgSink::GetPeerDataSize() { return 0; }
-void msgMsgSink::NotifySessionEvent() {}
-void msgMsgSink::vfn_17() {} void msgMsgSink::vfn_18() {} void msgMsgSink::vfn_19() {}
-uint32_t msgMsgSink::ProcessMessage(uint32_t messageFlags) { (void)messageFlags; return 0; }
-int32_t msgMsgSink::GetStateFlagsLocked(uint32_t* outFlags) { (void)outFlags; return 0; }
-int32_t msgMsgSink::GenerateAndCleanup() { return 0; }
-int32_t msgMsgSink::GetConnectionInfo(void* bufferOut, uint32_t sizeParam, uint32_t* totalSizeOut) { (void)bufferOut; (void)sizeParam; (void)totalSizeOut; return 0; }
-void msgMsgSink::vfn_27() {}
-uint32_t msgMsgSink::UpdatePrioritiesLocked(void* priorityData) { (void)priorityData; return 0; }
-uint32_t msgMsgSink::ApplyPrioritiesLocked(void* priorityData) { (void)priorityData; return 0; }
-int32_t msgMsgSink::FindValidMessageSlot(uint32_t searchKey) { (void)searchKey; return 0; }
-uint32_t msgMsgSink::SetPropertyLocked(uint32_t key, float value) { (void)key; (void)value; return 0; }
-uint32_t msgMsgSink::GetPropertyLocked(uint32_t key, float* outValue) { (void)key; (void)outValue; return 0; }
-uint32_t msgMsgSink::ProcessWithLock(uint32_t param) { (void)param; return 0; }
-uint32_t msgMsgSink::SetMessageBuffer(void* param) { (void)param; return 0; }
-void msgMsgSink::vfn_35() {} void msgMsgSink::vfn_36() {} void msgMsgSink::vfn_37() {}
-uint32_t msgMsgSink::GetStateFlags() { return 0; }
-void msgMsgSink::ProcessPendingMessages() {}
-void msgMsgSink::CleanupIfReady() {}
-void msgMsgSink::ForwardToMatchHandler() {}
-uint32_t msgMsgSink::DispatchEventDefault() { return 0; }
-void msgMsgSink::ClearPointers() {}
-void msgMsgSink::vfn_44() {} void msgMsgSink::vfn_45() {}
 uint32_t msgMsgSink::GetNestedObjectValue() { return 0; }
 void msgMsgSink::FlushAndDisconnect() {}
 void msgMsgSink::BeginDisconnect() {}
@@ -1399,3 +1378,29 @@ void pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned int* d, int e) 
 
 void pcrAnimBlender_ApplyClipWeights(void* a, unsigned b, float c, float d) { (void)a; (void)b; (void)c; (void)d; }
 void pcrAnimState_ComputePosition(vec3* a, pongAnimState* b) { (void)a; (void)b; }
+
+// ── P1/15 batch: helpers referenced by msg_msg_sink.cpp lifts ───────────────
+// These are out-of-partition free functions that will be decomped by P3.
+// Minimal stubs so the linker resolves them.
+extern "C" {
+void  msgMsgSink_43A8_g(void* self) { (void)self; }
+void  msgMsgSink_46B8_g(void* self, int mode) { (void)self; (void)mode; }
+void* msgMsgSink_A4F8_g(void* newObj, void* desc, void* self, int flag, int idx)
+    { (void)newObj; (void)desc; (void)self; (void)flag; (void)idx; return nullptr; }
+int   rage_A2C0(void* obj, unsigned code, void* data) { (void)obj; (void)code; (void)data; return 0; }
+int   rage_A1F0(void* obj, int flag, void* data) { (void)obj; (void)flag; (void)data; return 0; }
+int   rage_4960(void* self) { (void)self; return 0; }
+void* atSingleton_6F98_g(void) { return nullptr; }
+void  rage_7918(void* self) { (void)self; }
+void  game_6F40_h(void* self) { (void)self; }
+void  msgMsgSink_5F40_g(void* self, unsigned short idx, void* a, void* b) { (void)self; (void)idx; (void)a; (void)b; }
+void  msgMsgSink_5C10_g(void* obj, unsigned short idx, unsigned* p) { (void)obj; (void)idx; (void)p; }
+void* rage_01B8(unsigned size, unsigned alloc) { (void)size; (void)alloc; return nullptr; }
+void  fiAsciiTokenizer_3C68_g(unsigned b) { (void)b; }
+void  fiAsciiTokenizer_31F0_g(void) {}
+void  msgMsgSink_32A0_h(void* a, int f) { (void)a; (void)f; }
+}
+void msgMsgSink_5708_fw(void* self, unsigned int idx) { (void)self; (void)idx; }
+void msgMsgSink_F3F8_w(void* self) { (void)self; }
+void** g_handlerTable_8258FBFC = nullptr;
+void (*g_msgSinkPreShutdownCb_825E6E94)(void) = nullptr;

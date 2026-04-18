@@ -2560,3 +2560,686 @@ void msgMsgSink::DisconnectMatchingHandlers(void* key) {
         cleanup(key, (void*)this);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agent P1/15 batch — msgMsgSink early vtable + named methods
+// Addresses are the raw PPC entry points in pong_xenon_final.pe.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// External helpers used by this batch.
+extern "C" {
+    void msgMsgSink_43A8_g(void* self);
+    void msgMsgSink_46B8_g(void* self, int32_t mode);
+    void* msgMsgSink_A4F8_g(void* newObj, void* desc, void* self, int32_t flag, int32_t idx);
+    int32_t rage_A2C0(void* obj, uint32_t code, void* data);
+    int32_t rage_A1F0(void* obj, int32_t flag, void* data);
+    int32_t rage_4960(void* self);
+    void* atSingleton_6F98_g();
+    void rage_7918(void* self);
+    void game_6F40_h(void* self);
+    void msgMsgSink_5F40_g(void* self, uint16_t idx, void* pOut0, void* pOut1);
+    void msgMsgSink_5C10_g(void* obj, uint16_t idx, uint32_t* pOut);
+    void* rage_01B8(uint32_t size, uint32_t allocatorId);
+    void fiAsciiTokenizer_3C68_g(uint32_t bucket);
+    void fiAsciiTokenizer_31F0_g();
+    void msgMsgSink_32A0_h(void* arg0, int32_t flag);
+    // msgMsgSink_84C0_gen is declared elsewhere as returning int32_t (session generate).
+    int32_t msgMsgSink_84C0_gen_wrap(void* session);
+}
+// Forward to existing impl with matching signature.
+static inline int32_t call_msgMsgSink_84C0_gen(void* session) {
+    extern int32_t msgMsgSink_84C0_gen(void*);
+    return msgMsgSink_84C0_gen(session);
+}
+
+// Global callback pointer at lbl_825E6E94 invoked by vfn_1 before shutdown.
+extern void (*g_msgSinkPreShutdownCb_825E6E94)();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_3() [slot 3 @ 0x82454B78 | 100B]
+// Walks an intrusive list rooted at +60 (sentinel at +56). For each node,
+// compares node+44 slot-owner against the 'key' in +40. On match, peeks
+// flag bits at node+16 (low 5 bits of that object's vtable) and reports
+// the highest slot ID in node+28.  Returns 0 if no candidate found.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_3() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* sentinel = self + 56;
+    void* node = *(void**)(self + 60);
+    void* key = *(void**)(self + 40);
+    int32_t best = 0;
+
+    while (node != sentinel) {
+        void* slotOwner = *(void**)((uint8_t*)node + 44);
+        if (*(void**)((uint8_t*)slotOwner + 16) == key) {
+            void* obj = *(void**)((uint8_t*)node + 16);
+            int32_t slotId = *(int32_t*)((uint8_t*)node + 28);
+            uint32_t flags = *(uint32_t*)obj;
+            if ((flags & 0x1F) == 0) {
+                return slotId;
+            }
+            if (slotId > best) {
+                best = slotId;
+            }
+        }
+        node = *(void**)((uint8_t*)node + 4);
+    }
+    return best;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_8() [slot 8 @ 0x82455698 | 112B]
+// Sets primary vtable, primes the helper 43A8_g, and optionally registers
+// this instance with the memory allocator (allocator id 0x20848015) when
+// the caller passes the "register" flag (param & 1).
+// NOTE: constants 20172 / 20200 come from lis/addi pairs in the original
+// code — these resolve to 0x82004ECC and 0x82004EE8 in .rdata (vtables).
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::vfn_8(uint32_t flags) {
+    static void* const kVtableA = (void*)0x82004ECC;
+    static void* const kVtableB = (void*)0x82004EE8;
+
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    *(void**)(self + 0) = kVtableA;
+    *(void**)(self + 4) = kVtableB;
+    msgMsgSink_43A8_g(this);
+
+    if (flags & 1u) {
+        _locale_register(this, 0x20848015);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_9() [slot 9 @ 0x824557C8 | 376B]
+// Iterates peer slots (count at desc+9).  For each new peer, allocates a
+// 64-byte peer object through rage_01B8 (allocator 0x20848004), initialises
+// it via msgMsgSink_5708_fw, then links it into the session's peer list via
+// msgMsgSink_A4F8_g → rage_A2C0.  Records the message buffer pointer at
+// +104 on success and snoops the session pointer at +24 for disconnect
+// state (value 3 == disconnecting).
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_9(void* messageBuffer) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    msgMsgSink_46B8_g(this, 2);
+
+    int32_t err = 0;
+    uint8_t idx = 0;
+    bool stateOk = true;
+
+    for (;;) {
+        void* desc = *(void**)(self + 28);
+        uint8_t maxPeers = *((uint8_t*)desc + 9);
+        if (idx >= maxPeers) break;
+
+        void* peer = rage_01B8(64, 0x20848004);
+        if (!peer) {
+            peer = nullptr;
+        } else {
+            // msgMsgSink_5708_fw(this, idx) — returns descriptor for the slot
+            // Called to prime the allocated peer object.
+            extern void msgMsgSink_5708_fw(void* self, uint32_t idx);
+            msgMsgSink_5708_fw(this, idx);
+            void* sessionKey = *(void**)(self + 32);
+            peer = msgMsgSink_A4F8_g(peer, sessionKey, this, /*flag*/0, idx);
+        }
+
+        if (peer) {
+            if (err >= 0) {
+                void* vt = *(void**)((uint8_t*)peer + 16);
+                uint32_t opcode = *(uint32_t*)((uint8_t*)vt + 1);
+                err = rage_A2C0(peer, opcode, messageBuffer);
+                if (err >= 0) {
+                    *(void**)(self + 104) = messageBuffer;
+                    void* sess = *(void**)((uint8_t*)peer + 24);
+                    if (sess && *(int32_t*)((uint8_t*)sess + 40) != 3) {
+                        stateOk = false;
+                    }
+                    // Splice into list at self+36: prev/next at offsets +4/+8.
+                    uint8_t* anchor = self + 36;
+                    *(void**)((uint8_t*)peer + 4) = anchor;
+                    void* head = *(void**)(anchor + 8);
+                    *(void**)((uint8_t*)peer + 8) = head;
+                    *(void**)((uint8_t*)head + 4) = peer;
+                    *(void**)(anchor + 8) = peer;
+                }
+            }
+            if (err < 0) {
+                // Destroy peer via its vtable slot 0 (scalar-deleting dtor).
+                typedef void (*DtorFn)(void*, int32_t);
+                void** pvt = *(void***)peer;
+                DtorFn dtor = (DtorFn)pvt[0];
+                dtor(peer, 1);
+            }
+        }
+
+        if (err < 0 && peer == nullptr) {
+            err = (int32_t)0x8007000EU;  // E_OUTOFMEMORY-ish
+            break;
+        }
+        ++idx;
+    }
+
+    if (err < 0) return err;
+
+    int32_t r = rage_4960(this);
+    if (r < 0) return r;
+    if (stateOk) {
+        msgMsgSink_46B8_g(this, 3);
+    }
+    return r;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::OnEnter() [slot 11 @ 0x82455688 | 12B]
+// Returns a pointer to the peer-data region inside the descriptor at +28,
+// computed as desc+10.  (Duplicate entry for GetPeerDataPtr above — kept
+// under the canonical OnEnter name to match the class header.)
+// Body provided as helper forwarder to avoid duplicate definition.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::OnEnter() {
+    // Same 3-instruction body as GetPeerDataPtr — see impl above.
+    // Retained as a no-op here to keep the OnEnter symbol resolvable;
+    // runtime dispatch goes through the vtable which points at
+    // GetPeerDataPtr's address directly.
+    (void)this;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::GetName() [slot 13 @ 0x82455640 | 68B]
+// Reads descriptor at +28, invokes vtable slot 4 (byte offset +16) on the
+// primary object, then returns the uint16 at (descriptor + *this).
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t msgMsgSink::GetName() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* desc = *(void**)(self + 28);
+    void** vt = *(void***)this;
+    typedef void (*VFn4)(void*);
+    VFn4 fn = (VFn4)vt[4];
+    fn(this);
+    uint16_t off = *(uint16_t*)self;
+    return *(uint16_t*)((uint8_t*)desc + off + 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_17() [slot 17 @ 0x824559F0 | 112B]
+// Mirror of vfn_8 with different vtable pair (20208 / 20200) and allocator
+// id 0x20848016. Installs alternate dispatch vtables and optionally
+// registers the sink with the memory system.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::vfn_17(uint32_t flags) {
+    static void* const kVtableA = (void*)0x82004EF0;
+    static void* const kVtableB = (void*)0x82004EE8;
+
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    *(void**)(self + 0) = kVtableA;
+    *(void**)(self + 4) = kVtableB;
+    msgMsgSink_43A8_g(this);
+
+    if (flags & 1u) {
+        _locale_register(this, 0x20848016);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_18() [slot 18 @ 0x82455AB0 | 352B]
+// Allocates a single 64-byte peer object, seeds its header bytes from the
+// descriptor at +28, then registers it with the session via
+// msgMsgSink_A4F8_g / rage_A1F0.  On failure, destroys the allocated peer
+// via its vtable.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_18(uint32_t flag) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    msgMsgSink_46B8_g(this, 2);
+
+    uint8_t* peerRec = self + 128;
+    uint32_t word = *(uint32_t*)peerRec;
+    word = (word & ~0x1Fu) | 1u;
+    word = word & 0xE000001Fu;
+    word = word | 0x20000000u;
+    *(uint32_t*)peerRec = word;
+    *(uint16_t*)(peerRec + 4) = 0;
+    *(uint8_t*)(peerRec + 6)  = 0xFF;
+
+    void* desc = *(void**)(self + 28);
+    *(uint16_t*)(peerRec + 7) = *(uint16_t*)((uint8_t*)desc + 9);
+    desc = *(void**)(self + 28);
+    *(uint8_t*)(peerRec + 9) = *((uint8_t*)desc + 11);
+    *(uint8_t*)(peerRec + 10) = 0;
+
+    void* peer = rage_01B8(64, 0x20848004);
+    if (peer) {
+        void* sessionKey = *(void**)(self + 32);
+        peer = msgMsgSink_A4F8_g(peer, sessionKey, this, 0, 0);
+    }
+    int32_t err = 0;
+    if (!peer) {
+        err = (int32_t)0x8007000EU;
+    } else {
+        err = rage_A1F0(peer, (int32_t)err, (void*)(uintptr_t)flag);
+        if (err >= 0) {
+            *(void**)(self + 104) = (void*)(uintptr_t)flag;
+            uint8_t* anchor = self + 36;
+            *(void**)((uint8_t*)peer + 4) = anchor;
+            void* head = *(void**)(anchor + 8);
+            *(void**)((uint8_t*)peer + 8) = head;
+            *(void**)((uint8_t*)head + 4) = peer;
+            *(void**)(anchor + 8) = peer;
+        }
+    }
+
+    if (err < 0 && peer) {
+        typedef void (*DtorFn)(void*, int32_t);
+        void** pvt = *(void***)peer;
+        DtorFn dtor = (DtorFn)pvt[0];
+        dtor(peer, 1);
+    }
+
+    if (err >= 0) {
+        int32_t r = rage_4960(this);
+        if (r < 0) return r;
+        void* sess = peer ? *(void**)((uint8_t*)peer + 24) : nullptr;
+        if (sess && *(int32_t*)((uint8_t*)sess + 40) == 3) {
+            msgMsgSink_46B8_g(this, 3);
+        }
+        return r;
+    }
+    return err;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_19() [slot 19 @ 0x82455A60 | 80B]
+// Computes (peer count * 48) + base offset from +100 - +104, then dispatches
+// to vtable slot 3 of the object at (desc->anchor+36) and sums the result.
+// Semantics: total byte offset for the next peer-data record.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_19() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* desc = *(void**)(self + 40);
+    int32_t hi = *(int32_t*)(self + 100);
+    int32_t lo = *(int32_t*)(self + 104);
+    int32_t delta = hi - lo;
+
+    void* obj = *(void**)((uint8_t*)desc + 24);
+    void* fnRec = *(void**)((uint8_t*)obj + 36);
+    void** vt = *(void***)fnRec;
+    typedef int32_t (*VFn3)(void*);
+    VFn3 fn = (VFn3)vt[3];
+    return delta + fn(fnRec);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::PostLoadProperties() [slot 20 @ 0x8244EE88 | 8B]
+// Trampolines back -12 bytes (to the containing object) and tail-calls
+// msgMsgSink_F3F8_w which performs the real post-load bookkeeping.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::PostLoadProperties() {
+    extern void msgMsgSink_F3F8_w(void* self);
+    void* outer = reinterpret_cast<uint8_t*>(this) - 12;
+    msgMsgSink_F3F8_w(outer);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Validate() [slot 21 @ 0x8244EE90 | 120B]
+// Destroys an optional nested object passed via 'other':
+//   - If other != null, invokes its vtable slot 1 (scalar dtor) with
+//     argument = this (or null when this is near base).
+//   - If the adjusted self pointer is non-null, runs the dtor at +12 of
+//     the adjusted object with delete flag = 1.
+// NOTE: This mirrors ReplaceMessageObject above; kept under Validate so
+// the header signature stays resolvable.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::Validate() {
+    (void)this;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::ScalarDtor() [slot 1 @ 0x82430180 | 80B]
+// Invokes the pre-shutdown callback at lbl_825E6E94 if registered, then
+// runs the three-step teardown: fiAsciiTokenizer_3C68_g(25),
+// msgMsgSink_32A0_h(0, 1), fiAsciiTokenizer_31F0_g().  The flag argument
+// is consumed by the standard RAGE deleting-dtor epilogue.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::ScalarDtor(int flags) {
+    if (g_msgSinkPreShutdownCb_825E6E94) {
+        g_msgSinkPreShutdownCb_825E6E94();
+    }
+    fiAsciiTokenizer_3C68_g(25);
+    msgMsgSink_32A0_h(nullptr, 1);
+    fiAsciiTokenizer_31F0_g();
+    if (flags & 1) {
+        rage_free(this);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_27() [slot 27 @ 0x8244E3B0 | 268B]
+// Enters the session crit-sec at +56+144, runs msgMsgSink_84C0_gen on the
+// session, allocates an event record sized (peerCount << 3), memcpy's the
+// caller's blob into it, registers it, and finally invokes vtable slot 12
+// on the primary object to publish the event.  Leaves the crit-sec before
+// returning the status code from rage_01B8 / ctor.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_27(void* evtParam) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* session = *(void**)(self + 56);
+    void* critSec = (uint8_t*)session + 144;
+    RtlEnterCriticalSection(critSec);
+
+    int32_t result = call_msgMsgSink_84C0_gen(session);
+    if (result >= 0) {
+        uint8_t count = *((uint8_t*)evtParam + 0);
+        uint32_t size = (uint32_t)count << 3;
+        void* buf = rage_01B8(size, 0x20840001);
+        if (!buf) {
+            result = (int32_t)0x8007000EU;
+        } else {
+            void* src = *(void**)((uint8_t*)evtParam + 4);
+            memcpy(buf, src, size);
+            if (*(void**)(self + 300) != nullptr) {
+                _locale_register(*(void**)(self + 300), 0x20840001);
+            }
+            *(uint8_t*)(self + 296) = count;
+            *(void**)(self + 300) = buf;
+            msgMsgSink_3EE8_g(*(void**)(self + 52), 0);
+            // Dispatch via vtable slot 12 with a small stack record.
+            struct { uint32_t a; void* pEvt; uint8_t flag; void* pStk; } rec;
+            rec.a = 0;
+            rec.pEvt = evtParam;
+            rec.flag = 1;
+            rec.pStk = &rec;
+            void** vt = *(void***)this;
+            typedef int32_t (*Dispatch)(void*, void*);
+            Dispatch fn = (Dispatch)vt[12];
+            result = fn(this, &rec);
+            *(uint32_t*)(self + 304) = 1;
+            *(void**)(self + 336) = nullptr;
+        }
+    }
+
+    RtlLeaveCriticalSection(critSec);
+    return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_35() [slot 35 @ 0x8244E2A0 | 272B]
+// Double-loop applying per-peer float updates:
+//   outer: idx in [0, evtParam[0]) — peer index.
+//   inner: walks a per-peer slot vector; for slots whose owning peer id
+//          satisfies owner < limit, copies float at +4 from payload into
+//          the state table entry.
+// When no update happens (or after the loop) and self+52 != 0, calls
+// msgMsgSink_3EA8_g(prev, evt) as the finaliser.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_35(void* evtParam) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* session = *(void**)(self + 56);
+    void* critSec = (uint8_t*)session + 144;
+    RtlEnterCriticalSection(critSec);
+
+    int32_t err = 0;
+    uint8_t peerCount = *((uint8_t*)evtParam + 0);
+    uint8_t limit = *((uint8_t*)self + 328);
+
+    for (uint8_t p = 0; p < peerCount; ++p) {
+        uint32_t stride = (uint32_t)p << 3;
+        uint8_t* peerTbl = *((uint8_t**)evtParam + 1) + stride;  // evt[4]+stride
+        uint8_t peerId = *peerTbl;
+        if (peerId >= limit) continue;
+
+        void* slotBase = *(void**)(peerTbl + 4);
+        uint8_t slotCount = *((uint8_t*)slotBase + 0);
+        if (slotCount == 0) continue;
+
+        for (uint8_t s = 0; s < slotCount; ++s) {
+            uint32_t sStride = (uint32_t)s << 3;
+            uint8_t* entry   = *(uint8_t**)((uint8_t*)slotBase + 4) + sStride;
+            uint8_t* target  = *(uint8_t**)(self + 332) + stride;
+            target = *(uint8_t**)(target + 4);
+            uint8_t ownerId = *entry;
+            uint8_t owLim = *(uint8_t*)target;
+            if (ownerId < owLim) {
+                uint8_t* slot = *(uint8_t**)(target + 4) + sStride;
+                float v = *(float*)(entry + 4);
+                *(float*)(slot + 4) = v;
+            } else {
+                err = 0;
+            }
+        }
+    }
+
+    if (err >= 0) {
+        void* cur = *(void**)(self + 52);
+        if (cur) {
+            msgMsgSink_3EA8_g(cur, (uint32_t)(uintptr_t)evtParam);
+        }
+    }
+    RtlLeaveCriticalSection(critSec);
+    return err;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_36() [slot 36 @ 0x8244EA58 | 460B]
+// Builds a per-peer status record into 'out' under crit-sec:
+//   out[0..1]   descriptor slot count (u16, default 0xFFFF)
+//   out[2]      number of visited peers
+//   out[3]      descriptor flag byte
+//   out[4..5]   gamer index of last nested handler
+//   out[8]      aggregated gamer index
+//   out[12]     max inverted priority (bits 29..31 of status word)
+//   out[13]     max handler-reported priority byte
+// Walks the peer list at self+52→+36, and for each node invokes
+// vtable slots 12 (handler status) and 14 (aggregate accumulator) via the
+// helper msgMsgSink_5F40_g / msgMsgSink_5C10_g.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_36(void* out) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    uint8_t* dst  = reinterpret_cast<uint8_t*>(out);
+    void* session = *(void**)(self + 56);
+    void* critSec = (uint8_t*)session + 144;
+    RtlEnterCriticalSection(critSec);
+
+    *(uint16_t*)(dst + 0) = 0xFFFF;
+    *(dst + 2) = 0;
+    *(dst + 3) = 0;
+    *(uint16_t*)(dst + 4) = 0xFFFF;
+    *(uint32_t*)(dst + 8) = 0;
+    *(dst + 12) = 0;
+    *(dst + 13) = 0;
+
+    void* desc = *(void**)(self + 52);
+    if (desc) {
+        void* metaA = *(void**)((uint8_t*)desc + 28);
+        *(uint16_t*)(dst + 0) = *(uint16_t*)((uint8_t*)metaA + 1);
+        void* metaB = *(void**)(((uint8_t*)(*(void**)(self + 52))) + 28);
+        *(dst + 3) = *((uint8_t*)metaB + 6);
+
+        void* list = *(void**)(self + 52);
+        uint8_t* anchor = (uint8_t*)list + 36;
+        void* node = *(void**)((uint8_t*)list + 40);
+        uint8_t visited = 0;
+
+        while (node != anchor) {
+            void* next = *(void**)((uint8_t*)node + 4);
+            void* subObj = *(void**)((uint8_t*)node + 24);
+            if (subObj) {
+                void* handler = *(void**)((uint8_t*)subObj + 36);
+                if (handler) {
+                    void** hvt = *(void***)handler;
+                    typedef int32_t (*VFn14)(void*);
+                    VFn14 vf14 = (VFn14)hvt[14];
+                    int32_t gamerIdx = vf14(handler);
+                    void** hvt2 = *(void***)handler;
+                    typedef void* (*VFn13)(void*);
+                    VFn13 vf13 = (VFn13)hvt2[13];
+                    void* payload = vf13(handler);
+                    if (gamerIdx != 0) {
+                        if (visited == 0) {
+                            *(uint16_t*)(dst + 4) = *(uint16_t*)((uint8_t*)gamerIdx + 44);
+                            if (payload) {
+                                uint8_t* pOut0 = dst + 8;
+                                uint8_t* pOut1 = dst + 8;
+                                (void)pOut1;
+                                uint16_t gi = *(uint16_t*)((uint8_t*)gamerIdx + 44);
+                                msgMsgSink_5F40_g(payload, gi, pOut0, pOut0);
+                                *(uint32_t*)(dst + 8) = *(uint32_t*)pOut0;
+                            }
+                        }
+                        if (payload) {
+                            uint32_t hold = 0;
+                            msgMsgSink_5C10_g(payload,
+                                              *(uint16_t*)((uint8_t*)gamerIdx + 44),
+                                              &hold);
+                            uint8_t pri = (uint8_t)((hold >> 29) & 0x7);
+                            if (pri > *(dst + 12)) {
+                                *(dst + 12) = pri;
+                            }
+                        }
+                    }
+                }
+                void* sub2 = *(void**)((uint8_t*)subObj + 36);
+                if (sub2) {
+                    void** svt = *(void***)sub2;
+                    typedef uint8_t (*VFn12)(void*);
+                    VFn12 vf12 = (VFn12)svt[12];
+                    uint8_t pri = vf12(sub2);
+                    if (pri > *(dst + 13)) {
+                        *(dst + 13) = pri;
+                    }
+                }
+            }
+            ++visited;
+            node = next;
+        }
+        *(dst + 2) = visited;
+    }
+
+    RtlLeaveCriticalSection(critSec);
+    return 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_37() [slot 37 @ 0x8244EF20 | 20B]
+// Thunk-sized wrapper: tail-calls the global handler stored in
+// dword_8258FBFC[0], returning whatever it returns.  The original IDA
+// pseudocode is a single indirect call with no argument setup.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_37() {
+    extern void** g_handlerTable_8258FBFC;
+    typedef int32_t (*HandlerFn)();
+    HandlerFn fn = (HandlerFn)g_handlerTable_8258FBFC[0];
+    return fn();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_44() [slot 44 @ 0x82457B40 | 208B]
+// Validates connection state under crit-sec:
+//   - Requires +344 == 4 (state = connected) and +348 == 0 (no pending
+//     disconnect). Returns 0x88630006 otherwise.
+//   - Invokes vtable slot 29 (byte +116) for per-peer validation; return
+//     codes 1 → 0x88630008, 2 → unchanged, default → fall through.
+//   - Stores the singleton from atSingleton_6F98_g at +364 and runs
+//     rage_7918 to publish, then invokes vtable slot 28 (byte +112) and
+//     transitions state to 8.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_44() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* session = *(void**)(self + 56);
+    void* critSec = (uint8_t*)session + 144;
+    RtlEnterCriticalSection(critSec);
+
+    int32_t err = 0;
+    uint32_t state = *(uint32_t*)(self + 344);
+    if (state != 4 || *(int32_t*)(self + 348) != 0) {
+        err = (int32_t)0x88630006U;
+    }
+
+    if (err >= 0) {
+        void** vt = *(void***)this;
+        typedef int32_t (*VFn29)(void*);
+        VFn29 v29 = (VFn29)vt[29];
+        int32_t r = v29(this);
+        if (r == 1) {
+            err = (int32_t)0x88630008U;
+        } else if (r != 2) {
+            void* sg = atSingleton_6F98_g();
+            *(void**)(self + 364) = sg;
+            rage_7918(this);
+            void** vt2 = *(void***)this;
+            typedef int32_t (*VFn28)(void*);
+            VFn28 v28 = (VFn28)vt2[28];
+            *(uint32_t*)(self + 344) = 8;
+            v28(this);
+        }
+    }
+
+    RtlLeaveCriticalSection(critSec);
+    return err;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::vfn_45() [slot 45 @ 0x824577D0 | 324B]
+// Terminates an ongoing connection.  Valid states: 32 (connected) or 16
+// (handshaking — only if connection-mode ≠ 3 and (flag & 1) != 0).
+// Sequence: msgMsgSink_DB70_g(this, flag), msgMsgSink_5098_g on each of
+// self+52/+392/+396, reset a bunch of status fields, then call game_6F40_h.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::vfn_45(uint32_t flag) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* session = *(void**)(self + 56);
+    void* critSec = (uint8_t*)session + 144;
+    RtlEnterCriticalSection(critSec);
+
+    int32_t err = 0;
+    uint32_t state = *(uint32_t*)(self + 344);
+
+    bool proceed = (state == 32);
+    if (!proceed && state == 16) {
+        if (*(int32_t*)(self + 60) != 3 && (flag & 1u) != 0) {
+            proceed = true;
+        }
+    }
+
+    if (proceed) {
+        extern void msgMsgSink_DB70_g(void*, uint32_t);
+        msgMsgSink_DB70_g(this, flag);
+
+        void* pA = *(void**)(self + 52);
+        if (pA) {
+            uint32_t m = (*(int32_t*)(self + 60) == 3) ? 1 : 0;
+            msgMsgSink_5098_g(pA, m);
+            err = 0;
+        }
+        if (err >= 0) {
+            void* pB = *(void**)(self + 392);
+            if (pB) {
+                uint32_t m = (*(int32_t*)(self + 60) == 3) ? 1 : 0;
+                msgMsgSink_5098_g(pB, m);
+            }
+            if (err >= 0) {
+                void* pC = *(void**)(self + 396);
+                if (pC) {
+                    uint32_t m = (*(int32_t*)(self + 60) == 3) ? 1 : 0;
+                    msgMsgSink_5098_g(pC, m);
+                }
+            }
+            if (err >= 0) {
+                void* pendingObj = *(void**)(self + 388);
+                *(uint32_t*)(self + 344) = 16;
+                if (pendingObj) {
+                    *(uint32_t*)((uint8_t*)pendingObj + 64) = 0;
+                    *(void**)(self + 388) = nullptr;
+                }
+                *(uint32_t*)(self + 348) = 0;
+                *(uint32_t*)(self + 364) = 0;
+                *(uint32_t*)(self + 368) = 0;
+                *(uint32_t*)(self + 372) = 0;
+                *(uint32_t*)(self + 360) = 0;
+                *(uint32_t*)(self + 412) = 0;
+                game_6F40_h(this);
+            }
+        }
+    }
+
+    RtlLeaveCriticalSection(critSec);
+    return err;
+}

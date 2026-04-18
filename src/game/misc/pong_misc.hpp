@@ -328,16 +328,16 @@ struct msgMsgSink {
     // ── virtual methods ──
     virtual ~msgMsgSink();                  // [0] @ 0x822808a0
     virtual void ScalarDtor(int flags); // [1] @ 0x82430180
-    virtual void vfn_3();  // [3] @ 0x82454b78
-    virtual void vfn_8();  // [8] @ 0x82455698
-    virtual void vfn_9();  // [9] @ 0x824557c8
+    virtual int32_t vfn_3();  // [3] @ 0x82454b78
+    virtual void vfn_8(uint32_t flags = 0);  // [8] @ 0x82455698
+    virtual int32_t vfn_9(void* messageBuffer);  // [9] @ 0x824557c8
     virtual void OnEnter();  // [11] @ 0x82455688
     virtual uint16_t GetPeerDataSize();  // [12] @ 0x82455630
-    virtual void GetName();  // [13] @ 0x82455640
+    virtual uint16_t GetName();  // [13] @ 0x82455640
     virtual void NotifySessionEvent();  // [14] @ 0x82455540
-    virtual void vfn_17();  // [17] @ 0x824559f0
-    virtual void vfn_18();  // [18] @ 0x82455ab0
-    virtual void vfn_19();  // [19] @ 0x82455a60
+    virtual void vfn_17(uint32_t flags = 0);  // [17] @ 0x824559f0
+    virtual int32_t vfn_18(uint32_t flag);  // [18] @ 0x82455ab0
+    virtual int32_t vfn_19();  // [19] @ 0x82455a60
     virtual void PostLoadProperties();  // [20] @ 0x8244ee88
     virtual void Validate();  // [21] @ 0x8244ee90
     virtual uint32_t CheckAndProcess();  // [22] @ 0x8244dd50
@@ -345,7 +345,7 @@ struct msgMsgSink {
     virtual int32_t GetStateFlagsLocked(uint32_t* outFlags);  // [24] @ 0x8244dff8
     virtual int32_t GenerateAndCleanup();  // [25] @ 0x8244dcf0
     virtual int32_t GetConnectionInfo(void* bufferOut, uint32_t sizeParam, uint32_t* totalSizeOut);  // [26] @ 0x8244e160
-    virtual void vfn_27();  // [27] @ 0x8244e3b0
+    virtual int32_t vfn_27(void* evtParam);  // [27] @ 0x8244e3b0
     virtual uint32_t UpdatePrioritiesLocked(void* priorityData);  // [28] @ 0x8244e4c0
     virtual uint32_t ApplyPrioritiesLocked(void* priorityData);  // [29] @ 0x8244e568
     virtual int32_t FindValidMessageSlot(uint32_t searchKey);  // [30] @ 0x8244e6d0
@@ -353,17 +353,17 @@ struct msgMsgSink {
     virtual uint32_t GetPropertyLocked(uint32_t key, float* outValue);  // [32] @ 0x8244f330
     virtual uint32_t ProcessWithLock(uint32_t param);  // [33] @ 0x8244dec0
     virtual uint32_t SetMessageBuffer(void* param);  // [34] @ 0x8244e1d8
-    virtual void vfn_35();  // [35] @ 0x8244e2a0
-    virtual void vfn_36();  // [36] @ 0x8244ea58
-    virtual void vfn_37();  // [37] @ 0x8244ef20
+    virtual int32_t vfn_35(void* evtParam);  // [35] @ 0x8244e2a0
+    virtual int32_t vfn_36(void* out);  // [36] @ 0x8244ea58
+    virtual int32_t vfn_37();  // [37] @ 0x8244ef20
     virtual uint32_t GetStateFlags();  // [38] @ 0x8244df58
     virtual void ProcessPendingMessages();  // [39] @ 0x8244e050
     virtual void CleanupIfReady();  // [40] @ 0x8244e0c0
     virtual void ForwardToMatchHandler();  // [41] @ 0x82456688
     virtual uint32_t DispatchEventDefault();  // [42] @ 0x8244ed38
     virtual void ClearPointers();  // [43] @ 0x8244e138
-    virtual void vfn_44();  // [44] @ 0x82457b40
-    virtual void vfn_45();  // [45] @ 0x824577d0
+    virtual int32_t vfn_44();  // [44] @ 0x82457b40
+    virtual int32_t vfn_45(uint32_t flag);  // [45] @ 0x824577d0
     virtual uint32_t GetNestedObjectValue();  // [46] @ 0x8244e148
     virtual void FlushAndDisconnect();  // [49] @ 0x8244e628
     virtual void BeginDisconnect();  // [50] @ 0x8244e680
