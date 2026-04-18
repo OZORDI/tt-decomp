@@ -47,6 +47,18 @@
  *   - ppc_helper_vmx_noop    covers __savevmx_NN   / __restvmx_NN
  *   - ppc_helper_gprlr_noop  covers __savegprlr_NN / __restgprlr_NN
  *
+ * GPR/FPR "belts" with no pass5 __imp__ emission
+ * ----------------------------------------------
+ * A search of pass5_final for `__restgprlr`, `__savefpr`, `__restfpr`
+ * returns zero `__imp__` matches — pass5 inlines the equivalent
+ * reload directly into each translated caller's epilogue, so those
+ * alias addresses are never *targets* of a guest branch in the
+ * recompiled build. Registering hooks for them would be dead entries.
+ * Batch-06/F7 triaged 31 such addresses and confirmed no host action
+ * is required. Parent symbols `__savegprlr` (0x8242F85C),
+ * `__restgprlr` (0x8242F8B0), `__savefpr` (0x824365E0),
+ * `__restfpr` (0x8243662C) are similarly handled.
+ *
  * See:
  *   - crt_hooks.h   for the full CRT_HOOK_ADDR_*vmx_NN / *gprlr_NN lists.
  *   - crt_hooks.cpp g_crt_hook_table[] for the registrations.
@@ -110,7 +122,7 @@ void ppc_helper_gprlr_noop(ppc_context_t* ctx, uint8_t* base) {
  *
  *  __restgprlr_NN  (9 entries, 0x8242F8D4 .. 0x8242F8F4)
  *    0x8242F8D4  __restgprlr_23   (lwz r23,-0x24(r1); ... ; mtlr r0; blr)
- *    0x8242F8D8  __restgprlr_24
+ *    0x8242F8D8  __restgprlr_24   (lwz r24,-0x20(r1) tail entry)
  *    0x8242F8DC  __restgprlr_25
  *    0x8242F8E0  __restgprlr_26
  *    0x8242F8E4  __restgprlr_27
@@ -145,16 +157,6 @@ void ppc_helper_gprlr_noop(ppc_context_t* ctx, uint8_t* base) {
  *    0x82436650  __restfpr_23
  *    0x82436670  __restfpr_31
  *
- * Disposition (all 31): no-action PPC helpers. Unlike the VMX belt, the
- * static recompiler does NOT produce a distinct `__imp____restgprlr` /
- * `__imp____savefpr` PPC_FUNC_IMPL — a search of pass5_final turns up
- * zero matches. The recomp weaves the equivalent "reload r23..r31 / LR"
- * step directly into each translated caller's epilogue. So these
- * addresses are never *targets* of a guest call in the recompiled build,
- * and registering a hook for any of them would be a dead entry.
- *
- * We document them here (not stubbed) to record that batch-06 triaged
- * them and confirmed no host action is required. The parent symbols
- * `__savegprlr` (0x8242F85C), `__restgprlr` (0x8242F8B0), `__savefpr`
- * (0x824365E0), `__restfpr` (0x8243662C) are similarly handled.
+ * Disposition (all 31): no-action PPC helpers. pass5_final inlines
+ * their semantics at call sites; a host hook would be a dead entry.
  */
