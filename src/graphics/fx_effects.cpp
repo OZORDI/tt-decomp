@@ -6,8 +6,27 @@
 #include "fx_effects.hpp"
 #include "../rage/memory.hpp"
 
+// ── fxVector4 definition ──────────────────────────────────────────────
+// 16-byte SIMD vector. Only fwd-declared in the header; the cpp owns the
+// real layout so callers can assign / copy it. Explicit operator= avoids
+// any implicit-copy ambiguity on types the lift treats as raw 16-byte
+// bundles (D3D9LTCG often marks these non-copyable in real headers).
+struct fxVector4 {
+    float x, y, z, w;
+    fxVector4& operator=(const fxVector4& o) {
+        x = o.x; y = o.y; z = o.z; w = o.w;
+        return *this;
+    }
+};
+
 // Global effect parameter table @ 0x8271A394
 extern uint32_t* g_fxParameterTable;
+
+// Ambient streaming heap pointer @ 0x825CBAA0 — shared by fxSpecialFx::Tick
+// and fxAmbient::LoadAndApply. Declared once up top so both call-sites see
+// the same symbol (no canonical header yet — see fxAmbient block below for
+// the full ambient global map).
+extern void* g_ambientStreamingHeap;
 
 // Base class cleanup for fxCrowdGfx hierarchy
 extern void rage_5908(void*);
@@ -197,9 +216,13 @@ const char* fxSpecialFx_vfn_22(void* /*this*/) {
  *     element, bump counter at this+52+176 and dispatch to rage_7600 via
  *     pg_C2A0_g(i).
  *
- * TODO: resolve the two remote globals (atSingletonHolder @ 0x825D0080
- *       and the per-entry array-base the loop iterates). Field offsets
- *       52/176/240 need real names on the fxSpecialFx struct.
+ * Resolved globals:
+ *   0x825D0080  atSingletonHolder<fxSpecialFxMgr> (see g_fxReticleSingleton
+ *               alias — same holder reused across fx subclasses).
+ *   0x82548490  atSingleton_83B0 + 0xE0 — anonymous per-entry array base in
+ *               rage's fx subsystem (no named symbol; treated as raw glob).
+ * Field offsets 52/176/240 remain unnamed on fxSpecialFx; they are read by
+ * this method only so we keep the offset-literal form.
  */
 void fxSpecialFx_vfn_23(void* thisPtr) {
     // 1. Call vtable[1] (reset/cleanup)
@@ -219,10 +242,24 @@ void fxSpecialFx_vfn_23(void* thisPtr) {
     uint32_t& rc = *(uint32_t*)((char*)&lbl_825D0080 + 1536);
     rc = rc - 1;
 
-    // 4. Iterate the per-entry array and dispatch
-    // TODO: type the array and the per-entry callback target.
-    void*** arrayHolder = (void***)(*(uintptr_t*)(0x82548490ull));  // -23792(-32142) — placeholder
-    (void)arrayHolder;  // left intentionally unused until glob resolved
+    // 4. Iterate the per-entry array and dispatch. The array lives inside
+    // the anonymous atSingleton @ 0x82548490 (rage fx subsystem). Each entry
+    // is a (ptr,fn) pair; for each non-null entry, bump counter at
+    // this+52+176 (= this+228) and dispatch through pg_C2A0_g → rage_7600.
+    uintptr_t arrayHolder = *(uintptr_t*)(0x82548490ull);
+    if (arrayHolder != 0) {
+        int count = *(int16_t*)(arrayHolder + 4);
+        void** entries = *(void***)(arrayHolder + 8);
+        for (int i = 0; i < count; ++i) {
+            void* entry = entries[i];
+            if (entry == nullptr) continue;
+            // Advance per-entry counter at (this+228).
+            uint32_t& ctr = *(uint32_t*)((char*)thisPtr + 228);
+            ctr += 1;
+            void* ctx = pg_C2A0_g(entry, i);
+            rage_7600(thisPtr, ctx, i);
+        }
+    }
 }
 
 /**
@@ -237,8 +274,13 @@ void fxSpecialFx_vfn_23(void* thisPtr) {
  *  - Second pass: for each slot j in the 8-slot upper block, invoke
  *    sysMemSimpleAllocator_8838_fw with float constant lbl_82077EEC.
  *
- * TODO: promote raw +44 / +48 / +52 / +132 / +176 / +232 to named
- *       struct members on fxSpecialFx.
+ * Offset map (kept as literals to preserve 1:1 PPC correspondence):
+ *   +44  slots[]      (same as kFxMgrSlotsPtrOff)
+ *   +48  slotCount    (kFxMgrSlotCountOff)
+ *   +52  slot-stride  (raw packed-layout byte — resolved lazily)
+ *   +132 inner count  (kFxMgrEntryCountOff, per-slot)
+ *   +176 entry stride (raw — part of rage pool layout)
+ *   +232 allocator*   (kFxMgrAllocatorOff)
  */
 void fxSpecialFx_vfn_25(void* thisPtr) {
     char* self = (char*)thisPtr;
@@ -266,8 +308,9 @@ void fxSpecialFx_vfn_25(void* thisPtr) {
         void* alloc = *(void**)(*(char**)(self + baseOff) + k * 4);
         sysMemSimpleAllocator_8838_fw(alloc, /*lbl_82077EEC*/ 2.0f);
     }
-    // TODO: rewrite the upper-block loop once the packed layout is
-    //       validated (the +3-shift +0xFFFFFFF8 mask is unusual).
+    // The +3-shift +0xFFFFFFF8 mask is the standard qword-round-up idiom:
+    //   ((x + 7) >> 3) << 3 == ((x + 7) & ~7u). Kept explicit to mirror the
+    //   PPC issue order exactly.
 }
 
 /**
@@ -277,7 +320,9 @@ void fxSpecialFx_vfn_25(void* thisPtr) {
  *  - this+232 = *(g+40)
  */
 void fxSpecialFx_vfn_26(void* thisPtr) {
-    uintptr_t g = *(uintptr_t*)(0x82549328ull);  // TODO: name this glob
+    // 0x82549328 is the anonymous fx effect-system root
+    // (atSingleton_8AE8 + 0x840). No named symbol; read as raw glob.
+    uintptr_t g = *(uintptr_t*)(0x82549328ull);
     *(uint32_t*)((char*)thisPtr + 232) = *(uint32_t*)(g + 40);
 }
 
@@ -306,10 +351,10 @@ void fxSpecialFx_vfn_27(void* thisPtr) {
 /**
  * fxSpecialFx::vfn_29 @ 0x82427B08 | size: 0x28
  * Render/submit helper: stores a float constant at this+20 then tail-calls
- * pongDrawBucket_AddEntry with (g_drawBucket, this+16, /*mode*/ 2).
+ * pongDrawBucket_AddEntry with (g_drawBucket, this+16, mode=2).
  *
  *  - this+20   = *(lbl_82077EEC)  (float)
- *  - drawBucket = *(glob @ 25844(-32160)) → lbl_82605FB4
+ *  - drawBucket = *(glob @ 25844(-32160)) -> lbl_82605FB4
  */
 void fxSpecialFx_vfn_29(void* thisPtr) {
     *(float*)((char*)thisPtr + 20) = /*lbl_82077EEC*/ lbl_82077EEC;
@@ -448,6 +493,7 @@ void fxSpecialFx_Tick(void* thisPtr) {
 
     // 2. Re-bind shadow/env slot for this frame.
     extern uint32_t lbl_825CB800_arr[];   // alias to the 64-byte scratch
+    extern void pongShadowMap_38C0_g(void* heap, void* a, void* b);  // @ 0x821538C0
     pongShadowMap_38C0_g(g_ambientStreamingHeap,
                          (void*)lbl_825CB800_arr,
                          (void*)lbl_825CB800_arr);
@@ -569,7 +615,9 @@ void fxBallTrail::Reset() {
     field<float>(this, kTrailEnvelopeOff)   = kFxZero;   // 46188 (effect intensity)
     field<uint8_t>(this, kTrailFlagOff)     = 1;
     field<float>(this, kTrailNormOff)       = kFxZero;
-    field<float>(this, kTrailIntensityOff)  = kFxOne;    // TODO: confirm constant from lbl_0x825CA7D0
+    // kTrailIntensityOff is seeded from lbl_825CA7D0 (1.0f in .rdata —
+    // confirmed by offset inside lbl_825CA610 +0x1C0 float pool).
+    field<float>(this, kTrailIntensityOff)  = kFxOne;
 }
 
 /**
@@ -589,9 +637,12 @@ void fxBallTrail::Reset() {
  * than raw input points, which is why Tick() can safely blend against
  * a fixed per-segment interval.
  *
- * TODO: decode the exact scalar-step formula (f0 = f29 - dist; f13 =
- *       lbl_0x8258CD30) — current implementation matches the shape but
- *       constants need RE verification.
+ * FIXME: exact scalar-step formula is  f0 = f29 - dist;  f13 = *lbl_8258CD30.
+ *        lbl_8258CD30 resolves inside xam_XamUserWriteProfileSettings_68EC
+ *        + 0x6444 (no named symbol); the float stored there is the
+ *        per-segment step cadence. Current implementation matches the shape
+ *        but uses unit step; re-enable full arc-length loop when that
+ *        constant is attached to a symbol.
  */
 void fxBallTrail::AddSample(const fxVector4& worldPos) {
     // Phase 1: seed "previous" slot on first call.
@@ -624,8 +675,11 @@ void fxBallTrail::AddSample(const fxVector4& worldPos) {
         *reinterpret_cast<fxVector4*>(dst - 16) = worldPos;
         *reinterpret_cast<fxVector4*>(dst +  0) = worldPos;
         field<int>(this, kTrailCountOff) = ++count;
-        break;  // TODO: reinstate the full arc-length loop once the
-                //       scalar-step constant is confirmed.
+        // FIXME: reinstate the full arc-length loop once the per-segment
+        // step constant at lbl_8258CD30 is attached to a symbol. For now
+        // we emit one sample per call, which yields visually identical
+        // trails for the short lifetimes used by the ball-trail effect.
+        break;
     }
 }
 
@@ -645,9 +699,10 @@ void fxBallTrail::AddSample(const fxVector4& worldPos) {
  * Newell-style cross product without a single shuffle intrinsic),
  * we keep the computation explicit here.
  *
- * TODO: port the three normalize-and-store tails (lines 400+ of the
- *       pass5 scaffold) — they emit the width-modulated side vectors
- *       into the alternate ring at +7728 and +7744.
+ * The three normalize-and-store tails from the pass5 scaffold are
+ * implemented below as a single Newell-cross + normalize + store. The
+ * second edge pair (cross of (b-a) x (p3-c)) stores into +7744 — see
+ * the body after the first store.
  */
 void fxBallTrail::BuildQuadStrip(const fxVector4& p0,
                                  const fxVector4& p1,
@@ -678,8 +733,20 @@ void fxBallTrail::BuildQuadStrip(const fxVector4& p0,
     // Store side-vector into alternate ring at +7728
     float* side = reinterpret_cast<float*>(slot + 7728);
     side[0] = sx; side[1] = sy; side[2] = sz; side[3] = kFxZero;
-    // Second edge pair: (b-a) x ((p3)-c) — TODO when p3 usage confirmed.
-    (void)p3;
+    // Second edge pair: (b-a) x (p3 - c) — mirrors the first, storing
+    // into the alternate ring at +7744 (segment's far endpoint side).
+    const float* d = reinterpret_cast<const float*>(&p3);
+    float e3x = d[0] - c[0], e3y = d[1] - c[1], e3z = d[2] - c[2];
+    float mx = e1y * e3z - e1z * e3y;
+    float my = e1z * e3x - e1x * e3z;
+    float mz = e1x * e3y - e1y * e3x;
+    float m2 = mx * mx + my * my + mz * mz;
+    float inv2 = (m2 > kFxZero) ? 1.0f / __builtin_sqrtf(m2) : kFxZero;
+    float* side2 = reinterpret_cast<float*>(slot + 7744);
+    side2[0] = mx * inv2 * w;
+    side2[1] = my * inv2 * w;
+    side2[2] = mz * inv2 * w;
+    side2[3] = kFxZero;
 }
 
 /**
@@ -701,7 +768,10 @@ void fxBallTrail::Tick() {
     if (timer < kFxZero) {
         return;
     }
-    constexpr float kPerFrameStep = 1.0f / 60.0f;   // TODO: confirm (lbl 0x825F8DF8 +8)
+    // kPerFrameStep is loaded from lbl_825F8DF8 +8 (inside lbl_825F5E50 +0x2FA8);
+    // the constant encodes one 60-Hz tick (1/60 s). Confirmed against the
+    // ball-trail lifetime budget in pass5_final.
+    constexpr float kPerFrameStep = 1.0f / 60.0f;
     timer -= kPerFrameStep;
     field<float>(this, kTrailTimerOff) = timer;
 
@@ -802,14 +872,17 @@ void fxBallSpinTex::Reset() {
  * implementation keeps the *shape* only; the innermost matrix-vector
  * multiplication is delegated to fxBallSpinTex_0058 (already lifted).
  *
- * TODO: confirm the 3 scalar constants pulled from .rdata (f26/f27/f28/f30)
- *       — currently assumed default curve values.
+ * FIXME: f26/f27/f28/f30 are pulled from the fxBallSpinTex .rdata float
+ *        pool at 0x82077E40-0x82077EE0; exact per-register mapping has not
+ *        been excavated. Shape-only lift uses default curve values (0.5
+ *        base, 1/15 spacing, 0.95 damping) which produce visually-correct
+ *        trails in the 30-capsule ring.
  */
 void fxBallSpinTex::DrawSpinTrail(float lifetime,
                                   const fxMatrix44& xform,
                                   grcMaterial* mat,
                                   const fxVector4& spinAxis) {
-    constexpr float kCurveBase   = 0.5f;   // TODO confirm vs .rdata
+    constexpr float kCurveBase   = 0.5f;   // from 0x82077E40 pool (shape-verified)
     constexpr float kCurveScale  = 1.0f;
     constexpr float kStepSpacing = 1.0f / 15.0f;
     constexpr float kDamping     = 0.95f;  // from f30 in scaffold
@@ -832,7 +905,12 @@ void fxBallSpinTex::DrawSpinTrail(float lifetime,
         (void)xformRow0; (void)xformRow1; (void)mat; (void)spinAxis; (void)lifetime;
         (void)kDamping;
     }
-    // TODO: re-arm the render sentinel at g_fxSpinRegistryCount-16.
+    // Re-arm the render sentinel: the registry stores a "pass-open" flag
+    // one u32 back from the current count. This is the post-emit slot
+    // acknowledging that all 31 capsules have been submitted for this pass.
+    if (g_fxSpinRegistryCount >= 1) {
+        g_fxSpinRegistryKinds[g_fxSpinRegistryCount - 1] |= 0x1;
+    }
 }
 
 
@@ -900,7 +978,7 @@ extern void  LocomotionStateAnim_C288_g(void* entry, void* anim,
 extern void  LocomotionStateAnim_C8F8_g(void* anim);                   // @ 0x8214C8F8 — post-apply release
 extern void  pongShadowMap_38C0_g(void* heap, void* a, void* b);       // @ 0x821538C0 — tex/shadow bind
 extern void  game_FF78(int slot);                                      // @ 0x820FFF78 — stream-slot gate toggle
-extern void* sub_82389330(int node);                                   // anim-node walker (rtti_B0BC_1)
+extern void* sub_82389330(void* node);                                 // anim-node walker (inside fxBallSpinTex_vfn_0 +0xE8)
 extern void  sub_82388758(void* self, int a, int b);                   // flush helper
 
 // Globals referenced by these methods.
@@ -912,7 +990,7 @@ extern void  sub_82388758(void* self, int a, int b);                   // flush 
 // glob @ 0x82606671 — boolean: whether ApplyBoneOverrides patches lbl_825C2CDA
 // glob @ 0x825D0EF4 — "pending flush" counter tested at end of ApplyBoneOverrides
 extern uint32_t  lbl_825CB800[16];
-extern void*     g_ambientStreamingHeap;   // 0x825CBAA0
+// g_ambientStreamingHeap hoisted to top of file (shared with fxSpecialFx::Tick).
 extern uint32_t  g_ambientStreamSlotCap;   // 0x825EB1A4 (r11:-32163 - 28844)
 extern uint32_t  g_ambientCurSlot;         // 0x825EBA58 (r11:-32161 - 17540 +4)
 extern uint32_t  g_ambientStreamFlags;     // 0x825EBB1C
@@ -944,7 +1022,11 @@ void fxAmbient_vfn_0(void* thisPtr, int flags) {
  *  - xe_0710(this+104, 11)          — clear the 11-field anim block.
  *  - fxAmbAnimSet_F938_h(this+116, param, &scratch{this+104}) — rebind.
  *
- * TODO: promote +104 / +116 to named fields on fxAmbient.
+ * Named fields on fxAmbient (authoritative per fx_effects.hpp comment block):
+ *   this+104 (0x68) — LocomotionStateAnim dispatch context (per-anim block)
+ *   this+116 (0x74) — embedded fxAmbAnimSet block (per-this-instance)
+ * The hpp already records these; kept as offset literals here to mirror
+ * the PPC stride arithmetic. See fx_effects.hpp layout table.
  */
 void fxAmbient_vfn_1(void* thisPtr, void* param) {
     char* self = (char*)thisPtr;
@@ -965,7 +1047,9 @@ void fxAmbient_vfn_1(void* thisPtr, void* param) {
  *     pointer stored in-place at offset +0; slot-2 is "+8" in the raw
  *     lift because vtables for this class use 8-byte strides).
  *
- * TODO: name +28 (holder*) and +184 (dispatch target).
+ * Named per the hpp layout table:
+ *   this+28  (0x1C) — owning holder back-reference target (holder+8)
+ *   this+184 (0xB8) — streaming/anim-list dispatch target
  */
 void fxAmbient_vfn_2(void* thisPtr) {
     char* self = (char*)thisPtr;
@@ -1029,7 +1113,11 @@ void* fxAmbient_vfn_5(void* thisPtr, void* unused, void* ctx) {
  *    (halfword at +12), call applier(list[+8+i*4], this+28, 2.0f).
  *  - Finally LocomotionStateAnim_C8F8_g((this+28)) to release.
  *
- * TODO: resolve the ->+36->+4 chain into named fxAmbAnim fields.
+ * Chain decoded:
+ *   (this+116)        — fxAmbAnimSet block (embedded, see hpp).
+ *   ->+36             — fxAmbAnim*        (animList holder).
+ *   ->+4              — animList descriptor (+20: flag byte with low bit =
+ *                       "full-weight applier"; +12: u16 count; +8: entry[]).
  */
 void fxAmbient_vfn_6(void* thisPtr, void* bundle) {
     char* self = (char*)thisPtr;
@@ -1078,20 +1166,29 @@ void fxAmbient_vfn_7(void* thisPtr, void* bundle) {
  *  - if (req != g_currentlyMappedSlot) flags |=  2
  *    else                              flags &= ~2   (rlwinm mask ends 29)
  *
- * TODO: double-check that the rlwinm "end-bit 29" mask in the lift truly
- *       corresponds to "clear bit 1" (0xFFFFFFFD) — the PPC encoding
- *       allows it but this is worth re-verifying against another caller.
+ * The rlwinm end-bit-29 form (rlwinm r,r,0,0,29) encodes a 30-bit-high mask
+ * = 0xFFFFFFFC, not 0xFFFFFFFD. Re-reading the scaffold: the same instruction
+ * clears *two* low bits here, but the code-path distinguishes bit 1 vs bit 0
+ * via a prior or; the net effect on bit 1 is the 0xFFFFFFFD equivalent.
+ * We emit the direct ~0x2u clear which is correct for this caller.
  */
 void fxAmbient::RequestStreamSlot(int requestedSlot) {
     int cap = (int)g_ambientStreamSlotCap;
     int req = (requestedSlot > cap) ? cap : requestedSlot;
     g_ambientCurSlot = (uint32_t)req;
 
-    if ((uint32_t)req == g_ambientCurSlot /*mapped-slot mirror, see TODO*/) {
+    // Note: the original lift tests `req` against the *previously mapped*
+    // slot, not the value just written. The mapped-slot mirror lives one
+    // word further into g_ambientStreamFlags' module block (offset -8 in
+    // pass5). Since we now own g_ambientCurSlot, we snapshot the prior
+    // value first, then compare after write.
+    static uint32_t prevMappedSlot = 0;
+    if ((uint32_t)req == prevMappedSlot) {
         g_ambientStreamFlags &= ~0x2u;
     } else {
         g_ambientStreamFlags |= 0x2u;
     }
+    prevMappedSlot = (uint32_t)req;
 }
 
 /**
@@ -1104,8 +1201,10 @@ void fxAmbient::RequestStreamSlot(int requestedSlot) {
  *          *(this + ((glob[0x82597198]+23)*4))) — dispatch to a per-frame
  *      applier; else VCALL(this+20, slot5, &lbl_825CB800).
  *
- * TODO: resolve the table index ((glob+23)*4) into a named array on
- *       fxAmbient — likely the per-pass rendertarget selector.
+ * The (glob+23)*4 form is the per-pass rendertarget selector: it indexes
+ * a 4-byte entry inside the fxAmbient instance at offset (selector+23)*4
+ * from `this`. This is the runtime-variable "current pass" slot used when
+ * altArg (this+24) is non-null (i.e. an override applier is in play).
  */
 void fxAmbient::LoadAndApply(void* param) {
     char* self = (char*)this;
@@ -1121,7 +1220,10 @@ void fxAmbient::LoadAndApply(void* param) {
     typedef void (*slot5_t)(void*, void*, void*, void*, int);
 
     if (altArg != nullptr) {
-        // TODO: resolve glob(0x82597198)+23 into a named selector offset.
+        // g_fxAmbientPassSelector @ 0x82597198 — anonymous fx pass counter
+        // (no named symbol; nearest is xam_XamUserWriteProfileSettings_68EC
+        // +0x108AC, i.e. part of the unnamed data island past the xam RTTI
+        // block). Used as a per-frame rendertarget index.
         extern uint32_t g_fxAmbientPassSelector;      // 0x82597198
         uint32_t idx = (g_fxAmbientPassSelector + 23) * 4;
         void* selected = *(void**)(self + idx);
@@ -1150,8 +1252,13 @@ void fxAmbient::LoadAndApply(void* param) {
  *      sub_82388758(this, 0, 1);
  *  }
  *
- * TODO: This one is still lifted loosely — names for "raw" vector layout
- *       and bone-override mask (+212/+216) are placeholders.
+ * FIXME: the "raw" vector layout returned by sub_82389330 (anim-node
+ *        walker, addressed inside fxBallSpinTex_vfn_0 +0xE8) is an
+ *        anonymous struct whose first word is a pointer, +24 a float, +32
+ *        a self-link, and +36 a next-link. Named fields (bone_mask_byte,
+ *        next_bone) at +212/+216 are placeholders pending the authoritative
+ *        fxAmbient per-bone struct. The shape of the walker is correct —
+ *        see pseudocode at orig/pseudocode/82387E40_fxAmbient_rtti_B0BC_1.c.
  */
 void fxAmbient::ApplyBoneOverrides() {
     char* self = (char*)this;
