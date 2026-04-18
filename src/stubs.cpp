@@ -267,14 +267,10 @@ void grcDevice_shutdownAlt(void) {}
 void* grcDisplay_Create(void) { return nullptr; }
 
 // ── HSM Functions ───────────────────────────────────────────────────────────
-
-void hsmContext_SetNextState(void* context, int state) {
-    (void)context; (void)state;
-}
+// hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
 
 // ── Input Functions ─────────────────────────────────────────────────────────
-
-void io_Input_poll(void) {}
+// io_Input_poll — lifted in src/rage/core/io_input.cpp
 
 // ── Network System Functions ────────────────────────────────────────────────
 
@@ -307,7 +303,7 @@ void* rage_BlockAlloc(size_t size) {
     return nullptr;
 }
 
-void hsmContext_InitTimers(void) {}
+// hsmContext_InitTimers — lifted in src/rage/core/hsm.cpp
 
 void rage_DebugLog(const char* fmt, ...) {
     (void)fmt;
@@ -346,7 +342,7 @@ void sysMemAllocator_Free(void* ptr) {
     rage_free(ptr);
 }
 
-void hsmContext_Init(void* obj) { (void)obj; }
+// hsmContext_Init — lifted in src/rage/core/hsm.cpp
 
 int rage_main_stub(int argc, char** argv) {
     (void)argc; (void)argv;
@@ -428,16 +424,13 @@ void UpdatePageGroup(void* group) { (void)group; }
 void NotifyUIEvent(int event) { (void)event; }
 
 // ── Training Functions ──────────────────────────────────────────────────────
-
-void SetTrainingState(int state) { (void)state; }
+// SetTrainingState — lifted in src/rage/core/hsm.cpp
 
 // ── Network Client Functions ────────────────────────────────────────────────
-
-void SinglesNetworkClient_TickAll(void) {}
+// SinglesNetworkClient_TickAll — lifted in src/game/network/pong_network.cpp
 
 // ── Game Logic Functions ────────────────────────────────────────────────────
-
-void gmLogic_StepFrame(void) {}
+// gmLogic_StepFrame — lifted in src/rage/core/hsm.cpp
 
 // ── Vtables ─────────────────────────────────────────────────────────────────
 
@@ -478,9 +471,8 @@ extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
 }
 extern "C" void* phInst_BFB8_2hr(void* a) { (void)a; return nullptr; }
 extern "C" void phInst_Cleanup(void* a) { (void)a; }
-extern "C" float ph_Atan2(float y, float x) { (void)y; (void)x; return 0.0f; }
-extern "C" float ph_Normalize(float x) { (void)x; return 0.0f; }
-extern "C" void ke_DispatchPhysics(void* a) { (void)a; }
+// ph_Atan2, ph_Normalize, ke_DispatchPhysics — lifted into
+// src/physics/ph_update_object.cpp (extern "C" free functions).
 extern "C" void grc_SetupResource(void* a, void* b) { (void)a; (void)b; }
 extern "C" void msgMsgSink_Broadcast(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 extern "C" void fragDrawable_0AA0_2h(void* a, void* b, uint32_t c, void* d) {
@@ -540,7 +532,7 @@ extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
     if (dest && maxSize > 0) dest[0] = '\0';
     (void)src;
 }
-extern "C" void SinglesNetworkClient_SetMode(void* a, int b) { (void)a; (void)b; }
+// SinglesNetworkClient_SetMode — lifted in src/game/network/pong_network.cpp
 
 // ── Locomotion State / Animation ────────────────────────────────────────────
 
@@ -615,7 +607,7 @@ extern "C" float parStreamInXml_ReadFloat(void* a) { (void)a; return 0.0f; }
 // ── Game Logic ──────────────────────────────────────────────────────────────
 
 extern "C" void game_FrameSyncSignal(void* a, int b) { (void)a; (void)b; }
-extern "C" void gmLogic_StepFrame_impl(void* a) { (void)a; }
+// gmLogic_StepFrame_impl — lifted in src/rage/core/hsm.cpp
 extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 
 // ── Jump Tables / Dispatch ──────────────────────────────────────────────────
@@ -662,13 +654,7 @@ extern "C" void pongPlayer_ProcessReplay(void* a) { (void)a; }
 extern "C" void pongPlayer_ResetShotTiming(void* a, float b) { (void)a; (void)b; }
 extern "C" void pongPlayer_ResetSwingImpl(void* a) { (void)a; }
 extern "C" void pongPlayer_SetScoreSlot(void* a, int b) { (void)a; (void)b; }
-extern "C" void pongPlayer_StateHandler_9188(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_9198(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_91A8(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_91B8(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_91C8(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_91D8(void* a) { (void)a; }
-extern "C" void pongPlayer_StateHandler_91E8(void* a) { (void)a; }
+// pongPlayer_StateHandler_{9188..91E8} — lifted to src/game/player/pong_player.cpp
 extern "C" void pongPlayer_SyncFloat(void* a, void* b) { (void)a; (void)b; }
 extern "C" void pongPlayer_SyncWord(void* a, void* b) { (void)a; (void)b; }
 
@@ -730,10 +716,7 @@ extern "C" float cmOperator_EvalFloat(void* a) { (void)a; return 0.0f; }
 extern "C" int cmNode_GetInt(void* a) { (void)a; return 0; }
 extern "C" void cmNode_GetVector(void* a, void* b) { (void)a; (void)b; }
 
-// CRT snprintf overload (C++ mangled)
-void ph_snprintf(char* buf, int size, const char* fmt, const char* str, int val) {
-    if (buf && size > 0) std::snprintf(buf, (size_t)size, fmt, str, val);
-}
+// ph_snprintf — lifted into src/physics/ph_update_object.cpp.
 
 
 // ============================================================================
@@ -742,7 +725,7 @@ void ph_snprintf(char* buf, int size, const char* fmt, const char* str, int val)
 
 // ── BallHitMessage ──────────────────────────────────────────────────────────
 
-void BallHitMessage_ctor_69C8(void* memory) { (void)memory; }
+// BallHitMessage_ctor_69C8 — lifted in src/game/network/pong_network.cpp
 
 // ── CDelayEffect / CPeakMeterEffect / CShelvingFilterEffect ─────────────────
 
@@ -765,9 +748,9 @@ void CShelvingFilterEffect::CalcInputFrames() {}
 // ── Misc free functions ─────────────────────────────────────────────────────
 
 bool CheckButtonPressed(void* a) { (void)a; return false; }
-void ComputeNetworkHash(void* a, int b) { (void)a; (void)b; }
+// ComputeNetworkHash — lifted in src/game/network/pong_network.cpp
 void CopyVectorThreadSafe(void* a, void* b) { (void)a; (void)b; }
-void DeserializeNetworkData(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
+// DeserializeNetworkData — lifted in src/game/network/pong_network.cpp
 uint8_t Dialog_IsComplete(void* a) { (void)a; return 0; }
 void DismissPageGroup(void* a) { (void)a; }
 
@@ -776,7 +759,7 @@ void FadePageGroup(void* a, int b, int c, float d, float e) {
 }
 
 void GetPlayerID(void* a, unsigned int b) { (void)a; (void)b; }
-void HSM_QueueNotification(void* a) { (void)a; }
+// HSM_QueueNotification — lifted in src/rage/core/hsm.cpp
 void InitializePageGroup(void* a) { (void)a; }
 
 // ── LocomotionStateAnim members ─────────────────────────────────────────────
@@ -797,15 +780,13 @@ void LocomotionState_OnEnter(void* a) { (void)a; }
 
 // ── Net / Page / Message ────────────────────────────────────────────────────
 
-void NetDataQuery_InitNested(void* a) { (void)a; }
+// NetDataQuery_InitNested — lifted in src/game/network/pong_network.cpp
 void* PageGroup_GetTextEntry(void* a, const char* b) { (void)a; (void)b; return nullptr; }
 void* PageGroup_LookupText(uint32_t a, const char* b) { (void)a; (void)b; return nullptr; }
 void PageGroup_Register(void* a) { (void)a; }
 void* PageGroup_SetState(void* a) { (void)a; return nullptr; }
 
-void PlayerMovementMessage_54B0_h(void* a, float* b, float* c, bool d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
+// PlayerMovementMessage_54B0_h — lifted in src/game/network/pong_network.cpp
 
 void PostPageGroupMessage(int a, int b, int c, int d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
@@ -816,11 +797,9 @@ void PostPageGroupMessage(uint32_t a, uint8_t b, uint32_t c, uint32_t d, uint32_
 void PostPageGroupMessage(void* a, int b, int c, int d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
-void PostStateTransitionRequest(void* a, int b) { (void)a; (void)b; }
+// PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 
-void QueueGameMessage(int a, int b, void* c, int d, void* e, void* f) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
-}
+// QueueGameMessage — lifted in src/game/network/pong_network.cpp
 
 void ReadBitsFromStream(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 
@@ -831,8 +810,8 @@ void RegisterSerializedField(void* a, const char* b, void* c, const void* d, int
 void ResetShotTimingState(void* a) { (void)a; }
 
 void* RtlEnterCriticalSection_D6F0_fw(void* a) { (void)a; return nullptr; }
-void SendContextMessage(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
-void Player_ApplyServeStarted(void* a, void* b, void* c, float d) { (void)a; (void)b; (void)c; (void)d; }
+// SendContextMessage — lifted in src/game/network/pong_network.cpp
+// Player_ApplyServeStarted — lifted in src/game/network/pong_network.cpp
 void SetPageGroupVisible(void* a) { (void)a; }
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
@@ -844,42 +823,17 @@ void* rlEvent_Init(void* a, int b, void* c, void* d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e; return nullptr;
 }
 void snBitStream_ReadSigned(void* a, uint32_t* b, int c) { (void)a; (void)b; (void)c; }
-void NetworkClient_BeginJoinRequest(void* a) { (void)a; }
-uint8_t NetworkClient_PollJoinResponse(void* a) { (void)a; return 0; }
-void NetworkClient_InitInternalState(void* a) { (void)a; }
-void NetworkClient_ResetLocalState(void* a) { (void)a; }
-void NetworkClient_DispatchMessage(void* a, int b, void* c, int d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-int NetworkClient_GetMessageId(void* a) { (void)a; return 0; }
-void SinglesNetworkClient_4FB0_g(void* a) { (void)a; }
-void* NetworkClient_LookupPlayer(uint8_t a) { (void)a; return nullptr; }
-void NetworkClient_AbortMessageProcessing(void* a) { (void)a; }
-void NetworkClient_EndMessageProcessing(void* a) { (void)a; }
-bool NetworkClient_TryDequeueMessage(void* a, uint32_t* b) { (void)a; (void)b; return false; }
+// NetworkClient_* family + SinglesNetworkClient_{4FB0_g,8CC0_w,BE30_g}
+// — lifted in src/game/network/pong_network.cpp
 void netStream_WriteBool(void* a, bool b) { (void)a; (void)b; }
-void NetworkClient_ReadQueuedMessageSource(void* a, uint8_t* b) { (void)a; (void)b; }
 void snBitStream_ValidateWrite(void* a) { (void)a; }
-int SinglesNetworkClient_8CC0_w(void* a) { (void)a; return 0; }
 void snBitStream_ReadBits(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 void* snSession_FindProperty(void* a, const char* b) { (void)a; (void)b; return nullptr; }
-void* NetworkClient_BuildDispatchContext(void* a, void* b) { (void)a; (void)b; return nullptr; }
-bool NetworkClient_ValidateMessageSlot(void* a, void* b) { (void)a; (void)b; return false; }
 void snSession_BeginOperation(void* a) { (void)a; }
 uint8_t snSession_AcquireLock(void* a) { (void)a; return 0; }
 void snSession_ReleaseLock(void* a) { (void)a; }
-void SinglesNetworkClient_BE30_g(void* a, int b) { (void)a; (void)b; }
-void* NetworkClient_GetNextMessage(void* a) { (void)a; return nullptr; }
 
-// ── SpectatorNetworkClient members ──────────────────────────────────────────
-
-void SpectatorNetworkClient::PostLoadChildren() {}
-void SpectatorNetworkClient::vfn_2() {}
-void SpectatorNetworkClient::vfn_3() {}
-void SpectatorNetworkClient::vfn_4() {}
-void SpectatorNetworkClient::vfn_5() {}
-void SpectatorNetworkClient::vfn_6() {}
-void SpectatorNetworkClient::vfn_7() {}
+// SpectatorNetworkClient members — lifted to src/game/network/pong_network_classes.cpp
 
 // ── Misc ────────────────────────────────────────────────────────────────────
 
@@ -984,9 +938,7 @@ void grc_EB10(void* a) { (void)a; }
 // ============================================================================
 
 // ── HSM Context free functions ──────────────────────────────────────────────
-
-void hsmContext_5B40_w(void* a) { (void)a; }
-void hsmContext_5BC8_fw(void* a) { (void)a; }
+// hsmContext_5B40_w, hsmContext_5BC8_fw — lifted in src/rage/core/hsm.cpp
 
 // ── hsmState member functions ───────────────────────────────────────────────
 
@@ -1035,16 +987,10 @@ void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
 }
 
 // ── IO free functions ───────────────────────────────────────────────────────
-
-uint8_t io_ExecuteStateAction(io* self) { (void)self; return 0; }
-int io_Input_poll_9D68(void* a) { (void)a; return 0; }
+// io_ExecuteStateAction, io_Input_poll_9D68 — lifted in src/rage/core/io_input.cpp
 
 // ── Jump table / kernel free functions ──────────────────────────────────────
-
-void jumptable_3A48(void* a, unsigned int b, unsigned int c, unsigned int d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
-void jumptable_5C20(void* a) { (void)a; }
+// jumptable_3A48, jumptable_5C20 — lifted in src/rage/core/hsm.cpp
 void snListNode_Init(void* a) { (void)a; }
 
 // ── Motion clip free function ───────────────────────────────────────────────
@@ -1202,27 +1148,12 @@ void* phObject::vfn_29() { return nullptr; } void* phObject::vfn_30() { return n
 void* phObject::vfn_31() { return nullptr; }
 
 // ── Physics utility functions ───────────────────────────────────────────────
-
-void ph_59C8(void* a, const char* b, int c) { (void)a; (void)b; (void)c; }
+// ph_59C8, ph_9E50, ph_9EC0_1, ph_CEE0, ph_E010, ph_E088, ph_EF40,
+// ph_ForwardTarget — all lifted into src/physics/ph_update_object.cpp
+// (namespace rage).
 void* phArchetype_Find(void* a, const char* b) { (void)a; (void)b; return nullptr; }
-void ph_9E50(void* a, void* b) { (void)a; (void)b; }
-void* ph_9EC0_1(void* a) { (void)a; return nullptr; }
-void ph_CEE0(void* a, int b) { (void)a; (void)b; }
-void* ph_E010(void* a, void* b, const char* c) { (void)a; (void)b; (void)c; return nullptr; }
-void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
-void ph_EF40(void* a, void* b) { (void)a; (void)b; }
-void ph_ForwardTarget(void* a) { (void)a; }
 
-// ── plrPlayerMgr ────────────────────────────────────────────────────────────
-
-void plrPlayerMgr::PostLoadChildren() {}
-void plrPlayerMgr::PostLoadProperties() {}
-void plrPlayerMgr::Validate() {}
-void plrPlayerMgr::vfn_23() {} void plrPlayerMgr::vfn_24() {}
-void plrPlayerMgr::vfn_25() {} void plrPlayerMgr::vfn_27() {}
-void plrPlayerMgr::vfn_28() {} void plrPlayerMgr::vfn_29() {}
-void plrPlayerMgr::vfn_30() {} void plrPlayerMgr::vfn_31() {}
-void plrPlayerMgr::vfn_32() {}
+// plrPlayerMgr members — lifted to src/game/data/gd_data.cpp
 
 // ── pongAttractState ────────────────────────────────────────────────────────
 
@@ -1338,27 +1269,11 @@ void pongNetMessageHolder_vfn_2_FD70_1(pongNetMessageHolder* a) { (void)a; }
 // ── pongPlayer ──────────────────────────────────────────────────────────────
 
 // pongPlayer::Process(float) -- skipped, pong_misc.hpp declares Process() with no args
-int pongPlayer_0270_g(void* a) { (void)a; return 0; }
-void pongPlayer_0508_g(void* a, int b, float* c) { (void)a; (void)b; if (c) *c = 0.0f; }
-void pongPlayer_1460_g(void* a, int b) { (void)a; (void)b; }
-bool pongPlayer_5B60_gen(pongPlayer* a) { (void)a; return false; }
-void pongPlayer_6470_g(float* a, void* b, int c) { (void)a; (void)b; (void)c; }
-void pongPlayer_6470_g(vec3* a, void* b) { (void)a; (void)b; }
-void pongPlayer_ApplyNetStateImpl(void* a) { (void)a; }
-void pongPlayer_B208_g(void* a, vec3* b, unsigned char c) { (void)a; (void)b; (void)c; }
-int pongPlayer_BF18_g(void* a, int b, vec3* c, vec3* d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
-void pongPlayer_C678_g(pongPlayer* a) { (void)a; }
-// pongPlayer_D238_g: moved to src/game/player/pong_player.cpp (returns float)
-bool pongPlayer_DE98_g(void* a) { (void)a; return false; }
-// pongPlayer_E590_g — moved to src/game/player/pong_player.cpp (full implementation)
-void pongPlayer_E7B0_g(vec3* a, void* b) { (void)a; (void)b; }
-void pongPlayer_FD20_g(void* a, int b, void* c, void* d, int e, void* f, void* g, unsigned char h) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; (void)h;
-}
-void pongPlayer_GetPlayerPosition(void* a, void* b) { (void)a; (void)b; }
-void pongPlayer_InitShotImpl(void* a) { (void)a; }
-void pongPlayer_Interpolate(void* a, void* b) { (void)a; (void)b; }
-void pongPlayer_ResetMoverImpl(void* a) { (void)a; }
+// pongPlayer_* free functions lifted to src/game/player/pong_player.cpp
+// (0270_g, 1460_g, 5B60_gen, 6470_g, B208_g, BF18_g, C678_g, DE98_g,
+//  FD20_g, ApplyNetStateImpl, GetPlayerPosition, InitShotImpl,
+//  Interpolate, ResetMoverImpl, StateHandler_{9188..91E8})
+// Already-lifted elsewhere (removed duplicates): 0508_g, D238_g, E590_g, E7B0_g
 
 // ── pongScrnTransFadeIn ─────────────────────────────────────────────────────
 
@@ -1441,52 +1356,25 @@ void ke_ConstructObject(void* a) { (void)a; }
 void ke_DestroyObjectA(void* a) { (void)a; }
 void ke_DestroyObjectB(void* a) { (void)a; }
 
-void phArticulatedCollider_UpdateJointTransforms(void* a) { (void)a; }
-void phArticulatedCollider_ProcessJoints(void* a) { (void)a; }
-void phArticulatedCollider_ProcessColliderState(void* a) { (void)a; }
+// phArticulatedCollider_UpdateJointTransforms/ProcessJoints/ProcessColliderState,
+// phCollider_vfn_4, phJoint1Dof_AE38, phJoint1Dof_AFF8_p42, phJoint3Dof_0170_g,
+// phJoint_1388, phJoint_PreSyncState, ph_1B78, ph_A330, ph_E1E8, ph_FE48, and
+// ph_vt{3DB0,57D8,5A60,5A7C,5A84,5A8C,5B98}_* vtable thunks — lifted into
+// src/physics/ph_update_object.cpp (namespace rage).
 
 void phBoundCapsule_01D0_g(phJoint3Dof* j, float v) { (void)j; (void)v; }
 void phBoundCapsule_6C28_fw(void* a) { (void)a; }
 
-void phCollider_vfn_4(phArticulatedCollider* a) { (void)a; }
 void phInst_5910_p39(void* a) { (void)a; }
-
-float phJoint1Dof_AE38(void* a) { (void)a; return 0.0f; }
-void phJoint1Dof_AFF8_p42(phJoint3Dof* a, int b, float* c) { (void)a; (void)b; (void)c; }
-void phJoint3Dof_0170_g(void* a, int b, int c, void* d) { (void)a; (void)b; (void)c; (void)d; }
-void phJoint_1388(phJoint3Dof* a, int b, float c, float* d, float* e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
-void phJoint_PreSyncState(phJoint3Dof* a) { (void)a; }
-
-void ph_1B78(void* a, float b, float c, void* d) { (void)a; (void)b; (void)c; (void)d; }
-void ph_A330(void* a) { (void)a; }
-void ph_E1E8(void* a) { (void)a; }
-void ph_FE48(void* a, void* b) { (void)a; (void)b; }
-void ph_vt3DB0_12_8DB8(void* a) { (void)a; }
-void ph_vt3DB0_13_8E10(void* a) { (void)a; }
-void ph_vt57D8_20_0718(void* a) { (void)a; }
-void ph_vt57D8_28_FD08(void* a) { (void)a; }
-void ph_vt57D8_29_FDD0(void* a) { (void)a; }
-void ph_vt57D8_2_6378(void* a) { (void)a; }
-void ph_vt57D8_3_61E0(void* a) { (void)a; }
-void ph_vt5A60_57_6858(void* a) { (void)a; }
-void ph_vt5A60_58_6EE8(void* a) { (void)a; }
-void ph_vt5A60_60_7870(void* a) { (void)a; }
-void ph_vt5A60_61_7A38(void* a) { (void)a; }
-void ph_vt5A60_62_8F80(void* a) { (void)a; }
-void ph_vt5A7C_63_6A98(void* a) { (void)a; }
-void ph_vt5A84_63_6B90(void* a) { (void)a; }
-void ph_vt5A8C_63_6A50(void* a) { (void)a; }
-void ph_vt5B98_40_8D50(void* a) { (void)a; }
-void ph_vt5B98_41_8E50(void* a) { (void)a; }
 
 void rage_1058(void* a) { (void)a; }
 void rage_Alloc(int a, void* b) { (void)a; (void)b; }
 
-void util_4628(phJoint3Dof* a, int b) { (void)a; (void)b; }
+// util_4628 — lifted into src/physics/ph_update_object.cpp (namespace rage).
 void* util_B188(void* a, int b) { (void)a; (void)b; return nullptr; }
 void snSession_AssociateConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 void snSession_ProcessPendingConnections(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
+// hsmState_AttachChild — lifted in src/rage/core/hsm.cpp (inside namespace rage)
 
 } // namespace rage
 
@@ -1520,15 +1408,15 @@ void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
 void netStream_ReadS16(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 // ReadBallHitDataFromNetwork dependency (see src/game/network/pong_network_io.cpp).
 // util_1668 — sign-magnitude signed-8-bit bit-stream reader, not yet lifted.
-uint8_t netStream_ReadS8SignMagnitude(void* client, void* outByte) { (void)client; (void)outByte; return 0; }
+// netStream_ReadS8SignMagnitude (util_1668) — lifted in pong_network_io.cpp.
 void util_8FD0(void* a) { (void)a; }
-void util_AA38(NetDataQuery* a) { (void)a; }
+// util_AA38 — lifted in src/game/network/pong_network.cpp
 void util_B8A0(void* a) { (void)a; }
 void util_C930(void* a) { (void)a; }
 void util_CDF0(void* a, const void* b, unsigned int c) { (void)a; (void)b; (void)c; }
 void util_D150(void* a, void* b) { (void)a; (void)b; }
 void util_D150(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void hsmEvent_Init(void* a) { (void)a; }
+// hsmEvent_Init — lifted in src/rage/core/hsm.cpp
 void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
 void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
 
@@ -1542,21 +1430,19 @@ int xml_ReadInt(const char* a) { (void)a; return 0; }
 void xml_ReadString(const char* a, char* b, int c) { (void)a; if (b && c > 0) b[0] = '\0'; }
 
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a; (void)b; (void)c; }
-void fsmMachine_Destroy(void* a) { (void)a; }
+// fsmMachine_Destroy — real impl in src/rage/core/fsmMachine.c
 
 // ── C-linkage wrappers for dual-linkage symbols ─────────────────────────────
 
 extern "C" {
-void _c_PostStateTransitionRequest(void* m, int e) __asm__("_PostStateTransitionRequest");
-void _c_PostStateTransitionRequest(void* m, int e) { PostStateTransitionRequest(m, e); }
+// _c_PostStateTransitionRequest — lifted in src/rage/core/hsm.cpp
 // RtlEnterCriticalSection / RtlLeaveCriticalSection — C-linkage already
 // provided by extern "C" definitions in Section 1
 void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
 void _c_atArray_Clear(void* a) { atArray_Clear(a); }
 void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
 void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
-void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
-void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
+// _c_hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) { pg_6F68(a,b,c,d,e); }
 void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
@@ -1591,12 +1477,8 @@ void pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned int* d, int e) 
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
 
-// ── pongPlayer swing stubs (from stubs_final.cpp) ───────────────────────────
-
-void pongPlayer_42E0_g(void* a, vec3* b, vec3* c, float d) { (void)a; (void)b; (void)c; (void)d; }
-void pongPlayer_73E8_g(pongPlayer* a, float b) { (void)a; (void)b; }
-void pongPlayer_AB48_g(vec3* a, void* b) { (void)a; (void)b; }
-void pongPlayer_9CD0_g(void* a) { (void)a; }
+// pongPlayer swing free functions — lifted to src/game/player/pong_player_swing.cpp
+// (42E0_g, 73E8_g, AB48_g, 9CD0_g — real bodies already in pong_player_swing.cpp)
 
 // ── pcrAnimBlender / pcrAnimState (from stubs_final.cpp) ────────────────────
 

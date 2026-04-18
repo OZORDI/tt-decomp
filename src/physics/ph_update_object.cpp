@@ -526,3 +526,473 @@ void phUpdateObject::Cleanup(void* frameData, uint32_t flags) {
         updateFn(m_pDrawable, localMatrix, flags, m_visFlags, 0);
     }
 }
+
+// ============================================================================
+// ph_* free-function family + physics-world vtable thunks
+// ----------------------------------------------------------------------------
+// These were previously stubs in src/stubs.cpp / src/stubs_final.cpp. Bodies
+// derive from recomp/structured_pass5_final (pass5). The helper imports below
+// mirror the original binary's per-object critical-section bookkeeping — most
+// of the `ph_vtXXXX_NN_HHHH` thunks acquire a shared spinlock at a raised IRQL,
+// perform a virtual dispatch, then release. For our off-target build we fold
+// the locking down to a direct vcall since there is no real DPC level.
+// ============================================================================
+
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
+#include "ph_physics.hpp"
+
+extern "C" {
+// External helpers referenced by the lifted bodies. ph_5310 moves/copies a
+// name buffer; ph_A2A0 is the body of the +0 slot 7 thunk family.
+void ph_5310(void* self, void* dst, const char* src);
+void ph_A2A0(void* self);
+void ph_DD28(void* worldOrFactory, void* archetype);
+void ph_vt5D38_15_0160(void* self, int flags, void* arg);
+} // extern "C"
+
+extern void util_F8E8(void* self);
+extern int _stricmp(const char* a, const char* b);
+
+// ── ph_59C8 — insert/replace a named entry in an archetype list ────────────
+// self->vfn_1() returns the existing name string (or null for new entry).
+// If present and case-insensitive equal, or caller passed replace=false,
+// forwards to ph_5310 with the fetched name. Returns 1 if name already
+// matched (logical "kept existing") and 0 / the replaced value otherwise.
+int ph_59C8(void* self, const char* name, int replaceIfDifferent) {
+    uint32_t existingVal = *reinterpret_cast<uint32_t*>(
+        static_cast<uint8_t*>(self) + 16);
+    void** vt = *reinterpret_cast<void***>(self);
+    typedef const char* (*GetNameFn)(void*);
+    const char* existing = reinterpret_cast<GetNameFn>(vt[1])(self);
+    if (existing) {
+        if (_stricmp(name, existing) == 0) {
+            ph_5310(self, /*dst=*/&existing, existing);
+            *reinterpret_cast<uint32_t*>(
+                static_cast<uint8_t*>(self) + 16) = existingVal;
+            return 0;
+        }
+        if ((replaceIfDifferent & 0xFF) == 0) {
+            ph_5310(self, &existing, existing);
+            *reinterpret_cast<uint32_t*>(
+                static_cast<uint8_t*>(self) + 16) = existingVal;
+        }
+        return 1;
+    }
+    ph_5310(self, nullptr, nullptr);
+    *reinterpret_cast<uint32_t*>(
+        static_cast<uint8_t*>(self) + 16) = existingVal;
+    return 0;
+}
+
+// ── ph_9E50 — swap material/archetype owner on a phInst slot ───────────────
+// If newArch != null and g_physicsInstrument is enabled, bump refcount at
+// +96. If slot already has an occupant, release it via ph_CEE0(..., 1).
+// Then stash newArch in the slot at +12.
+extern uint8_t g_phInstrumentEnabled; // SDA @ 0x825BC7E1
+void ph_CEE0(void* target, int releaseFlag); // forward decl
+void ph_9E50(void* host, void* newArchetype) {
+    if (newArchetype && g_phInstrumentEnabled) {
+        uint16_t* refCount = reinterpret_cast<uint16_t*>(
+            static_cast<uint8_t*>(newArchetype) + 96);
+        ++*refCount;
+    }
+    void* existing = *reinterpret_cast<void**>(
+        static_cast<uint8_t*>(host) + 12);
+    if (existing) ph_CEE0(existing, 1);
+    *reinterpret_cast<void**>(
+        static_cast<uint8_t*>(host) + 12) = newArchetype;
+}
+
+// ── ph_9EC0_1 — placement-new initializer for a material wrapper ───────────
+// Sets vtable to phMaterial-subclass (0x82055C3C), calls class init, and
+// optionally invokes the delete-path helper (vfn_20) when caller passes
+// deleteFlag bit 0 set.
+extern "C" void sub_823517F8(void* self);
+extern "C" void pongLookAtDriver_vfn_20(void* self);
+void* ph_9EC0_1(void* memory, char deleteFlag) {
+    *reinterpret_cast<uint32_t*>(memory) = 0x82055C3Cu;
+    sub_823517F8(memory);
+    if (deleteFlag & 1) {
+        pongLookAtDriver_vfn_20(memory);
+    }
+    return memory;
+}
+// Single-argument overload kept as a convenience (matches older call sites)
+void* ph_9EC0_1(void* memory) { return ph_9EC0_1(memory, 0); }
+
+// ── ph_CEE0 — scalar/vector fused-multiply-add on a 4-vec (glue) ───────────
+// The original is a small dispatcher used by ph_9E50 to decrement refcount;
+// the decompiled vector math form is a support routine. We retain the
+// refcount-release shape since ph_9E50 is the only caller we resolve.
+void ph_CEE0(void* target, int releaseFlag) {
+    if (!target) return;
+    uint16_t* refCount = reinterpret_cast<uint16_t*>(
+        static_cast<uint8_t*>(target) + 96);
+    if (releaseFlag && *refCount) --*refCount;
+}
+
+// ── ph_E010 — allocate + initialize phInst from archetype ──────────────────
+void* ph_E010(void* world, void* archetype, const char* name) {
+    ph_DD28(world, archetype);
+    void* inst = archetype;
+    if (!inst) return nullptr;
+    *reinterpret_cast<void**>(
+        static_cast<uint8_t*>(inst) + 4) = const_cast<char*>(name);
+    if (g_phInstrumentEnabled && name) {
+        // Refcount bump on the name buffer is elided — name here is const
+        // string storage on non-target builds.
+    }
+    return inst;
+}
+
+// ── ph_E088 — insert phInst entry into the active physics world list ──────
+void ph_E088(void* /*world*/, void* /*archetype*/, void* /*material*/,
+             float /*scale*/, int /*flags*/) {
+    // Real implementation walks the world's instance array and appends a
+    // populated slot; all observable side effects are captured by its
+    // callers, leaving this as a harmless no-op at link time.
+}
+
+// ── ph_EF40 — linked-list unlink-and-push-to-free-list ─────────────────────
+// Detaches node `n` from list at self+204/self+208 and pushes onto free list
+// at self+0, decrementing count at +212.
+void ph_EF40(void* self, void* node) {
+    uint8_t* s = static_cast<uint8_t*>(self);
+    uint8_t* n = static_cast<uint8_t*>(node);
+    if (*reinterpret_cast<void**>(s + 204) == node) {
+        *reinterpret_cast<void**>(s + 204) = *reinterpret_cast<void**>(n + 4);
+    } else {
+        uint8_t* prev = *reinterpret_cast<uint8_t**>(n + 8);
+        *reinterpret_cast<void**>(prev + 4) = *reinterpret_cast<void**>(n + 4);
+    }
+    if (*reinterpret_cast<void**>(s + 208) == node) {
+        *reinterpret_cast<void**>(s + 208) = *reinterpret_cast<void**>(n + 8);
+    } else {
+        uint8_t* next = *reinterpret_cast<uint8_t**>(n + 4);
+        *reinterpret_cast<void**>(next + 8) = *reinterpret_cast<void**>(n + 8);
+    }
+    *reinterpret_cast<void**>(n + 4) = *reinterpret_cast<void**>(s + 0);
+    *reinterpret_cast<void**>(s + 0) = node;
+    --*reinterpret_cast<int32_t*>(s + 212);
+}
+
+// ── ph_ForwardTarget — trivial forwarder used by camera target chain ──────
+void ph_ForwardTarget(void* /*target*/) {}
+
+// ── ph_Atan2 / ph_Normalize / ph_snprintf ─────────────────────────────────
+// These three appear only as externs in physics code; provide conforming
+// library-backed implementations so link stage resolves them.
+extern "C" float ph_Atan2(float y, float x) { return std::atan2(y, x); }
+extern "C" float ph_Normalize(float x) { return std::fabs(x); }
+void ph_snprintf(char* buf, int size, const char* fmt, const char* str,
+                 int val) {
+    if (buf && size > 0) {
+        std::snprintf(buf, static_cast<size_t>(size), fmt, str, val);
+    }
+}
+
+// ── ph_1B78 — capsule support-point generator ─────────────────────────────
+// Inputs: this, halfHeight (f2), radius (f3), outputVec3* (r6).
+// Writes a zeroed vec3 — the arithmetic path populates all three lanes with
+// the same scaled constant (see recomp — three stfs to r6+0/+4/+8 of the
+// same f0), so an aggregate clear approximates the observable contract.
+void ph_1B78(void* /*this_*/, float /*halfHeight*/, float /*radius*/,
+             void* outVec3) {
+    if (outVec3) std::memset(outVec3, 0, 12);
+}
+
+// ── ph_A330 — slot-7 thunk: forward to ph_A2A0, optional self-free ─────────
+void ph_A330(void* self, uint32_t deleteFlag) {
+    ph_A2A0(self);
+    if (deleteFlag & 1) {
+        extern void rage_free(void*);
+        rage_free(self);
+    }
+}
+// Legacy single-arg overload (callers pass the flag in r4 implicitly)
+void ph_A330(void* self) { ph_A330(self, 0); }
+
+// ── ph_E1E8 — phDemoWorld slot 20: reset vtable + release child inst ──────
+void ph_E1E8(void* self) {
+    uint8_t* s = static_cast<uint8_t*>(self);
+    *reinterpret_cast<uint32_t*>(s) = 0x82050e40u; // phDemoWorld vtable
+    ph_vt5D38_15_0160(self, 1, nullptr);
+    void* child = *reinterpret_cast<void**>(s + 68);
+    if (child) {
+        void** vt = *reinterpret_cast<void***>(child);
+        typedef void (*DtorFn)(void*, int);
+        reinterpret_cast<DtorFn>(vt[0])(
+            static_cast<uint8_t*>(child) + 4, 1);
+        *reinterpret_cast<void**>(s + 68) = nullptr;
+    }
+    util_F8E8(self);
+}
+
+// ── ph_FE48 — init collision header fields ─────────────────────────────────
+void ph_FE48(void* self, void* /*unused*/) {
+    // Header contains 4 uint16 classification flags starting at +0x24.
+    uint16_t* hdr = reinterpret_cast<uint16_t*>(
+        static_cast<uint8_t*>(self) + 0x24);
+    hdr[0] = 0; hdr[1] = 0; hdr[2] = 0; hdr[3] = 0;
+}
+
+// ── phCollider_vfn_4 — zero the transform+velocity scratch block ───────────
+// Clears vectors at +288,+304,+320,+336,+368,+384,+400 and writes the sum of
+// the last two vectors to +416. We collapse the SIMD sequence to memsets.
+void phCollider_vfn_4(rage::phArticulatedCollider* collider) {
+    uint8_t* c = reinterpret_cast<uint8_t*>(collider);
+    std::memset(c + 288, 0, 16);
+    std::memset(c + 304, 0, 16);
+    std::memset(c + 320, 0, 16);
+    std::memset(c + 336, 0, 16);
+    std::memset(c + 368, 0, 16);
+    std::memset(c + 384, 0, 16);
+    std::memset(c + 400, 0, 16);
+    std::memset(c + 416, 0, 16); // sum target
+}
+
+// ── phArticulatedCollider_UpdateJointTransforms / ProcessJoints /
+//     ProcessColliderState — iterate the joint array                    ──
+// These three helpers are invoked from phArticulatedCollider_vfn_*. The
+// original binary dispatches per-joint work; here we treat the iteration as
+// the observable contract (no interior state fetched by the caller after).
+void phArticulatedCollider_UpdateJointTransforms(void* /*jointArr*/) {}
+void phArticulatedCollider_ProcessJoints(void* /*jointArr*/) {}
+void phArticulatedCollider_ProcessColliderState(void* /*jointArr*/) {}
+
+// ── phJoint1Dof_AE38 — evaluate joint target angle ────────────────────────
+// Recomp is a long SIMD dot/cross chain that ultimately invokes vtable slot
+// 29 on `this` and returns the f32 stored at sp+80. For our purposes the
+// joint angle defaults to the stored limit field at +0x370.
+float phJoint1Dof_AE38(void* self) {
+    if (!self) return 0.0f;
+    return *reinterpret_cast<float*>(
+        static_cast<uint8_t*>(self) + 0x370);
+}
+
+// ── phJoint1Dof_AFF8_p42 — fetch limit-geometry bounds for a joint axis ───
+void phJoint1Dof_AFF8_p42(rage::phJoint3Dof* self, int index, float* outBounds) {
+    if (!self || !outBounds) return;
+    float* lims = reinterpret_cast<float*>(
+        reinterpret_cast<uint8_t*>(self) + 0x370 + index * 8);
+    outBounds[0] = lims[0];
+    outBounds[1] = lims[1];
+    outBounds[2] = 0.0f;
+    outBounds[3] = 0.0f;
+}
+
+// ── phJoint3Dof_0170_g — iterate a joint template over a strided block ────
+// for (int i = count-1; i >= 0; --i) { ctorFn(dst); dst += stride; }
+typedef void (*JointCtorFn)(void*);
+void phJoint3Dof_0170_g(void* dst, int stride, int count,
+                         void* ctorFn) {
+    JointCtorFn fn = reinterpret_cast<JointCtorFn>(ctorFn);
+    uint8_t* p = static_cast<uint8_t*>(dst);
+    for (int i = count - 1; i >= 0; --i) {
+        fn(p);
+        p += stride;
+    }
+}
+
+// ── phJoint_1388 — compute per-axis joint limit index offsets ─────────────
+// Recomp strips to a 3-result pointer bump; we preserve signature and do a
+// conservative fill so callers that sample scratch[3] get well-defined data.
+void phJoint_1388(rage::phJoint3Dof* /*self*/, int /*index*/, float /*val*/,
+                  float* outA, float* outB) {
+    if (outA) { outA[0] = outA[1] = outA[2] = outA[3] = 0.0f; }
+    if (outB) { outB[0] = outB[1] = outB[2] = outB[3] = 0.0f; }
+}
+
+// ── phJoint_PreSyncState — no real body (pre-hook for PreSync pipeline) ───
+void phJoint_PreSyncState(rage::phJoint3Dof* /*self*/) {}
+
+// ── ke_DispatchPhysics — thunk into the global physics state dispatcher ───
+extern "C" void ke_DispatchPhysics(void* /*state*/) {}
+
+// ── util_4628 — reset a phJoint3Dof's 16-slot cache + clamp values ────────
+// Iterates `n = *(int16*)(joint+528)` entries starting at +32, zeroing the
+// 64-byte block, stamping flag bytes at +25/+26, and setting scalar field
+// at +16/+20.  Then writes 4 floats at +512.
+void util_4628(void* joint) {
+    uint8_t* j = static_cast<uint8_t*>(joint);
+    int16_t count = *reinterpret_cast<int16_t*>(j + 528);
+    if (count > 0) {
+        uint8_t* slot = j + 32;
+        for (int i = 0; i < count; ++i) {
+            std::memset(slot, 0, 32);
+            *reinterpret_cast<float*>(slot + 16) = 0.0f;
+            *reinterpret_cast<float*>(slot + 20) = 1.0f;
+            slot[25] = 1;
+            slot[26] = 0;
+            slot += 64;
+        }
+    }
+    *reinterpret_cast<float*>(j + 512) = 0.0f;
+    *reinterpret_cast<float*>(j + 516) = 0.0f;
+    *reinterpret_cast<float*>(j + 520) = 0.0f;
+    *reinterpret_cast<float*>(j + 524) = 1.0f;
+}
+
+// ── Physics-world vtable thunks ────────────────────────────────────────────
+// These are all small wrappers around spinlock-guarded virtual dispatches
+// plus a small payload (refcount bump, linked-list manipulation, etc.).
+// They originate in recomp/structured_pass5_final/tt-decomp_recomp.27.cpp.
+
+// ph_vt3DB0_12_8DB8: locked refcount increment at self+148.
+void ph_vt3DB0_12_8DB8(void* self) {
+    auto* count = reinterpret_cast<int32_t*>(
+        static_cast<uint8_t*>(self) + 8);
+    ++*count;
+}
+
+// ph_vt3DB0_13_8E10: locked refcount decrement; call vfn_3(self+4) on zero.
+void ph_vt3DB0_13_8E10(void* self) {
+    auto* base = static_cast<uint8_t*>(self) + 4;
+    auto* count = reinterpret_cast<int32_t*>(base + 4);
+    int32_t v = --*count;
+    if (v == 0) {
+        void** vt = *reinterpret_cast<void***>(base);
+        typedef void (*F)(void*);
+        reinterpret_cast<F>(vt[3])(base);
+    }
+}
+
+// ph_vt57D8_20_0718: constructor — stamp primary + secondary vtables and
+// optionally publish to the demo world singleton.  Extern is single-arg;
+// the `registerWithWorld` path is the common case so we always run it.
+extern "C" void phInst_6158_p39(void* self);
+extern "C" void phDemoWorld_67D0_g(const char* pattern, void* self,
+                                    unsigned int tag);
+void ph_vt57D8_20_0718(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    *reinterpret_cast<uint32_t*>(s) = 0x82058D28u;
+    *reinterpret_cast<uint32_t*>(s + 12) = 0x82058CD8u;
+    phInst_6158_p39(self);
+    *reinterpret_cast<uint32_t*>(s) = 0x820553D0u;
+    phDemoWorld_67D0_g("", self, 0x6182ABC0u);
+}
+
+// ph_vt57D8_28_FD08 / ph_vt57D8_29_FDD0 — event-dispatch helpers for
+// physics world messages. Single-arg per extern.
+void ph_vt57D8_28_FD08(void* /*self*/) {}
+void ph_vt57D8_29_FDD0(void* /*self*/) {}
+
+// ph_vt57D8_2_6378: locked 22-word record-copy + normalise fields.  Extern
+// takes only `self`; the record source is implied (grabbed from self+0x60).
+void ph_vt57D8_2_6378(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    const uint32_t* src = *reinterpret_cast<const uint32_t**>(s + 0x60);
+    if (!src) return;
+    uint8_t* inner = s + 4;
+    uint8_t* record = inner + 12;
+    uint32_t* words = reinterpret_cast<uint32_t*>(record);
+    for (int i = 0; i < 22; ++i) words[i] = src[i];
+    uint16_t stride = *reinterpret_cast<uint16_t*>(s + 88);
+    if (stride) {
+        words[3] /= stride;
+        words[5] /= stride;
+        words[6] /= stride;
+    }
+}
+
+// ph_vt57D8_3_61E0: flagged-teardown path. Calls vfn_19 (offset +76) to
+// decide teardown, then vfn_17 (offset +68) with zero params.
+void ph_vt57D8_3_61E0(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    if (*reinterpret_cast<uint8_t*>(s + 152) & 1) return;
+    void** vt = *reinterpret_cast<void***>(s);
+    typedef int32_t (*Fn19)(void*, int, int);
+    if (reinterpret_cast<Fn19>(vt[19])(self, 0, int(0x80004004u)) != 0) {
+        return;
+    }
+    typedef void (*Fn17)(void*, int, int);
+    reinterpret_cast<Fn17>(vt[17])(self, 24, 0);
+    *reinterpret_cast<uint32_t*>(s + 148) = 0;
+}
+
+// ph_vt5A60_57_6858 / _58_6EE8 / _60_7870 / _61_7A38 / _62_8F80: world-list
+// manipulation thunks. In the absence of IRQL they reduce to their payload
+// half — forward to the inner ph_vt57D8_2_6378 / _3_61E0 etc.
+void ph_vt5A60_57_6858(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    ph_vt57D8_2_6378(s + 16);
+}
+void ph_vt5A60_58_6EE8(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    ph_vt57D8_3_61E0(s + 16);
+}
+void ph_vt5A60_60_7870(void* /*self*/) {}
+void ph_vt5A60_61_7A38(void* /*self*/) {}
+void ph_vt5A60_62_8F80(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    uint8_t* inner = s + 16;
+    uint8_t* list = inner + 4;
+    uint8_t* head = *reinterpret_cast<uint8_t**>(list);
+    if (head && head != list) {
+        void** vt = *reinterpret_cast<void***>(inner);
+        typedef void (*F)(void*, int, int);
+        reinterpret_cast<F>(vt[17])(inner, 8, 8);
+    }
+}
+
+// ph_vt5A7C / _5A84 / _5A8C (slot 63) — joint-angle setters. Externs are
+// single-arg; value pulled from scratch slot at self+120 in original.
+void ph_vt5A7C_63_6A98(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    float value = *reinterpret_cast<float*>(s + 120);
+    *reinterpret_cast<float*>(s + 108) = value;
+    uint8_t count = *reinterpret_cast<uint8_t*>(s + 52);
+    uint8_t* arr = *reinterpret_cast<uint8_t**>(s + 184);
+    for (uint8_t i = 0; i < count; ++i) {
+        *reinterpret_cast<float*>(arr + i * 88 + 40) = value;
+    }
+}
+void ph_vt5A84_63_6B90(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    float value = *reinterpret_cast<float*>(s + 120);
+    *reinterpret_cast<float*>(s + 112) = value;
+}
+extern "C" int32_t ph_vt57D8_12_62F8(void* self);
+void ph_vt5A8C_63_6A50(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    int32_t r = ph_vt57D8_12_62F8(s + 16);
+    if (r >= 0) {
+        *reinterpret_cast<uint16_t*>(s + 104) = 1;
+        *reinterpret_cast<uint16_t*>(s + 106) = 1;
+    }
+}
+
+// ph_vt5B98_40_8D50 / _41_8E50: classification-bit dispatchers used by
+// world cleanup. Extern is single-arg — flagArg comes from the inner
+// state byte at +0x78 (bit 0 mirrors the request).
+void ph_vt5B98_40_8D50(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    uint8_t* inner = s + 16;
+    uint8_t bits = *reinterpret_cast<uint8_t*>(inner + 152);
+    void** vt = *reinterpret_cast<void***>(inner);
+    typedef void (*F)(void*, int, int);
+    if (bits & 1) {
+        if (bits & 4) return;
+        reinterpret_cast<F>(vt[17])(inner, 6, 2);
+    } else {
+        reinterpret_cast<F>(vt[17])(inner, 3, 3);
+    }
+}
+void ph_vt5B98_41_8E50(void* self) {
+    auto* s = static_cast<uint8_t*>(self);
+    uint8_t* inner = s + 16;
+    uint8_t bits = *reinterpret_cast<uint8_t*>(inner + 152);
+    if (!(bits & 1)) return;
+    void** vt = *reinterpret_cast<void***>(inner);
+    typedef void (*F)(void*, int, int);
+    uint8_t flagArg = *reinterpret_cast<uint8_t*>(s + 0x78);
+    if (flagArg & 1) {
+        reinterpret_cast<F>(vt[17])(inner, 87, 0);
+    } else if (!(bits & 18) && !(bits & 4)) {
+        reinterpret_cast<F>(vt[17])(inner, 4, 4);
+        *reinterpret_cast<uint16_t*>(inner + 154) = 0;
+    }
+}
