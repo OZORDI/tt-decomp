@@ -88,10 +88,15 @@ public:
                                        //   m_pExtra, then calls base Flash cleanup
     virtual void Update(float dt);     // [3] @ 0x822EB058  per-frame update;
                                        //   calls SinglesNetworkClient_B2A8/BF88
-    virtual void vfn_4();              // [4] @ 0x822EB0E8  TODO: input/close check
+    virtual void vfn_4();              // [4] @ 0x822EB0E8  FIXME: input/close check — not yet lifted
     virtual void OnExit();             // [6] @ 0x822EB148  hide/close the screen;
                                        //   adds draw bucket entry or destroys
                                        //   the secondary MI sub-object
+
+    // Scaleform/Flash-style property dispatch — sets a HUD object's property
+    // by id, routing through the global object table and the id->slot lookup.
+    // Non-virtual; implementation @ 0x8215B060 (see hud.cpp).
+    void SetPropertyById(int objectId, int value);
 
     // Pending fields (from offset_cluster_map, high-access, not yet named):
     uint32_t     field_0x000c;  // +0x000c  R:16   (likely width or size)
@@ -335,8 +340,13 @@ public:
 class hudTrainingHUD : public hudFlashBase {
 public:
     virtual ~hudTrainingHUD();     // [0] @ 0x822FA110
-    virtual void vfn_2();          // [2] @ 0x822FA340  TODO: Update
+    virtual void vfn_2();          // [2] @ 0x822FA340  FIXME: Update — not yet lifted
     virtual void OnEnter();        // [5] @ 0x822FA1B0
+
+    // Training-HUD event sink — dispatches training event codes (0x820/0x862/
+    // 0x863) to the owning network client. Implementation @ 0x822FA518
+    // (hudTrainingHUD_rtti_CB88_1); see hud.cpp for event code table.
+    void OnEvent(void* eventData);
 };
 
 

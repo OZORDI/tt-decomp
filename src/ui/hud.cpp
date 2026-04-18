@@ -156,13 +156,9 @@ void hudFlashBase::SetPropertyById(int objectId, int value)
     
     // No match found - return without storing
 }
-/**
- * ui/hud.cpp — Network and UI utility functions
- * Rockstar Presents Table Tennis (Xbox 360, 2006)
- */
-
-#include "ui/hud.hpp"
-#include <stdint.h>
+// ═════════════════════════════════════════════════════════════════════════════
+// Network and UI utility functions (continued)
+// ═════════════════════════════════════════════════════════════════════════════
 
 /* ── External dependencies for network cleanup ────────────────────────────── */
 
