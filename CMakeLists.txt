@@ -116,6 +116,7 @@ set(SOURCES
     src/game/network/xonline_strings.cpp
     src/game/player/pong_player.cpp
     src/game/pong_render.cpp
+    src/game/pong_vfn_stubs.cpp
     src/game/match/hsm_log_strings.cpp
     src/game/match/pong_states.cpp
     src/game/match/match_rtti_strings.cpp
