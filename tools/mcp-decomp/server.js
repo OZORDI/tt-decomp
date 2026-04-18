@@ -124,6 +124,50 @@ function sdaByAddr() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FLIRT signature map — new in v4 (Phase 16)
+//   Built from IDA Pro 9.2 FLIRT pass against tt_decrypted.xex using
+//   dolphin.sig + gow3.sig. 1420 hits, split into trusted / suspect / review
+//   per the "trust only API functions" rule (XG*, D3D*, Rtl*, Nt*, Xam*,
+//   XAUDIO2*, __save*/rest* compiler helpers, CRT mem/str/wcs).
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _flirt = null;
+function flirt() {
+  if (_flirt === null) {
+    const p = `${CFG}/flirt_map.json`;
+    _flirt = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
+  }
+  return _flirt;
+}
+
+/**
+ * Look up FLIRT entry by virtual address (any case, with or without 0x).
+ * Returns `null` if the address was not hit by FLIRT.
+ */
+function flirtByAddr(addrStr) {
+  const key = "0x" + addrStr.replace(/^0x/i, "").toLowerCase().padStart(8, "0");
+  return flirt()[key] || null;
+}
+
+/** Human-readable summary of a FLIRT hit, or empty string. */
+function flirtSummaryLine(addrStr) {
+  const e = flirtByAddr(addrStr);
+  if (!e) return "";
+  const trust = e.category === "trusted"
+    ? "TRUSTED (API name authoritative)"
+    : e.category === "suspect"
+    ? "SUSPECT (name is UE3/GoW3 false positive — ignore)"
+    : "REVIEW (ambiguous — verify before trusting)";
+  return [
+    `\nFLIRT Match [${e.sig_source}]:`,
+    `  Raw name  : ${e.raw_name}`,
+    `  Family    : ${e.family_base}`,
+    `  Subsystem : ${e.subsystem}`,
+    `  Category  : ${trust}`,
+  ].join("\n");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Binary string reading — new in v3
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -774,6 +818,68 @@ function tool_resolve_address({ address }) {
     if (liftedIn.length) lines.push(`  Lifted in: ${liftedIn.join(", ")}`);
   }
 
+  // FLIRT signature match (Phase 16 — dolphin.sig + gow3.sig)
+  const flirtLine = flirtSummaryLine(addrStr);
+  if (flirtLine) lines.push(flirtLine);
+
+  return lines.join("\n");
+}
+
+/**
+ * TOOL: get_flirt_api
+ * Returns the FLIRT signature entry for an address or name substring.
+ * FLIRT data is from IDA Pro 9.2 applying dolphin.sig + gow3.sig to
+ * tt_decrypted.xex. Entries are classified:
+ *   - trusted: API name is authoritative (XG, D3D, Rtl, save/rest helpers, CRT)
+ *   - suspect: UE3/GoW3 class-decorated name — ignore the name, address is real
+ *   - review : ambiguous — verify before trusting
+ */
+function tool_get_flirt_api({ query, limit = 25 }) {
+  if (!query) return "Usage: get_flirt_api({ query: '0xADDR' | 'namesubstr' | 'subsystem:xbox-graphics' | 'category:trusted' })";
+  const map = flirt();
+  const all = Object.entries(map);
+  const lines = [];
+
+  // Case 1: address lookup
+  if (/^0x[0-9a-f]+$/i.test(query)) {
+    const key = "0x" + query.replace(/^0x/i, "").toLowerCase().padStart(8, "0");
+    const e = map[key];
+    if (!e) return `No FLIRT match at ${key}. Map has ${all.length} total entries.`;
+    lines.push(`FLIRT match at ${key}:`);
+    lines.push(`  raw_name   : ${e.raw_name}`);
+    lines.push(`  family_base: ${e.family_base}`);
+    lines.push(`  category   : ${e.category}`);
+    lines.push(`  sig_source : ${e.sig_source}`);
+    lines.push(`  subsystem  : ${e.subsystem}`);
+    return lines.join("\n");
+  }
+
+  // Case 2: filter predicates (subsystem:X or category:Y)
+  let filter;
+  const mSub = /^subsystem:(.+)$/i.exec(query);
+  const mCat = /^category:(.+)$/i.exec(query);
+  if (mSub) {
+    const sub = mSub[1].toLowerCase();
+    filter = e => e.subsystem.toLowerCase() === sub;
+    lines.push(`FLIRT entries with subsystem = ${sub}:`);
+  } else if (mCat) {
+    const cat = mCat[1].toLowerCase();
+    filter = e => e.category.toLowerCase() === cat;
+    lines.push(`FLIRT entries with category = ${cat}:`);
+  } else {
+    // Case 3: substring name search
+    const q = query.toLowerCase();
+    filter = e => e.raw_name.toLowerCase().includes(q) || e.family_base.toLowerCase().includes(q);
+    lines.push(`FLIRT entries matching "${query}":`);
+  }
+
+  const hits = all.filter(([, e]) => filter(e));
+  lines.push(`(${hits.length} total; showing ${Math.min(limit, hits.length)})`);
+  lines.push("");
+  for (const [addr, e] of hits.slice(0, limit)) {
+    lines.push(`  ${addr}  [${e.category.padEnd(7)}]  ${e.subsystem.padEnd(20)}  ${e.raw_name}`);
+  }
+  if (hits.length > limit) lines.push(`  … ${hits.length - limit} more`);
   return lines.join("\n");
 }
 
@@ -1112,6 +1218,18 @@ const TOOLS = [
       }
     },
   },
+  {
+    name: "get_flirt_api",
+    description: "Look up FLIRT signature matches from an IDA Pro FLIRT pass with dolphin.sig + gow3.sig (1420 hits over tt.bin). Query forms: '0xADDR' resolves one address, 'subsystem:xbox-graphics' / 'category:trusted' filter by class, and any plain substring name-greps. Categories: trusted = API-ish name authoritative (CRT, XGRAPHICS, D3D, XAM, Socket, __save*/__rest* helpers); suspect = UE3/GoW3 leaked decoration, address real but name WRONG; review = ambiguous. Known subsystems: crt, xbox-graphics, d3d9, d3dx-shader, xam, socket-xbox, ppc-vmx-save, ppc-vmx-rest, ppc-gpr-save, ppc-gpr-rest, ppc-fpr-save, seh, novodex-physics, atg.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "'0xADDR' | name-substr | 'subsystem:X' | 'category:trusted|suspect|review'" },
+        limit: { type: "integer", description: "Max results for a multi-hit query (default 25)" }
+      },
+      required: ["query"]
+    },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1144,6 +1262,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "get_existing_source":     result = tool_get_existing_source(args);    break;
       case "suggest_unimplemented_class": result = tool_suggest_unimplemented_class(args); break;
       case "suggest_unimplemented_func":  result = tool_suggest_unimplemented_func(args);  break;
+      case "get_flirt_api":               result = tool_get_flirt_api(args);               break;
       default:
         return { content:[{ type:"text", text:`Unknown tool: ${name}` }], isError:true };
     }
