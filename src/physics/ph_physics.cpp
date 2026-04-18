@@ -15,6 +15,24 @@ extern "C" void* rage_alloc(uint32_t size);  // RAGE heap alloc (defined in heap
 #include <math.h>
 #include <string.h>
 
+// ─────────────────────────────────────────────────────────────────────────────
+// File-local helpers
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// phBoundGeometry stores its working centroid at +0x30 inside the
+// `_pad0x002c[52]` region of the struct header.  This is distinct from
+// phBoundBox which has `m_vCentroidX/Y/Z` at +0x10.  The recomp for
+// phBoundGeometry_vfn_6 (@ 0x82293D88) emits `addi r11,r3,48` before the
+// `lvx128 v12,r0,r11` load, confirming a 16-byte aligned centroid at +0x30.
+// Until the header is extended with a named `m_vCentroid` field, all in-file
+// users should funnel through these accessors so a future rename is one edit.
+static inline float* phBoundGeometry_Centroid(void* bound) {
+    return (float*)((char*)bound + 0x30);
+}
+static inline const float* phBoundGeometry_Centroid(const void* bound) {
+    return (const float*)((const char*)bound + 0x30);
+}
+
 /* ======================================================================
    Forward declarations -- moved from function bodies to file scope
    ====================================================================== */
@@ -307,7 +325,12 @@ extern void* g_fragDrawableVtable; // @ 0x82033094
  *   +240   16-byte vector (zeroed)
  *   +256   State fields (all zeroed)
  */
-// TODO: fragDrawable needs proper namespace/class declaration
+// FIXME: fragDrawable is a real rage:: class (49 symbols prefixed
+// `fragDrawable_*` in the binary, e.g. `fragDrawable_D838`, `fragDrawable_3010`),
+// but has no struct declaration in ph_physics.hpp because its field layout
+// has not been recovered yet. Until a `struct fragDrawable` is added (with a
+// vtable at +0x00, state block at +256 and matrix at +192 per this function),
+// the constructor operates on a raw `void*` and writes offsets directly.
 void fragDrawable_Constructor(void* thisPtr) {
     void* self = thisPtr; (void)self;
     // Call base class initialization
@@ -1670,8 +1693,9 @@ void phBoundGeometry::SelectMaterialForRendering() {
 // @param point - 16-byte aligned vector representing the test point
 // ─────────────────────────────────────────────────────────────────────────────
 void phBoundGeometry::CheckBoundsAndUpdate(const float* point) {
-    // Compute offset from center
-    const float* center = (const float*)((const char*)this + 0x30);  // +48 — TODO: add m_vCenter to phBoundGeometry header
+    // Compute offset from center (centroid lives at +0x30, see
+    // phBoundGeometry_Centroid helper at top of file).
+    const float* center = phBoundGeometry_Centroid(this);
     float offset[4];
     offset[0] = point[0] - center[0];
     offset[1] = point[1] - center[1];
@@ -1722,8 +1746,8 @@ void phBoundGeometry::UpdateBounds(const float* offset) {
         }
     }
 
-    // Add offset to center point
-    float* center = (float*)((char*)this + 0x30);  // +48 — TODO: add m_vCenter to phBoundGeometry header
+    // Add offset to center point (centroid @ +0x30 via helper).
+    float* center = phBoundGeometry_Centroid(this);
     center[0] += offset[0];
     center[1] += offset[1];
     center[2] += offset[2];
@@ -2294,17 +2318,32 @@ void rage::phArticulatedCollider::ScalarDestructor() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 void rage::phArticulatedCollider::ResetForces() {
-    // Zero out linear force accumulator at +256
-    memset((char*)this + 256, 0, 16);  // TODO: name force accumulator at +0x100
+    // Four 16-byte SIMD vector clears.  Each `memset(..., 0, 16)` below
+    // corresponds to one `vxor vN,vN,vN; stvx vN,r0,rX` pair in
+    // phArticulatedCollider_vfn_2 @ 0x8224E720.  These slots live inside
+    // `_pad0x006c[56]`, `_pad0x00a8[72]` and `_pad0x00f8[184]` in the
+    // phArticulatedCollider header; the header's scalar `m_fLinearDamping`
+    // @+0xF0 and `m_fAngularDamping` @+0xF4 are aliased with the same
+    // 16-byte aligned slot that holds the angular-velocity accumulator.
+    //
+    // FIXME: promote the 4 slots below to named SIMD fields
+    //   (m_vLinearVelAccum @+0xE0, m_vAngularVelAccum @+0xF0,
+    //    m_vLinearForceAccum @+0x100, m_vAngularForceAccum @+0x110)
+    // once the header's `m_fLinearDamping`/`m_fAngularDamping` aliasing is
+    // reconciled — that likely means collapsing them into the vector name
+    // and exposing damping via accessors that index the same memory.
+    // Zero out linear force accumulator at +0x100
+    memset((char*)this + 256, 0, 16);
 
-    // Zero out angular force accumulator at +272
-    memset((char*)this + 272, 0, 16);  // TODO: name force accumulator at +0x110
+    // Zero out angular force accumulator at +0x110
+    memset((char*)this + 272, 0, 16);
 
-    // Zero out linear velocity accumulator at +224
-    memset((char*)this + 224, 0, 16);  // TODO: name velocity accumulator at +0xE0
+    // Zero out linear velocity accumulator at +0xE0
+    memset((char*)this + 224, 0, 16);
 
-    // Zero out angular velocity accumulator at +240
-    memset((char*)this + 240, 0, 16);  // TODO: name velocity accumulator at +0xF0 (overlaps m_fLinearDamping)
+    // Zero out angular velocity accumulator at +0xF0
+    // (aliases header m_fLinearDamping / m_fAngularDamping — see FIXME above).
+    memset((char*)this + 240, 0, 16);
 
     // Apply the cleared state via base class update
     this->Update();
@@ -2357,8 +2396,15 @@ void rage::phArticulatedCollider::ResetActiveJoints() {
 // class ApplyForce (vtable slot 32).
 // ─────────────────────────────────────────────────────────────────────────────
 void rage::phArticulatedCollider::ApplyScaledGravity(float scale) {
-    // Load mass from field +100
-    float mass = *(float*)&m_pRootTransform;  // +0x64 (100) — TODO: verify type, reading float from ptr field
+    // Load mass from field +0x64.  The recomp for
+    // phArticulatedCollider_vfn_27 @ 0x8224FD58 emits `lfs f13,100(r3)`,
+    // so this slot is read as an IEEE-754 single-precision float in this
+    // context.  The header declares the same offset as `m_pRootTransform`
+    // (uint32_t) because other callers consume it as a pointer; the slot is
+    // effectively a tagged union of "root-joint transform ptr" and
+    // "collider mass".  Read the raw 32-bit word and reinterpret as float
+    // instead of renaming the header field.
+    float mass = *(const float*)((const char*)this + 0x64);
 
     // Construct gravity force vector: {0, mass * scale, 0}
     float forceY = mass * scale;
