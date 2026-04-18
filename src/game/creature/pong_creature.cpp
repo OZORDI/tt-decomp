@@ -3051,3 +3051,52 @@ void pongCreatureInst::StoreBlendFlag(void* xmlNode) {
     int result = VCALL(dataObj, 4, int(*)(void*))(dataObj);
     this->field_0x01be = (uint8_t)result;  // m_blendFlag
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Partition-owned creature free-function stubs (synthetic linker names that
+// wrap around real work still being lifted). Moved verbatim from stubs.cpp.
+// No binary symbols match these names — the codebase references them as
+// C-linkage bridges; we keep them here for correct partition placement.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" {
+
+void pongCreature_BaseDtor(void* a) { (void)a; }
+void pongCreature_Fixup(void* a, void* b) { (void)a; (void)b; }
+void pongCreature_UpdateReplay(void* a) { (void)a; }
+
+} // extern "C"
+
+// pongCreature_7CE8_g @ 0x820C7CE8 | size: 0xCC — no pseudocode available
+void pongCreature_7CE8_g(void* a, void* b, int c, int d, int e, int f) {
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
+}
+
+// pongCreatureInst helpers — synthetic linker bridges (no binary symbol)
+void pongCreatureInst_RegisterPhysics(void* a, void* b) { (void)a; (void)b; }
+
+// pongCreatureInst_EDC0_g @ 0x820DEDC0 | size: 0x104 — no pseudocode available
+void pongCreatureInst_EDC0_g(void* a, void* b, void* c) {
+    (void)a; (void)b; (void)c;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Additional creature/creature-inst free-function bridges (C++ linkage).
+// Referenced from player/network/creature translation units; no binary symbol
+// matches the name. Emitted as no-op stubs until lifted.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreature_59C0_g(void* creature) { (void)creature; }
+void pongCreatureInst_9030_g(void* creatureInst, void* srcPayload) {
+    (void)creatureInst; (void)srcPayload;
+}
+void pongCreature_ApplyMatrix(void* creature, void* matrix,
+                              int p1, int p2, int p3, int p4) {
+    (void)creature; (void)matrix; (void)p1; (void)p2; (void)p3; (void)p4;
+}
+void pongCreatureInst_CopyTransform(void* dst, void* src, void* helper) {
+    (void)dst; (void)src; (void)helper;
+}
+
+// C-linkage vfn 12 trampoline referenced from rage::phArticulatedCollider.
+extern "C" void pongCreatureInst_E828_v12(void* self, unsigned int flags) {
+    (void)self; (void)flags;
+}

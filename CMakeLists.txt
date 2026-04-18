@@ -93,6 +93,7 @@ set(SOURCES
 
     # Game logic
     src/game/char_view/char_view.cpp
+    src/game/char_view/pong_attract_state_shims.cpp
     src/game/cutscene/gd_cutscene_strings.cpp
     src/game/cutscene/pong_cutscene.cpp
     src/game/data/gd_data.cpp

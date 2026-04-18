@@ -463,9 +463,8 @@ extern "C" void LinkPhysicsResource(void* a, void* b) { (void)a; (void)b; }
 extern "C" void ReleaseSceneObject(void* a) { (void)a; }
 extern "C" void ResetBoundObject(void* a, int b) { (void)a; (void)b; }
 extern "C" void ResetViewBound(void* a, int b) { (void)a; (void)b; }
-extern "C" void pongDrawBucket_AddEntry(void* a, void* b, void* c) {
-    (void)a; (void)b; (void)c;
-}
+// pongDrawBucket_AddEntry — moved to src/game/pong_render.cpp with C++ linkage
+// (call site in ph_update_object.cpp uses C++ linkage).
 extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
     (void)a; (void)b; (void)c; (void)d;
 }
@@ -494,13 +493,13 @@ extern "C" void FadePageGroupOut(void* a, float b, int c, int d, int e) {
 extern "C" void PostPageGroupMessage(int a, int b, int c, int d) {
     (void)a; (void)b; (void)c; (void)d;
 }
-extern "C" void SetupCharViewDisplay(void* a) { (void)a; }
+// SetupCharViewDisplay — moved to src/game/char_view/char_view.cpp
 
 // ── Game Data ───────────────────────────────────────────────────────────────
 
-extern "C" int32_t FindCharacterByName(void* a, const char* b) { (void)a; (void)b; return 0; }
+// FindCharacterByName — moved to src/game/char_view/char_view.cpp
 extern "C" void* GetStateContextName(void* a) { (void)a; return nullptr; }
-extern "C" uint16_t LookupEffectId(const char* a) { (void)a; return 0; }
+// LookupEffectId — moved to src/game/char_view/char_view.cpp
 extern "C" int32_t util_2458_FindCharacterIndex(void* a, const char* b) { (void)a; (void)b; return 0; }
 
 // ── Xbox 360 Kernel / XAM ───────────────────────────────────────────────────
@@ -633,9 +632,7 @@ extern "C" void pongCameraMgr_SetCameraByIndex(void* a, int b) { (void)a; (void)
 
 // ── Creature System ─────────────────────────────────────────────────────────
 
-extern "C" void pongCreature_BaseDtor(void* a) { (void)a; }
-extern "C" void pongCreature_Fixup(void* a, void* b) { (void)a; (void)b; }
-extern "C" void pongCreature_UpdateReplay(void* a) { (void)a; }
+// pongCreature_BaseDtor / Fixup / UpdateReplay — moved to src/game/creature/pong_creature.cpp
 extern "C" void pongCreatureInst_Cleanup(void* a) { (void)a; }
 extern "C" float pongCreatureInst_ComputeHeading(void* a) { (void)a; return 0.0f; }
 extern "C" void pongCreatureInst_NotifyHeadingChanged(void* a) { (void)a; }
@@ -746,10 +743,10 @@ void CShelvingFilterEffect::CalcInputFrames() {}
 
 // ── Misc free functions ─────────────────────────────────────────────────────
 
-bool CheckButtonPressed(void* a) { (void)a; return false; }
-// ComputeNetworkHash — lifted in src/game/network/pong_network.cpp
-void CopyVectorThreadSafe(void* a, void* b) { (void)a; (void)b; }
-// DeserializeNetworkData — lifted in src/game/network/pong_network.cpp
+// CheckButtonPressed — moved to src/game/char_view/char_view.cpp
+void ComputeNetworkHash(void* a, int b) { (void)a; (void)b; }
+// CopyVectorThreadSafe — moved to src/game/char_view/char_view.cpp
+void DeserializeNetworkData(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 uint8_t Dialog_IsComplete(void* a) { (void)a; return 0; }
 void DismissPageGroup(void* a) { (void)a; }
 
@@ -876,27 +873,10 @@ void atSingleton_QueryEventData(void* a, void* b) { (void)a; (void)b; }
 
 void audControl_Destructor(void* obj) { (void)obj; }
 
-// ── charViewCS virtual methods (local class definition to avoid char_view.hpp) ──
-
-class charViewCS {
-public:
-    virtual ~charViewCS() = default;
-    virtual void vfn_3();
-    virtual void vfn_4();
-    virtual void vfn_6();
-    virtual void vfn_7();
-    virtual void vfn_9();
-    virtual void vfn_10();
-    virtual void vfn_11();
-};
-
-void charViewCS::vfn_3()  {}
-void charViewCS::vfn_4()  {}
-void charViewCS::vfn_6()  {}
-void charViewCS::vfn_7()  {}
-void charViewCS::vfn_9()  {}
-void charViewCS::vfn_10() {}
-void charViewCS::vfn_11() {}
+// charViewCS virtual methods vfn_3/4/6/7/9/10/11 — moved to
+// src/game/char_view/char_view.cpp where they're lifted with semantic names
+// (RegisterXmlFields, Validate, GetName, GetVariantName, Update,
+// RecalcBounds, PurgeFilteredNodes).
 
 // ── CM (Control Machine) helpers ────────────────────────────────────────────
 
@@ -1155,20 +1135,16 @@ void* phArchetype_Find(void* a, const char* b) { (void)a; (void)b; return nullpt
 // plrPlayerMgr members — lifted to src/game/data/gd_data.cpp
 
 // ── pongAttractState ────────────────────────────────────────────────────────
-
-void pongAttractState::GetName() {}
-void pongAttractState::ProcessInput() {}
-void pongAttractState::Reset() {}
-void pongAttractState::Shutdown() {}
-void pongAttractState_Shutdown(void* a) { (void)a; }
+// pongAttractState::{Reset,Shutdown,GetName,ProcessInput} and the free
+// function pongAttractState_Shutdown — moved to
+// src/game/char_view/pong_attract_state_shims.cpp.
 
 // ── pongBallInstance ────────────────────────────────────────────────────────
 // vfn_2..vfn_30 stubs removed — methods are now declared with semantic names
 // (GetMatrixAt60, SetMatrixAt60, GetCurrentPosition, GetCurrentVelocity,
 // ProcessCollisionAndActivate, ValidateCollisionParams3) and implemented in
 // pong_ball.cpp.
-
-void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
+// pongBallInstance_4980_g — moved to src/game/ball/pong_ball.cpp
 
 // ── pongCameraMgr helpers ───────────────────────────────────────────────────
 
@@ -1189,31 +1165,8 @@ uint8_t pongCameraMgr_ValidateTransition(void* a, TransitionParams* b, int c, Tr
 // SECTION 7: C++ stubs from stubs_linker_3b.cpp
 // ============================================================================
 
-// pongCharViewContext stubs — char_view.hpp forward-declares `class atSingleton`
-// without rage:: namespace. Provide minimal definition before including.
-// Also, char_view.hpp redefines pongAttractState, charViewCS — we handle conflicts.
-class atSingleton {
-public:
-    virtual ~atSingleton() = default;
-};
-
-// char_view.hpp redefines charViewCS and pongAttractState which are already
-// defined via pong_states.hpp. We can't include it directly. Forward-declare
-// pongCharViewContext minimally instead.
-class pongCharViewContext {
-public:
-    virtual ~pongCharViewContext();
-    virtual void vfn_11();
-    virtual void vfn_12();
-    virtual void vfn_16();
-    virtual void vfn_17();
-    virtual void vfn_18();
-    virtual void vfn_23();
-};
-
-void pongCharViewContext::vfn_11() {}
-void pongCharViewContext::vfn_12() {}
-void pongCharViewContext::vfn_16() {}
+// pongCharViewContext vfn_11..vfn_23 — moved to
+// src/game/char_view/char_view.cpp (uses the definition in char_view.hpp).
 
 
 
@@ -1221,49 +1174,16 @@ void pongCharViewContext::vfn_16() {}
 // SECTION 8: C++ stubs from stubs_linker_4.cpp
 // ============================================================================
 
-// pongCharViewContext vfn_17/18/23 defined above in Section 7
+// pongCreature / pongCreatureInst helpers (pongCreatureInst_RegisterPhysics,
+// pongCreatureInst_EDC0_g, pongCreature_7CE8_g) — moved to
+// src/game/creature/pong_creature.cpp
 
-void pongCharViewContext::vfn_17() {}
-void pongCharViewContext::vfn_18() {}
-void pongCharViewContext::vfn_23() {}
+// pongDrawBucket::InitStatics / Load — moved to src/game/pong_render.cpp
 
-// ── pongCreature / pongCreatureInst helpers ─────────────────────────────────
+// pongLerpQueue_3410_g — moved to src/game/pong_lerp_queue.cpp
 
-void pongCreatureInst_RegisterPhysics(void* a, void* b) { (void)a; (void)b; }
-void pongCreatureInst_EDC0_g(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void pongCreature_7CE8_g(void* a, void* b, int c, int d, int e, int f) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f;
-}
-
-// ── pongDrawBucket ──────────────────────────────────────────────────────────
-
-void pongDrawBucket::InitStatics() {}
-void pongDrawBucket::Load(const char* a, int b, void* c) { (void)a; (void)b; (void)c; }
-
-// ── pongLerpQueue ───────────────────────────────────────────────────────────
-
-void pongLerpQueue_3410_g(void* a) { (void)a; }
-
-// ── pongNetMessageHolder ────────────────────────────────────────────────────
-
-void pongNetMessageHolder::ScalarDtor(int flags) { (void)flags; }
-void pongNetMessageHolder_5038_w() {}
-void pongNetMessageHolder_6778_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_68D0_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_6B48_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_6C98_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_6D68_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_6E30_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_6FF8_wrh(void* a) { (void)a; }
-void pongNetMessageHolder_7700_wrh(void* a) { (void)a; }
-pongNetMessageHolder* pongNetMessageHolder_FAE0_isl() { return nullptr; }
-void pongNetMessageHolder_vfn_2_0868_1(pongNetMessageHolder* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_1628_1(pongNetMessageHolder* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_24B8_1(void* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_3878_1(pongNetMessageHolder* a) { (void)a; }
-void pongNetMessageHolder_vfn_2_FD70_1(pongNetMessageHolder* a) { (void)a; }
+// pongNetMessageHolder family (ScalarDtor, _5038_w, all *_wrh, _FAE0_isl,
+// vfn_2_*) — moved to src/game/network/pong_network_classes.cpp
 
 // ── pongPlayer ──────────────────────────────────────────────────────────────
 
@@ -1274,9 +1194,7 @@ void pongNetMessageHolder_vfn_2_FD70_1(pongNetMessageHolder* a) { (void)a; }
 //  Interpolate, ResetMoverImpl, StateHandler_{9188..91E8})
 // Already-lifted elsewhere (removed duplicates): 0508_g, D238_g, E590_g, E7B0_g
 
-// ── pongScrnTransFadeIn ─────────────────────────────────────────────────────
-
-void pongScrnTransFadeIn_EndTransition(void* a) { (void)a; }
+// pongScrnTransFadeIn_EndTransition — moved to src/game/pong_render.cpp
 
 // ── namespace rage globals and stubs ────────────────────────────────────────
 

@@ -1285,3 +1285,50 @@ void pongBallHitData::LoadProperties() {
     g_pongBallHitDataEnableFlag =
         (this->m_flags & kHitDataFlag_Enabled) ? 1 : 0;
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// pongBallInstance_4980_g @ 0x822C4980 | size: 0x1DC
+// No pseudocode available — emitted as a valid no-op so it links while the
+// real body is lifted in a later pass. Signature derived from call sites in
+// player code (pongPlayer calls this on the player manager pointer).
+// ────────────────────────────────────────────────────────────────────────────
+void pongBallInstance_4980_g(void* instance, int a, int b, int c, int d) {
+    (void)instance; (void)a; (void)b; (void)c; (void)d;
+}
+
+// 6-arg overload — call site in phUpdateObject::Reset uses
+// (void*, unsigned short, int, int, int, int). Kept as a no-op stub.
+void pongBallInstance_4980_g(void* instance, unsigned short s,
+                             int a, int b, int c, int d) {
+    (void)instance; (void)s; (void)a; (void)b; (void)c; (void)d;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongBallInstance_DispatchHit (C++ linkage, 7 args) — used by pongBallInstance
+// hit/remote-hit paths. No matching binary symbol; stubbed here to link.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongBallInstance_DispatchHit(pongBallInstance* self, unsigned short player,
+                                  void* a, void* b, void* c, void* d, void* e) {
+    (void)self; (void)player; (void)a; (void)b; (void)c; (void)d; (void)e;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// C-linkage ball-event bridges referenced from ball::vfn_24 (swing resolver).
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" {
+    int pongBallInstance_DispatchSwingEvent(uintptr_t owner, uint32_t hitType,
+                                            const pongBallInstance::Vec4* impactPos,
+                                            uint32_t evFlags, uint32_t zero) {
+        (void)owner; (void)hitType; (void)impactPos; (void)evFlags; (void)zero;
+        return 0;
+    }
+
+    void pongBallInstance_OnBallMissed(pongBallInstance* self) { (void)self; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongLerpQueue_Update — synthetic linker bridge called from
+// pongPlayer::UpdatePhysicsAndSwingInput. The full lerp queue is in
+// src/game/pong_lerp_queue.cpp (not yet in CMakeLists). Stub here.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongLerpQueue_Update(void* queue) { (void)queue; }

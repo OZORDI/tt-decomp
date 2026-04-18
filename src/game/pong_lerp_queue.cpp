@@ -660,3 +660,10 @@ void pongLerpQueue_ProcessLargeUpdate(pongLerpQueue* queue, pongPlayer* player,
     retryAdj          -= divisor;
     slot->m_remoteTimeOffset = retryAdj;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongLerpQueue_3410_g @ 0x821D3410 | size: 0x2E4
+// No pseudocode available — emitted as a valid no-op so the translation unit
+// owns the symbol. Lifts to real behaviour in a later pass.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongLerpQueue_3410_g(void* queue) { (void)queue; }

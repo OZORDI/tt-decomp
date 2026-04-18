@@ -2127,3 +2127,70 @@ void pongNetMessageHolder_vfn_2_0260(void* self) {
 void pongNetMessageHolder_vfn_2_04D0(void* self) {
     pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/32);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongNetMessageHolder partition — stubs lifted from src/stubs.cpp.
+// Class layout in pong_network.hpp is compatible; ScalarDtor is declared
+// there. Sizes in the binary range from 0x5C to 0x1E4 bytes; no pseudocode
+// is available for these yet. Emitted as valid no-ops so the translation
+// unit owns each symbol.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The pongNetMessageHolder struct is declared in pong_network.hpp but that
+// header pulls in a large dependency tree. Use a local minimal class
+// declaration sufficient to define ScalarDtor here — its layout only needs
+// the vtable pointer for symbol resolution.
+struct pongNetMessageHolder {
+    void** vtable;
+    virtual ~pongNetMessageHolder() = default;
+    virtual void ScalarDtor(int flags);
+    virtual void CleanupInternalArray();
+};
+
+// Virtual method (slot 1, scalar-deleting destructor).
+// Size/body not yet lifted — empty implementation lets the vtable link.
+void pongNetMessageHolder::ScalarDtor(int flags) { (void)flags; }
+
+// Free-function pool/thread helpers referenced by unrelated code.
+void pongNetMessageHolder_5038_w()                              {}  // 0x82585038
+void pongNetMessageHolder_6778_wrh(void* self) { (void)self; }      // 0x823C6778
+void pongNetMessageHolder_68D0_wrh(void* self) { (void)self; }      // 0x823C68D0
+void pongNetMessageHolder_6B48_wrh(void* self) { (void)self; }      // 0x823C6B48
+void pongNetMessageHolder_6C98_wrh(void* self) { (void)self; }      // 0x823C6C98
+void pongNetMessageHolder_6D68_wrh(void* self) { (void)self; }      // 0x823C6D68
+void pongNetMessageHolder_6E30_wrh(void* self) { (void)self; }      // 0x823C6E30
+void pongNetMessageHolder_6FF8_wrh(void* self) { (void)self; }      // 0x823C6FF8
+void pongNetMessageHolder_7700_wrh(void* self) { (void)self; }      // 0x823C7700
+pongNetMessageHolder* pongNetMessageHolder_FAE0_isl()               // 0x823EFAE0
+{ return nullptr; }
+
+// vfn_2 pool-teardown family (called from the 73-vtable MI chain).
+void pongNetMessageHolder_vfn_2_0868_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_1628_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_1770_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_18D0_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_24B8_1(void* self)                 { (void)self; }
+void pongNetMessageHolder_vfn_2_3878_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_FD70_1(pongNetMessageHolder* self) { (void)self; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Additional pongNetMessageHolder bridges referenced from pong_network.cpp
+// and pong_network_classes.cpp. Synthetic linker names (no binary symbol).
+// Stub bodies are sufficient for linker resolution.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongNetMessageHolder_0838_w(void* a, void* b) { (void)a; (void)b; }
+void pongNetMessageHolder_6F30_wrh(void* self) { (void)self; }
+void pongNetMessageHolder_70C8_wrh(void* self) { (void)self; }
+void pongNetMessageHolder_71C0_wrh(void* self) { (void)self; }
+void pongNetMessageHolder_72A8_wrh(void* self) { (void)self; }
+void pongNetMessageHolder_7668_2hr(void* self) { (void)self; }
+void pongNetMessageHolder_7B68_wrh(void* self) { (void)self; }
+void pongNetMessageHolder_7C48_wrh(void* self) { (void)self; }
+
+void pongNetMessageHolder_vfn_2_0928_1(pongNetMessageHolder* self) { (void)self; }
+void pongNetMessageHolder_vfn_2_0B58_1(pongNetMessageHolder* self) { (void)self; }
+
+extern "C" {
+    void pongNetMessageHolder_89B8_w(void* self) { (void)self; }
+    void pongNetMessageHolder_FE60_w(void* self) { (void)self; }
+}

@@ -44,7 +44,14 @@ void atHashMap_Find(void*, const void*) {}
 // ph_59C8, ph_9E50, ph_9EC0_1, ph_CEE0, ph_E010, ph_E088, ph_EF40,
 // ph_ForwardTarget — lifted to src/physics/ph_update_object.cpp (namespace rage).
 void* phArchetype_Find(void*, const char*) { return nullptr; }
-void pongAttractState_Shutdown(void*) {}
+void ph_9E50(void*, void*) {}
+void* ph_9EC0_1(void*) { return nullptr; }
+void ph_CEE0(void*, int) {}
+void* ph_E010(void*, void*, const char*) { return nullptr; }
+void ph_E088(void*, void*, void*, float, int) {}
+void ph_EF40(void*, void*) {}
+void ph_ForwardTarget(void*) {}
+// pongAttractState_Shutdown — moved to src/game/char_view/pong_attract_state_shims.cpp
 void pongCameraMgr_3500_fw(pongCameraMgr*, void*, int) {}
 void pongCameraMgr_3650_fw(pongCameraMgr*, void*, int) {}
 void pongCameraMgr_6E08(void*, TransitionParams*, int, void*, int) {}
@@ -82,18 +89,12 @@ void _c_xmlNodeStruct_Initialize(void* o) { xmlNodeStruct_Initialize(o); }
 
 // ── C++ signatures that differ from stubs_final ─────────────────────────────
 void* pg_9C00_g(void* p, int i) { (void)p;(void)i; return nullptr; }
-void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
+// pongBallInstance_4980_g — moved to src/game/ball/pong_ball.cpp
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
 namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
 
 namespace rage { class atSingleton; void ReleaseSingleton(atSingleton*) {} }
 
-// pongAttractState base methods needed by child vtables
-#include "game/char_view.hpp"
-void pongAttractState::ProcessInput() {}
-void pongAttractState::Reset() {}
-
-
-void pongAttractState::GetName() {}
-void pongAttractState::Shutdown() {}
+// pongAttractState base methods (Reset/Shutdown/GetName/ProcessInput) —
+// moved to src/game/char_view/pong_attract_state_shims.cpp.
 
