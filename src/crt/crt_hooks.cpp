@@ -39,6 +39,11 @@
 #include <stdarg.h>    /* va_list                                           */
 #include <stddef.h>
 #include <stdint.h>
+#include <wchar.h>     /* wcslen                                            */
+
+/* Canonical VMX save/restore no-op, defined in ppc_helpers.c. One impl,
+ * N registrations — see the bottom of this file and ppc_helpers.c. */
+extern "C" PPC_FUNC_IMPL(ppc_helper_vmx_noop);
 
 /* =====================================================================
  * PPC VARIADIC RECONSTRUCTION
@@ -467,6 +472,60 @@ PPC_FUNC_IMPL(crt_hook_strncpy) {
     /* ctx.r3 already holds the guest address — no change needed. */
 }
 
+/**
+ * strncmp hook — 0x824320D0
+ *
+ * PPC: r3 = const char* a,  r4 = const char* b,  r5 = size_t n
+ *      →  r3 = int result  (negative/zero/positive, C-standard semantics)
+ *
+ * The guest body is the classic Xenon unrolled bdnzf-loop. Native strncmp()
+ * on host libc is trivial to dispatch — and handles the n==0 fast path
+ * (returns 0) identically to the guest's early `li r3,0; blr`.
+ */
+PPC_FUNC_IMPL(crt_hook_strncmp) {
+    PPC_FUNC_PROLOGUE();
+    const char* a = GUEST_STR(ctx.r3);
+    const char* b = GUEST_STR(ctx.r4);
+    size_t      n = (size_t)ctx.r5.u32;
+
+    if (n == 0) {
+        ctx.r3.s64 = 0;
+        return;
+    }
+    if (!a || !b) {
+        /* Graceful degradation: treat NULL as empty string. */
+        ctx.r3.s64 = (a ? 1 : 0) - (b ? 1 : 0);
+        return;
+    }
+    ctx.r3.s64 = (int64_t)strncmp(a, b, n);
+}
+
+/**
+ * wcslen hook — 0x82433748
+ *
+ * PPC: r3 = const wchar_t* str  →  r3 = size_t length (UTF-16 code units)
+ *
+ * The Xbox 360 treats `wchar_t` as 16-bit (UTF-16). The guest body walks
+ * 2 bytes per step and returns (bytes_scanned/2) - 1. Dispatching to host
+ * wcslen() here requires that host `wchar_t` is also 16-bit — which is
+ * true on Windows (16-bit wchar_t) but NOT on macOS/Linux (32-bit). We
+ * therefore walk the guest string directly as uint16_t to stay ABI-safe
+ * across hosts.
+ */
+PPC_FUNC_IMPL(crt_hook_wcslen) {
+    PPC_FUNC_PROLOGUE();
+    const uint16_t* s = (const uint16_t*)GUEST_CPTR(ctx.r3);
+    if (!s) {
+        ctx.r3.u64 = 0ULL;
+        return;
+    }
+    /* Guest memory is big-endian; a zero code unit is 0x0000 regardless of
+     * endianness, so a raw byte-pair compare works without byteswap. */
+    size_t n = 0;
+    while (s[n] != 0) ++n;
+    ctx.r3.u64 = (uint64_t)n;
+}
+
 /* =====================================================================
  * MEMORY FUNCTIONS
  * ===================================================================== */
@@ -664,7 +723,9 @@ const CrtHookEntry g_crt_hook_table[] = {
     /* ── String ─────────────────────────────────────────────────── */
     { CRT_HOOK_ADDR_strlen,         crt_hook_strlen,          "strlen"         },
     { CRT_HOOK_ADDR_strcmp,         crt_hook_strcmp,          "strcmp"         },
+    { CRT_HOOK_ADDR_strncmp,        crt_hook_strncmp,         "strncmp"        },
     { CRT_HOOK_ADDR_strncpy,        crt_hook_strncpy,         "strncpy"        },
+    { CRT_HOOK_ADDR_wcslen,         crt_hook_wcslen,          "wcslen"         },
 
     /* ── Memory ──────────────────────────────────────────────────── */
     { CRT_HOOK_ADDR_memset,         crt_hook_memset,          "memset"         },
@@ -677,6 +738,73 @@ const CrtHookEntry g_crt_hook_table[] = {
     { CRT_HOOK_ADDR_sprintf,        crt_hook_sprintf,         "sprintf"        },
     { CRT_HOOK_ADDR_snprintf,       crt_hook_snprintf,        "_snprintf"      },
     { CRT_HOOK_ADDR_vsnprintf,      crt_hook_vsnprintf,       "_vsnprintf"     },
+
+    /* ── PPC VMX save/restore belt (compiler-emitted, no-op under recomp) ── */
+    { CRT_HOOK_ADDR_savevmx_103,    ppc_helper_vmx_noop,      "__savevmx_103"  },
+    { CRT_HOOK_ADDR_savevmx_104,    ppc_helper_vmx_noop,      "__savevmx_104"  },
+    { CRT_HOOK_ADDR_savevmx_105,    ppc_helper_vmx_noop,      "__savevmx_105"  },
+    { CRT_HOOK_ADDR_savevmx_106,    ppc_helper_vmx_noop,      "__savevmx_106"  },
+    { CRT_HOOK_ADDR_savevmx_107,    ppc_helper_vmx_noop,      "__savevmx_107"  },
+    { CRT_HOOK_ADDR_savevmx_108,    ppc_helper_vmx_noop,      "__savevmx_108"  },
+    { CRT_HOOK_ADDR_savevmx_109,    ppc_helper_vmx_noop,      "__savevmx_109"  },
+    { CRT_HOOK_ADDR_savevmx_110,    ppc_helper_vmx_noop,      "__savevmx_110"  },
+    { CRT_HOOK_ADDR_savevmx_111,    ppc_helper_vmx_noop,      "__savevmx_111"  },
+    { CRT_HOOK_ADDR_savevmx_112,    ppc_helper_vmx_noop,      "__savevmx_112"  },
+    { CRT_HOOK_ADDR_savevmx_113,    ppc_helper_vmx_noop,      "__savevmx_113"  },
+    { CRT_HOOK_ADDR_savevmx_114,    ppc_helper_vmx_noop,      "__savevmx_114"  },
+    { CRT_HOOK_ADDR_savevmx_115,    ppc_helper_vmx_noop,      "__savevmx_115"  },
+    { CRT_HOOK_ADDR_savevmx_116,    ppc_helper_vmx_noop,      "__savevmx_116"  },
+    { CRT_HOOK_ADDR_savevmx_117,    ppc_helper_vmx_noop,      "__savevmx_117"  },
+    { CRT_HOOK_ADDR_savevmx_118,    ppc_helper_vmx_noop,      "__savevmx_118"  },
+    { CRT_HOOK_ADDR_savevmx_119,    ppc_helper_vmx_noop,      "__savevmx_119"  },
+    { CRT_HOOK_ADDR_savevmx_120,    ppc_helper_vmx_noop,      "__savevmx_120"  },
+    { CRT_HOOK_ADDR_savevmx_121,    ppc_helper_vmx_noop,      "__savevmx_121"  },
+    { CRT_HOOK_ADDR_savevmx_122,    ppc_helper_vmx_noop,      "__savevmx_122"  },
+    { CRT_HOOK_ADDR_savevmx_123,    ppc_helper_vmx_noop,      "__savevmx_123"  },
+    { CRT_HOOK_ADDR_savevmx_124,    ppc_helper_vmx_noop,      "__savevmx_124"  },
+    { CRT_HOOK_ADDR_savevmx_125,    ppc_helper_vmx_noop,      "__savevmx_125"  },
+    { CRT_HOOK_ADDR_savevmx_126,    ppc_helper_vmx_noop,      "__savevmx_126"  },
+    { CRT_HOOK_ADDR_savevmx_127,    ppc_helper_vmx_noop,      "__savevmx_127"  },
+
+    { CRT_HOOK_ADDR_restvmx_14,     ppc_helper_vmx_noop,      "__restvmx_14"   },
+    { CRT_HOOK_ADDR_restvmx_15,     ppc_helper_vmx_noop,      "__restvmx_15"   },
+    { CRT_HOOK_ADDR_restvmx_16,     ppc_helper_vmx_noop,      "__restvmx_16"   },
+    { CRT_HOOK_ADDR_restvmx_17,     ppc_helper_vmx_noop,      "__restvmx_17"   },
+    { CRT_HOOK_ADDR_restvmx_18,     ppc_helper_vmx_noop,      "__restvmx_18"   },
+    { CRT_HOOK_ADDR_restvmx_19,     ppc_helper_vmx_noop,      "__restvmx_19"   },
+    { CRT_HOOK_ADDR_restvmx_20,     ppc_helper_vmx_noop,      "__restvmx_20"   },
+    { CRT_HOOK_ADDR_restvmx_21,     ppc_helper_vmx_noop,      "__restvmx_21"   },
+    { CRT_HOOK_ADDR_restvmx_22,     ppc_helper_vmx_noop,      "__restvmx_22"   },
+    { CRT_HOOK_ADDR_restvmx_23,     ppc_helper_vmx_noop,      "__restvmx_23"   },
+    { CRT_HOOK_ADDR_restvmx_24,     ppc_helper_vmx_noop,      "__restvmx_24"   },
+    { CRT_HOOK_ADDR_restvmx_25,     ppc_helper_vmx_noop,      "__restvmx_25"   },
+    { CRT_HOOK_ADDR_restvmx_26,     ppc_helper_vmx_noop,      "__restvmx_26"   },
+    { CRT_HOOK_ADDR_restvmx_27,     ppc_helper_vmx_noop,      "__restvmx_27"   },
+    { CRT_HOOK_ADDR_restvmx_28,     ppc_helper_vmx_noop,      "__restvmx_28"   },
+    { CRT_HOOK_ADDR_restvmx_29,     ppc_helper_vmx_noop,      "__restvmx_29"   },
+    { CRT_HOOK_ADDR_restvmx_30,     ppc_helper_vmx_noop,      "__restvmx_30"   },
+    { CRT_HOOK_ADDR_restvmx_31,     ppc_helper_vmx_noop,      "__restvmx_31"   },
+    { CRT_HOOK_ADDR_restvmx_64,     ppc_helper_vmx_noop,      "__restvmx_64"   },
+    { CRT_HOOK_ADDR_restvmx_65,     ppc_helper_vmx_noop,      "__restvmx_65"   },
+    { CRT_HOOK_ADDR_restvmx_66,     ppc_helper_vmx_noop,      "__restvmx_66"   },
+    { CRT_HOOK_ADDR_restvmx_67,     ppc_helper_vmx_noop,      "__restvmx_67"   },
+    { CRT_HOOK_ADDR_restvmx_68,     ppc_helper_vmx_noop,      "__restvmx_68"   },
+    { CRT_HOOK_ADDR_restvmx_69,     ppc_helper_vmx_noop,      "__restvmx_69"   },
+    { CRT_HOOK_ADDR_restvmx_70,     ppc_helper_vmx_noop,      "__restvmx_70"   },
+    { CRT_HOOK_ADDR_restvmx_71,     ppc_helper_vmx_noop,      "__restvmx_71"   },
+    { CRT_HOOK_ADDR_restvmx_72,     ppc_helper_vmx_noop,      "__restvmx_72"   },
+    { CRT_HOOK_ADDR_restvmx_73,     ppc_helper_vmx_noop,      "__restvmx_73"   },
+    { CRT_HOOK_ADDR_restvmx_74,     ppc_helper_vmx_noop,      "__restvmx_74"   },
+    { CRT_HOOK_ADDR_restvmx_75,     ppc_helper_vmx_noop,      "__restvmx_75"   },
+    { CRT_HOOK_ADDR_restvmx_76,     ppc_helper_vmx_noop,      "__restvmx_76"   },
+    { CRT_HOOK_ADDR_restvmx_77,     ppc_helper_vmx_noop,      "__restvmx_77"   },
+    { CRT_HOOK_ADDR_restvmx_78,     ppc_helper_vmx_noop,      "__restvmx_78"   },
+    { CRT_HOOK_ADDR_restvmx_79,     ppc_helper_vmx_noop,      "__restvmx_79"   },
+    { CRT_HOOK_ADDR_restvmx_80,     ppc_helper_vmx_noop,      "__restvmx_80"   },
+    { CRT_HOOK_ADDR_restvmx_81,     ppc_helper_vmx_noop,      "__restvmx_81"   },
+    { CRT_HOOK_ADDR_restvmx_82,     ppc_helper_vmx_noop,      "__restvmx_82"   },
+    { CRT_HOOK_ADDR_restvmx_83,     ppc_helper_vmx_noop,      "__restvmx_83"   },
+    { CRT_HOOK_ADDR_restvmx_84,     ppc_helper_vmx_noop,      "__restvmx_84"   },
 
     /* Sentinel */
     { 0, NULL, NULL }

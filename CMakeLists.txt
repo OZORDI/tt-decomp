@@ -43,6 +43,7 @@ set(SOURCES
     src/crt/exit.c
     src/crt/heap.c
     src/crt/memory.c
+    src/crt/ppc_helpers.c
     src/crt/startup.c
     src/crt/string.c
     src/globals.c
