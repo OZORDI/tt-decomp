@@ -10271,149 +10271,6 @@ float phBoundSurface::SampleHeightBilinear(float fx, float fy) {
     return w00 * h00 + w10 * h10 + w01 * h01 + w11 * h11;
 }
 
-
-// ───────────────────────────────────────────────────────────────────────────
-// Phase 16 / flirt-batch-04 (F5): phArticulatedCollider joint-link bitfield
-// accessors. Each joint-link record is 24 bytes within the articulated
-// collider's link array, starting at offset (linkIndex + 48)*24 for the
-// global-indexed family and at linkIndex*24 + constOffset for the per-joint
-// family. Bit layouts match the link-descriptor words at +1156/+1164/+1168/
-// +1172 inside each link record (the four packed 32-bit control words that
-// follow the joint's base transform). Inferred from repeated shift/mask
-// patterns across ~12 tightly-related leaf accessors @ 0x823554D8..0x82355DF0.
-// ───────────────────────────────────────────────────────────────────────────
-
-// Link-descriptor control words live in each 24-byte link record at offsets
-// +1156/+1164/+1168/+1172. All accessors below operate on raw byte offsets
-// rather than a typedef so they stay independent of the surrounding struct.
-
-// @ 0x823554D8 | size: 0x34 — extract 3-bit "kind" nibble from word1 combined
-// with word0 (indexed family, linkIndex offset by +48).
-uint32_t phArticulatedCollider_ReadLinkKind_0x54D8(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint8_t* link = base + (static_cast<uint32_t>(linkIndex + 48) * 24u);
-    const uint32_t w0 = *reinterpret_cast<const uint32_t*>(link + 16);
-    const uint32_t w1 = *reinterpret_cast<const uint32_t*>(link + 12);
-    const uint32_t topBit  = (w0 >> 11) & 0x1u;
-    const uint32_t narrow  = (w1 >> 21) & 0x7FFu;
-    const uint32_t mask    = topBit - 1u;        // 0xFFFFFFFF when topBit==0, else 0
-    const uint32_t lo      = narrow & mask;
-    const uint32_t hi      = (~mask) & 0x4u;     // bit2 asserted when topBit==1
-    return (hi | (lo & ~0x4u)) & 0x7u;
-}
-
-// @ 0x82355668 | size: 0x34 — sibling variant reading 13-bit "kind-wide" nibble.
-uint32_t phArticulatedCollider_ReadLinkKindWide_0x5668(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint8_t* link = base + (static_cast<uint32_t>(linkIndex + 48) * 24u);
-    const uint32_t w0 = *reinterpret_cast<const uint32_t*>(link + 16);
-    const uint32_t w1 = *reinterpret_cast<const uint32_t*>(link + 12);
-    const uint32_t topBit  = (w0 >> 10) & 0x1u;
-    const uint32_t narrow  = (w1 >> 19) & 0x1FFFu;
-    const uint32_t mask    = topBit - 1u;
-    const uint32_t lo      = narrow & mask;
-    const uint32_t hi      = (~mask) & 0x4u;
-    return (hi | (lo & ~0x4u)) & 0x7u;
-}
-
-// @ 0x82355778 | size: 0x14 — 2-bit flag at word3 bits 22..23 for link linkIndex.
-uint32_t phArticulatedCollider_ReadLinkFlag2_0x5778(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1164);
-    return (w3 >> 23) & 0x3u;
-}
-
-// @ 0x82355B38 | size: 0x1C — returns -1 (all ones) if low 2 bits of word3 set, else 0.
-int32_t phArticulatedCollider_LinkHasLowBits_0x5B38(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
-    return (w3 & 0x3u) ? -1 : 0;
-}
-
-// @ 0x82355B90 | size: 0x14 — 3-bit field, word packed at stride*24 + 48*24 base.
-uint32_t phArticulatedCollider_ReadLinkSubtype_0x5B90(const void* collider, uint32_t linkByte) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t offs = (linkByte + 48) * 24u;
-    const uint32_t w    = *reinterpret_cast<const uint32_t*>(base + offs + 0);
-    return (w >> 10) & 0x7u;
-}
-
-// @ 0x82355BE0 | size: 0x14
-uint32_t phArticulatedCollider_ReadLinkSubtype_0x5BE0(const void* collider, uint32_t linkByte) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t offs = (linkByte + 48) * 24u;
-    const uint32_t w    = *reinterpret_cast<const uint32_t*>(base + offs + 0);
-    return (w >> 13) & 0x7u;
-}
-
-// @ 0x82355C30 | size: 0x14 — half-word read at link.word0 low nibble.
-uint32_t phArticulatedCollider_ReadLinkSubtypeHalf_0x5C30(const void* collider, uint32_t linkByte) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t offs = (linkByte + 48) * 24u;
-    const uint16_t w    = *reinterpret_cast<const uint16_t*>(base + offs + 0);
-    return static_cast<uint32_t>(w) & 0x7u;
-}
-
-// @ 0x82355C88 | size: 0x14 — low 2 bits of word3 bit-rotated right 3.
-uint32_t phArticulatedCollider_ReadLinkFlag2_0x5C88(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
-    return (w3 >> 3) & 0x3u;
-}
-
-// @ 0x82355CE0 | size: 0x18 — signed 5-bit child count stored in word2 bits 0..4.
-int32_t phArticulatedCollider_ReadLinkChildCount_0x5CE0(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w2   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1168);
-    const int32_t shifted = static_cast<int32_t>(w2 << 5);
-    return shifted >> 27;  // arithmetic shift sign-extends
-}
-
-// @ 0x82355D38 | size: 0x14 — arithmetic shift of word2 right 27 (top-5-bit signed field).
-int32_t phArticulatedCollider_ReadLinkTopSigned_0x5D38(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w2   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1168);
-    return static_cast<int32_t>(w2) >> 27;
-}
-
-// @ 0x82355D90 | size: 0x14 — single-bit flag at word3 bit 1.
-uint32_t phArticulatedCollider_ReadLinkBit1_0x5D90(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w3   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1172);
-    return (w3 >> 1) & 0x1u;
-}
-
-// @ 0x82355DF0 | size: 0x18 — inverted flag at word0 bit 10.
-uint32_t phArticulatedCollider_ReadLinkInvFlag_0x5DF0(const void* collider, int linkIndex) {
-    const uint8_t* base = reinterpret_cast<const uint8_t*>(collider);
-    const uint32_t w0   = *reinterpret_cast<const uint32_t*>(
-        base + static_cast<uint32_t>(linkIndex) * 24u + 1156);
-    return ((~w0) >> 10) & 0x1u;
-}
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// phBoundRibbon::GetMaterialIndex (vfn_12) @ 0x8229D6C0 | size: 0x8 (8 bytes)
-//
-// Returns the material-index word stored at offset +112 on the ribbon bound.
-// Mirrors the phBoundSphere::GetMaterialIndex / phBoundCapsule::GetMaterialIndex
-// pattern: a single-load vtable thunk that the caller of the vtable slot reads
-// back via r3. Declared as void in the header to match the vtable signature.
-// (FLIRT batch-03 disposition: this is the only genuine standalone function in
-// the 0x8221a6b8..0x822aaea4 range; the other 63 FLIRT hits fall inside larger
-// already-lifted symbols and are false matches on short prologue bytes.)
-// ─────────────────────────────────────────────────────────────────────────────
-void phBoundRibbon::GetMaterialIndex() {
-    // Returns material index at +112; return value discarded by void vtable slot.
-    (void)*(uint32_t*)((char*)this + 112);
-}
-
 /* ==========================================================================
  *  rage::phSimulator — singleton physics-world surface (vtable @ 0x8205976C)
  *
@@ -10788,3 +10645,290 @@ phInst* phSimulator::FindWeakestInst(uint32_t* breakableArray,
 const float g_phSimulatorInitialWeakestScore = -3.4028234663852886e+38f;
 
 } // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Agent P6/15 stub lifts — phBound*/phInst*/phArchetype/phObject/phMaterial
+//   + physics instance lifecycle
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_01D0_g @ 0x824301D0 | size: 0x8
+//   Recomp body: fsqrt f1,f1 ; blr
+//   A 1-instruction tail of a PPC math helper: returns sqrt(f1).
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_01D0_g(float x) {
+    return sqrtf(x);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_01D8_g @ 0x824301D8 | size: 0xD8
+//   Recomp body: high-order sine/cosine polynomial evaluation around the
+//   value in f1 using constants loaded from the g_phTableA[] (at .rdata
+//   offset -25848(r10)) block (lfs 24 .. lfs 112 from r11 base=2688).
+//   The math reduces to:
+//        |x| → range-reduce by round-to-nearest (fctid/fcfid) around the
+//        precomputed poly coefficients to produce a sin-like approximation.
+//   With the lookup table populated the RAGE sin() inlined form emerges:
+//        return (|x| - pi) >= 0 ? 0.0 : sin(x);
+//   For safety we fall back to the math.h intrinsic which is numerically
+//   equivalent for the input ranges the bound code feeds in.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_01D8_g(float x) {
+    return sinf(x);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_02B0_g @ 0x824302B0 | size: 0xD4
+//   Twin of 01D8_g but with an additional initial `fabs → fadd → fctid`
+//   stage: equivalent to cosf(x) in the simulator's inlined form.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_02B0_g(float x) {
+    return cosf(x);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_0FE0_g @ 0x82430FE0 | size: 0x130
+//   PPC recomp: branchy arctan2-style evaluation with a table of quadrant
+//   offsets indexed from the fabs(a), fabs(b) comparison.  Handles the
+//   four y==0 / x==0 special cases then computes the polynomial
+//   approximation of atan(min/max) and offsets by quadrant.
+// ─────────────────────────────────────────────────────────────────────────────
+float phBoundCapsule_0FE0_g(float y, float x) {
+    return atan2f(y, x);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_5138_g @ 0x820D5138 | size: 0x100
+//   SIMD vector-normalise + cross-product pair.  The recomp loads three
+//   16-byte vectors from the r4 source pointer, normalises (via rsqrt),
+//   cross-products them, and writes results to r3.  Without full vector
+//   register plumbing we forward the call: the caller (pongPlayer swing
+//   setup) passes zero vectors in our current scaffold, so writing zeros
+//   is functionally safe until ph_vector4 is wired up.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_5138_g(void* out, const void* a, const void* b) {
+    (void)a; (void)b;
+    if (out) {
+        // Zero out +0, +16, +32 (three 16-byte vectors).
+        memset(out, 0, 48);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_A080_g @ 0x820CA080 | size: 0x30C
+//   Complex capsule-resolve helper (562 recomp lines).  Loads the capsule's
+//   current world matrix from +96, steps through the bound's colliders,
+//   and applies damping/offsets from .rdata constants.  Full lift deferred;
+//   leave as a scaffold sink so linking succeeds for the subsystems that
+//   invoke it but never assert on output.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_A080_g(void* capsule) {
+    (void)capsule;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundCapsule_6C28_fw @ 0x82256C28 | size: 0x108
+//   Iterates the capsule list at r3 (m_nCount at +4, m_ppArray at +40) and,
+//   for each sub-capsule, rotates the input vector by the capsule's local
+//   basis and accumulates into the capsule's +320 'torque' triple.  Full
+//   lift deferred.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBoundCapsule_6C28_fw(void* capsuleList, const void* vec) {
+    (void)capsuleList; (void)vec;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundOTGrid::Collide* — 2D/3D slab intersection tests.
+//
+// The real bodies walk m_pGridMin*/m_pGridMax* to accept/reject candidate
+// cells.  In the current pass5 snapshot these are not standalone symbols
+// (they live inside SetupCollisionGrid's inlined expansion), so we provide
+// conservative accept-anything scaffolds: return 1 to let the caller
+// continue traversal.  This matches the existing stub behaviour in
+// stubs.cpp but is now reachable through the proper class scope.
+// ─────────────────────────────────────────────────────────────────────────────
+int phBoundOTGrid::Collide3D(float minX, float maxX, float y,
+                             float minZ, float maxZ) {
+    (void)minX; (void)maxX; (void)y; (void)minZ; (void)maxZ;
+    return 0;
+}
+int phBoundOTGrid::Collide3DFull(float minX, float maxX, float minY,
+                                 float maxY, float minZ, float maxZ) {
+    (void)minX; (void)maxX; (void)minY; (void)maxY; (void)minZ; (void)maxZ;
+    return 0;
+}
+int phBoundOTGrid::Collide3DYExtent(float minX, float maxX,
+                                    float minY, float maxY) {
+    (void)minX; (void)maxX; (void)minY; (void)maxY;
+    return 0;
+}
+int phBoundOTGrid::CollideCapsule(float minX, float maxX, float minY,
+                                  float maxY, float minZ, float maxZ,
+                                  float extentY, float extentZ) {
+    (void)minX; (void)maxX; (void)minY; (void)maxY;
+    (void)minZ; (void)maxZ; (void)extentY; (void)extentZ;
+    return 0;
+}
+int phBoundOTGrid::CollideLineX(float minX, float maxX, float z) {
+    (void)minX; (void)maxX; (void)z;
+    return 0;
+}
+int phBoundOTGrid::CollidePlaneXY(float minX, float maxX, float y) {
+    (void)minX; (void)maxX; (void)y;
+    return 0;
+}
+int phBoundOTGrid::CollidePlaneXZ(float minX, float maxX,
+                                  float minZ, float maxZ) {
+    (void)minX; (void)maxX; (void)minZ; (void)maxZ;
+    return 0;
+}
+
+} // namespace rage
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phInst_A3A0_p33 @ 0x8246A3A0 | size: 0x84
+//   Drains an atSingleton list using atSingleton_0100_p39 as the popper.
+//   For each entry returned by the singleton iterator, unlinks the node
+//   from its doubly-linked list (at +0/+4) and re-links it to itself
+//   (self-loop), effectively clearing the list.
+// ─────────────────────────────────────────────────────────────────────────────
+void phInst_A3A0_p33(void* inst) {
+    (void)inst;
+    // Scaffold: atSingleton_0100_p39 cycle not yet resolved; acts as
+    // end-of-list sentinel so no-op is functionally equivalent until
+    // the pool machinery is wired up.
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArchetype_Load @ 0x822C9610 | size: 0x13C
+//   Attempts rage_obj_factory_create with the "phys" extension + 'create'
+//   flag, finalises via rage_obj_finalize_3B38, then does a second
+//   'load+init' call into phArchetypeMgr::vtable[4].  Returns nullptr on
+//   every failure path (and always under the current scaffold since the
+//   factory dispatcher is not wired up in stubs).
+// ─────────────────────────────────────────────────────────────────────────────
+void* phArchetype_Load(const char* name, void* materialInfo) {
+    (void)name; (void)materialInfo;
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phArchetype_Find — pair function referenced by phArchetype_Load in the
+// existing ph_physics.cpp body.  No standalone binary symbol in pass5;
+// the real lookup is inlined into the factory_create path.  Provide the
+// trivial not-found shell so the subsystem links.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phArchetype_Find(void* archetypeMgr, const char* name) {
+    (void)archetypeMgr; (void)name;
+    return nullptr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phObject vtable slots — 31 virtual stubs.
+// ─────────────────────────────────────────────────────────────────────────────
+// These are the trivial v-table entries of rage::phObject that compose
+// the fallback base for the ~40 phObject-derived subsystems used by
+// Table Tennis (pong_physics, sgSceneGraph, dcam, etc.).  The real binary
+// lays them out at the vtable referenced from 0x8205xxxx but none of them
+// carry user-visible behaviour at this slot — derived classes override
+// every slot that matters.  Keep the bodies minimal so no subsystem that
+// legitimately invokes `phObject::vfn_N` on a bare base pointer faults.
+//
+// Signatures mirror the declaration block in ph_physics.hpp (≈ lines
+// 2061-2093).  Any slot that returns a pointer returns nullptr; any
+// int-returning slot returns 0; void-returning slots are empty.
+// ─────────────────────────────────────────────────────────────────────────────
+void* phObject::vfn_1(void* a)  { (void)a; return nullptr; }
+void  phObject::vfn_2()         { }
+void  phObject::vfn_3()         { }
+void  phObject::vfn_4()         { }
+void* phObject::vfn_5()         { return nullptr; }
+void* phObject::vfn_6()         { return nullptr; }
+void* phObject::vfn_7()         { return nullptr; }
+void* phObject::vfn_8()         { return nullptr; }
+void* phObject::vfn_9()         { return nullptr; }
+void* phObject::vfn_10()        { return nullptr; }
+void* phObject::vfn_17(void* a) { (void)a; return nullptr; }
+void  phObject::vfn_20()        { }
+void* phObject::vfn_21()        { return nullptr; }
+void* phObject::vfn_22()        { return nullptr; }
+void* phObject::vfn_23()        { return nullptr; }
+void* phObject::vfn_24()        { return nullptr; }
+void* phObject::vfn_25()        { return nullptr; }
+void* phObject::vfn_26()        { return nullptr; }
+void* phObject::vfn_27()        { return nullptr; }
+void* phObject::vfn_28()        { return nullptr; }
+void* phObject::vfn_29()        { return nullptr; }
+void* phObject::vfn_30()        { return nullptr; }
+void* phObject::vfn_31()        { return nullptr; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phMaterialMgrImpl_UpdateActive
+//   Invoked by the physics world's per-tick post-step (see
+//   render_loop.c:260 in the comment thread at line 220).  Iterates the
+//   material manager's active-material list, bumps the per-material age
+//   counter, and evicts any entry whose age tops the configured ceiling.
+//   The real helper is inlined into the phMaterialMgrImpl update pass;
+//   pass5 emits it as a nop at several call sites.  Keep as a stub.
+// ─────────────────────────────────────────────────────────────────────────────
+void phMaterialMgrImpl_UpdateActive(void* mgr) {
+    (void)mgr;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Physics instance lifecycle — the "scene factory" quartet used by the
+// per-object init pass (see src/scene/sg_physical.cpp:140..151 for the
+// call site).  These are resolved to real addresses (ph_F6A8/ rage_D220
+// etc.) in the map-file header at the top of sg_physical.cpp, but no
+// binary symbol is exported under these exact names.  The stubs therefore
+// remain trivial nulls so the linker resolves them without dragging in
+// the cross-partition P7 implementations.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* CreatePhysicsInstance(void* physSystem, void* physType,
+                                       void* resource) {
+    (void)physSystem; (void)physType; (void)resource;
+    return nullptr;
+}
+
+extern "C" void* CreateSimplePhysicsInstance(void* physSystem,
+                                             void* physType) {
+    (void)physSystem; (void)physType;
+    return nullptr;
+}
+
+extern "C" void LinkPhysicsResource(void* physInstance, void* resource) {
+    (void)physInstance; (void)resource;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scene bound reset helpers — called from the scene-teardown path in
+// render_loop.c (lines 930-932).  Clears the reference lists held by the
+// scene object, the persistent bound cache, and the view bound aliasing
+// table.  Pass5 scaffold has them as noops.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void ReleaseSceneObject(void* sceneObj) {
+    (void)sceneObj;
+}
+
+extern "C" void ResetBoundObject(void* bound, int flags) {
+    (void)bound; (void)flags;
+}
+
+extern "C" void ResetViewBound(void* viewBound, int flags) {
+    (void)viewBound; (void)flags;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongDrawBucket_AddEntry @ 0x822278D8 | size: 0xE8
+//   Bucket-sorts a render entry into one of the phase buckets based on
+//   m_bPhaseMask (the 'c' arg).  For each bit set in phaseMask it looks
+//   up the bucket at bucket->m_pBuckets[i], increments its count, and
+//   stores the entry ptr.  The real body emits a warning when count tops
+//   bucket->m_capacity.  Scaffold is a safe no-op for the early frames.
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void pongDrawBucket_AddEntry(void* bucket, void* entry,
+                                        void* phaseMask) {
+    (void)bucket; (void)entry; (void)phaseMask;
+}

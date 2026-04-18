@@ -28,18 +28,14 @@ void pcrAnimBlender_ApplyClipWeights(void*, unsigned, float, float) {}
 void pcrAnimBlender_Initialize(void*) {}
 void pcrAnimState_ComputePosition(vec3*, pongAnimState*) {}
 void pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender*) {}
-// pgPageGroup_DispatchEvent / pg_9C00_g / pg_ApplyTransition / pg_E6E0 → src/rage/swf.cpp
-void* phArchetype_Load(const char*, void*) { return nullptr; }
-float phBoundCapsule_01D0_g(float v) { return v; }
-float phBoundCapsule_01D8_g(float v) { return v; }
-float phBoundCapsule_02B0_g(float v) { return v; }
-float phBoundCapsule_0FE0_g(float a, float b) { (void)b; return a; }
-void phBoundCapsule_5138_g(void*, void*, void*) {}
-void phBoundCapsule_A080_g(void*) {}
-void phInst_A3A0_p33(void*) {}
-// atHashMap_Find — moved to src/rage/data/at_types.cpp.
+void pgPageGroup_DispatchEvent(void*, void*, int, unsigned*, int) {}
+void* pg_9C00_g(void*) { return nullptr; }
+void pg_ApplyTransition(void*, TransitionParams*, int, TransitionFlags*, int) {}
+void pg_E6E0(int, int, int, int) {}
+// phArchetype_Load, phBoundCapsule_01D0_g/01D8_g/02B0_g/0FE0_g/5138_g/A080_g,
+// phInst_A3A0_p33, phArchetype_Find — lifted to src/physics/ph_physics.cpp.
+void atHashMap_Find(void*, const void*) {}
 void ph_59C8(void*, const char*, int) {}
-void* phArchetype_Find(void*, const char*) { return nullptr; }
 void ph_9E50(void*, void*) {}
 void* ph_9EC0_1(void*) { return nullptr; }
 void ph_CEE0(void*, int) {}
@@ -86,7 +82,9 @@ void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 // pg_9C00_g(void*, int) → src/rage/swf.cpp
 void pongBallInstance_4980_g(void* a, int b, int c, int d, int e) { (void)a;(void)b;(void)c;(void)d;(void)e; }
 void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a;(void)b;(void)c; }
-namespace rage { struct phJoint3Dof; void phBoundCapsule_01D0_g(phJoint3Dof* j, float f) { (void)j;(void)f; } }
+// rage::phBoundCapsule_01D0_g(phJoint3Dof*, float) overload removed; the
+// fsqrt-tail overload now lives in src/physics/ph_physics.cpp as
+// rage::phBoundCapsule_01D0_g(float).
 
 namespace rage { class atSingleton; void ReleaseSingleton(atSingleton*) {} }
 

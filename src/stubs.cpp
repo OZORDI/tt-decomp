@@ -267,7 +267,7 @@ void rage_debugLog_c(const char* fmt, ...) {
 
 // ── Physics Functions ───────────────────────────────────────────────────────
 
-void phMaterialMgrImpl_UpdateActive(void* mgr) { (void)mgr; }
+// phMaterialMgrImpl_UpdateActive lifted to src/physics/ph_physics.cpp.
 void* phWorld_Construct(void) { return nullptr; }
 void rage_strchr(void) {}
 
@@ -424,18 +424,9 @@ void* rage_datBase_vtable[16] = {0};
 
 // ── Physics / Scene ─────────────────────────────────────────────────────────
 
-extern "C" void* CreatePhysicsInstance(void* a, void* b, void* c) {
-    (void)a; (void)b; (void)c; return nullptr;
-}
-extern "C" void* CreateSimplePhysicsInstance(void* a, void* b) {
-    (void)a; (void)b; return nullptr;
-}
-extern "C" void LinkPhysicsResource(void* a, void* b) { (void)a; (void)b; }
-extern "C" void ReleaseSceneObject(void* a) { (void)a; }
-extern "C" void ResetBoundObject(void* a, int b) { (void)a; (void)b; }
-extern "C" void ResetViewBound(void* a, int b) { (void)a; (void)b; }
-// pongDrawBucket_AddEntry — moved to src/game/pong_render.cpp with C++ linkage
-// (call site in ph_update_object.cpp uses C++ linkage).
+// CreatePhysicsInstance, CreateSimplePhysicsInstance, LinkPhysicsResource,
+// ReleaseSceneObject, ResetBoundObject, ResetViewBound, pongDrawBucket_AddEntry
+// lifted to src/physics/ph_physics.cpp.
 extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
     (void)a; (void)b; (void)c; (void)d;
 }
@@ -938,41 +929,21 @@ int32_t pcrPostPointBlender_GetActiveClipIndex(pcrPostPointBlender* a) { (void)a
 
 // ── Page Group helpers → src/rage/swf.cpp ───────────────────────────────────
 
-void* phArchetype_Load(const char* a, void* b) { (void)a; (void)b; return nullptr; }
-
-// ── phBoundCapsule ──────────────────────────────────────────────────────────
-
-float phBoundCapsule_01D0_g(float a) { (void)a; return 0.0f; }
-float phBoundCapsule_01D8_g(float a) { (void)a; return 0.0f; }
-float phBoundCapsule_02B0_g(float a) { (void)a; return 0.0f; }
-float phBoundCapsule_0FE0_g(float a, float b) { (void)a; (void)b; return 0.0f; }
-void phBoundCapsule_5138_g(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-void phBoundCapsule_A080_g(void* a) { (void)a; }
-
-// ── phInst / phObject ───────────────────────────────────────────────────────
-
-void phInst_A3A0_p33(void* a) { (void)a; }
-// atHashMap_Find — moved to src/rage/data/at_types.cpp.
-
-void* phObject::vfn_17(void* a) { (void)a; return nullptr; }
-void phObject::vfn_20() {}
-void* phObject::vfn_1(void* a) { (void)a; return nullptr; }
-void phObject::vfn_2() {} void phObject::vfn_3() {} void phObject::vfn_4() {}
-void* phObject::vfn_5() { return nullptr; } void* phObject::vfn_6() { return nullptr; }
-void* phObject::vfn_7() { return nullptr; } void* phObject::vfn_8() { return nullptr; }
-void* phObject::vfn_9() { return nullptr; } void* phObject::vfn_10() { return nullptr; }
-void* phObject::vfn_21() { return nullptr; } void* phObject::vfn_22() { return nullptr; }
-void* phObject::vfn_23() { return nullptr; } void* phObject::vfn_24() { return nullptr; }
-void* phObject::vfn_25() { return nullptr; } void* phObject::vfn_26() { return nullptr; }
-void* phObject::vfn_27() { return nullptr; } void* phObject::vfn_28() { return nullptr; }
-void* phObject::vfn_29() { return nullptr; } void* phObject::vfn_30() { return nullptr; }
-void* phObject::vfn_31() { return nullptr; }
+// phArchetype_Load, phBoundCapsule_01D0_g/01D8_g/02B0_g/0FE0_g/5138_g/A080_g,
+// phInst_A3A0_p33, phObject::vfn_1..31 lifted to src/physics/ph_physics.cpp.
+void* atHashMap_Find(void* a, const void* b) { (void)a; (void)b; return nullptr; }
 
 // ── Physics utility functions ───────────────────────────────────────────────
-// ph_59C8, ph_9E50, ph_9EC0_1, ph_CEE0, ph_E010, ph_E088, ph_EF40,
-// ph_ForwardTarget — all lifted into src/physics/ph_update_object.cpp
-// (namespace rage).
-void* phArchetype_Find(void* a, const char* b) { (void)a; (void)b; return nullptr; }
+
+void ph_59C8(void* a, const char* b, int c) { (void)a; (void)b; (void)c; }
+// phArchetype_Find lifted to src/physics/ph_physics.cpp.
+void ph_9E50(void* a, void* b) { (void)a; (void)b; }
+void* ph_9EC0_1(void* a) { (void)a; return nullptr; }
+void ph_CEE0(void* a, int b) { (void)a; (void)b; }
+void* ph_E010(void* a, void* b, const char* c) { (void)a; (void)b; (void)c; return nullptr; }
+void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
+void ph_EF40(void* a, void* b) { (void)a; (void)b; }
+void ph_ForwardTarget(void* a) { (void)a; }
 
 // plrPlayerMgr members — lifted to src/game/data/gd_data.cpp
 
@@ -1094,15 +1065,8 @@ void grcTextureReferenceBase::vfn_3() {}
 
 // swfINSTANCE::vfn_7 → src/rage/swf.cpp
 
-int phBoundOTGrid::Collide3D(float a, float b, float c, float d, float e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
-int phBoundOTGrid::Collide3DFull(float a, float b, float c, float d, float e, float f) { (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; return 0; }
-int phBoundOTGrid::Collide3DYExtent(float a, float b, float c, float d) { (void)a; (void)b; (void)c; (void)d; return 0; }
-int phBoundOTGrid::CollideCapsule(float a, float b, float c, float d, float e, float f, float g, float h) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g; (void)h; return 0;
-}
-int phBoundOTGrid::CollideLineX(float a, float b, float c) { (void)a; (void)b; (void)c; return 0; }
-int phBoundOTGrid::CollidePlaneXY(float a, float b, float c) { (void)a; (void)b; (void)c; return 0; }
-int phBoundOTGrid::CollidePlaneXZ(float a, float b, float c, float d) { (void)a; (void)b; (void)c; (void)d; return 0; }
+// phBoundOTGrid::Collide3D/Collide3DFull/Collide3DYExtent/CollideCapsule/
+// CollideLineX/CollidePlaneXY/CollidePlaneXZ lifted to src/physics/ph_physics.cpp.
 
 // hudFlashBase_9CA8_h → src/rage/swf.cpp
 
@@ -1116,10 +1080,12 @@ void ke_DestroyObjectB(void* a) { (void)a; }
 // ph_vt{3DB0,57D8,5A60,5A7C,5A84,5A8C,5B98}_* vtable thunks — lifted into
 // src/physics/ph_update_object.cpp (namespace rage).
 
-void phBoundCapsule_01D0_g(phJoint3Dof* j, float v) { (void)j; (void)v; }
-void phBoundCapsule_6C28_fw(void* a) { (void)a; }
+// rage::phBoundCapsule_01D0_g(phJoint3Dof*,float) and phBoundCapsule_6C28_fw
+// lifted to src/physics/ph_physics.cpp (01D0_g is reconciled to the single
+// fsqrt-tail form taking a float).
 
-void phInst_5910_p39(void* a) { (void)a; }
+void phCollider_vfn_4(phArticulatedCollider* a) { (void)a; }
+// phInst_5910_p39 was already lifted to src/physics/ph_physics.cpp.
 
 void rage_1058(void* a) { (void)a; }
 void rage_Alloc(int a, void* b) { (void)a; (void)b; }
