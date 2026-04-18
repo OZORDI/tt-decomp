@@ -51,13 +51,11 @@ void* ph_E010(void*, void*, const char*) { return nullptr; }
 void ph_E088(void*, void*, void*, float, int) {}
 void ph_EF40(void*, void*) {}
 void ph_ForwardTarget(void*) {}
-// pongAttractState_Shutdown — moved to src/game/char_view/pong_attract_state_shims.cpp
-void pongCameraMgr_3500_fw(pongCameraMgr*, void*, int) {}
-void pongCameraMgr_3650_fw(pongCameraMgr*, void*, int) {}
-void pongCameraMgr_6E08(void*, TransitionParams*, int, void*, int) {}
-void pongCameraMgr_B9B0_g(void*, int) {}
-void pongCameraMgr_ValidateTransition(void*, TransitionParams*, int, TransitionFlags*, int) {}
-// pongPlayer_{42E0_g,73E8_g,AB48_g} — defined in src/game/player/pong_player_swing.cpp
+void pongAttractState_Shutdown(void*) {}
+// pongCameraMgr_* helpers lifted to src/game/camera/pong_camera_helpers.cpp
+void pongPlayer_42E0_g(void*, vec3*, vec3*, float) {}
+void pongPlayer_73E8_g(pongPlayer*, float) {}
+void pongPlayer_AB48_g(vec3*, void*) {}
 void rage_free(void* p) { free(p); }
 void sysCallback_Invoke(void*, int) {}
 // xmlNodeStruct_Initialize — moved to src/rage/data/par_xml_types.cpp.

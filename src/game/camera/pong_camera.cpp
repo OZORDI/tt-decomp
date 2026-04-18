@@ -216,8 +216,8 @@ bool pongCameraMgr::TryTransitionMode20(void* gameState) {
     // Call the core transition function with mode 20
     // The mode parameter (r5 = 20) likely specifies a particular
     // camera transition type or validation mode
-    extern bool pongCameraMgr_35A0_fw(void* cameraMgr, void* gameState, int mode);
-    
+    extern bool pongCameraMgr_35A0_fw(pongCameraMgr* mgr, void* gameState, int mode);
+
     bool result = pongCameraMgr_35A0_fw(this, gameState, 20);
     
     // Convert to explicit boolean (the assembly does clrlwi r11,r3,24

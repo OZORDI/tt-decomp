@@ -478,24 +478,7 @@ extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
 // ── Audio ───────────────────────────────────────────────────────────────────
 // xapo_UnpackBuffer — moved to src/rage/io/fiStreamBuf.cpp.
 
-// ── CM (Control Machine) System ─────────────────────────────────────────────
-
-extern "C" float cmAngle_Normalize(float a) { (void)a; return 0.0f; }
-extern "C" float cmApproach2_ComputeFactor(void* a) { (void)a; return 0.0f; }
-extern "C" uint8_t cmNode_GetBoolValue(void* a) { (void)a; return 0; }
-extern "C" uint32_t cmNode_GetDimValue(void* a) { (void)a; return 0; }
-extern "C" bool cmNode_TryConnect3(void* a, void* b) { (void)a; (void)b; return false; }
-extern "C" bool cmNode_TryConnectSingle(void* a, void* b) { (void)a; (void)b; return false; }
-extern "C" void cmNormalizedTimer_Allocate(void* a) { (void)a; }
-
-extern "C" void cmPort_CopyToBuffer(void* a, void* b) { (void)a; (void)b; }
-extern "C" void cmPort_SyncValue(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-extern "C" void cmPowerApproach_Step(float* out, float a, float b, float c) {
-    if (out) *out = 0.0f; (void)a; (void)b; (void)c;
-}
-extern "C" void cmReporter_Init(void* a) { (void)a; }
-extern "C" int cmNode_GetDim_stub(void* a) { (void)a; return 0; }
-extern "C" float cmVec4_Atan2(float* a, float* b) { (void)a; (void)b; return 0.0f; }
+// ── CM (Control Machine) System — lifted to src/rage/animation/cm_shims.cpp ─
 
 // ── File I/O / Tokenizer ────────────────────────────────────────────────────
 // fiAsciiTokenizer_SetString / fiAsciiTokenizer_Process —
@@ -512,21 +495,11 @@ extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 
 // ── Jump Tables / Dispatch ──────────────────────────────────────────────────
 
-extern "C" void cmOperator_SetLabel(void* a, const char* b, const char* c, uint32_t d, uint32_t e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
-}
-
+// cmOperator_SetLabel — lifted to src/rage/animation/cm_shims.cpp
 
 // ── Page Group Internals → src/rage/swf.cpp ─────────────────────────────────
 
-// ── Camera Manager ──────────────────────────────────────────────────────────
-
-extern "C" bool pongCameraMgr_FloatThresholdA(void* a, float b) { (void)a; (void)b; return false; }
-extern "C" bool pongCameraMgr_FloatThresholdB(void* a) { (void)a; return false; }
-extern "C" bool pongCameraMgr_QueryA(void* a, int b) { (void)a; (void)b; return false; }
-extern "C" bool pongCameraMgr_QueryB(void* a, int b) { (void)a; (void)b; return false; }
-extern "C" bool pongCameraMgr_QueryC(void* a, int b) { (void)a; (void)b; return false; }
-extern "C" void pongCameraMgr_SetCameraByIndex(void* a, int b) { (void)a; (void)b; }
+// ── Camera Manager — lifted to src/game/camera/pong_camera_helpers.cpp ─────
 
 // ── Creature System ─────────────────────────────────────────────────────────
 
@@ -590,11 +563,7 @@ extern "C" void sysMemAllocator_InitThreadHeap(void) {
     base[2] = xtfBlock;
 }
 
-// ── Utility Functions ───────────────────────────────────────────────────────
-
-extern "C" float cmOperator_EvalFloat(void* a) { (void)a; return 0.0f; }
-extern "C" int cmNode_GetInt(void* a) { (void)a; return 0; }
-extern "C" void cmNode_GetVector(void* a, void* b) { (void)a; (void)b; }
+// ── Utility Functions — cm* lifted to src/rage/animation/cm_shims.cpp ──────
 
 // ph_snprintf — lifted into src/physics/ph_update_object.cpp.
 
@@ -707,10 +676,7 @@ void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
 // (RegisterXmlFields, Validate, GetName, GetVariantName, Update,
 // RecalcBounds, PurgeFilteredNodes).
 
-// ── CM (Control Machine) helpers ────────────────────────────────────────────
-
-void cmMetafileTuningSet_vfn_8(void* a, uint32_t b, uint32_t c) { (void)a; (void)b; (void)c; }
-void cmOperator_5FC8_g(void* a, uint32_t* b, uint32_t* c) { (void)a; (void)b; (void)c; }
+// ── CM (Control Machine) helpers — lifted to src/rage/animation/cm_shims.cpp
 
 // ── Animation ───────────────────────────────────────────────────────────────
 // Lifted to src/anim/locomotion.cpp (P10).
@@ -889,19 +855,7 @@ void ph_ForwardTarget(void* a) { (void)a; }
 // pong_ball.cpp.
 // pongBallInstance_4980_g — moved to src/game/ball/pong_ball.cpp
 
-// ── pongCameraMgr helpers ───────────────────────────────────────────────────
-
-bool pongCameraMgr_3500_fw(pongCameraMgr* a, void* b, int c) { (void)a; (void)b; (void)c; return false; }
-bool pongCameraMgr_35A0_fw(pongCameraMgr* a, void* b, int c) { (void)a; (void)b; (void)c; return false; }
-bool pongCameraMgr_35A0_fw(void* a, void* b, int c) { (void)a; (void)b; (void)c; return false; }
-bool pongCameraMgr_3650_fw(pongCameraMgr* a, void* b, int c) { (void)a; (void)b; (void)c; return false; }
-uint8_t pongCameraMgr_6E08(void* a, TransitionParams* b, int c, void* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
-}
-void* pongCameraMgr_B9B0_g(void* a, int b) { (void)a; (void)b; return nullptr; }
-uint8_t pongCameraMgr_ValidateTransition(void* a, TransitionParams* b, int c, TransitionFlags* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
-}
+// ── pongCameraMgr helpers — lifted to src/game/camera/pong_camera_helpers.cpp
 
 
 // ============================================================================

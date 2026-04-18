@@ -91,6 +91,7 @@ set(SOURCES
     src/rage/swf.cpp
     src/rage/core/timer.cpp
     src/rage/misc/rage_cm.cpp
+    src/rage/animation/cm_shims.cpp
     src/rage/misc/rage_globals.cpp
     src/rage/misc/rage_misc.cpp
     src/rage/rage_engine_dtors.cpp
@@ -114,6 +115,7 @@ set(SOURCES
     src/game/audio/pong_audio_effects.cpp
     src/game/ball/pong_ball.cpp
     src/game/camera/pong_camera.cpp
+    src/game/camera/pong_camera_helpers.cpp
     src/game/creature/pong_creature.cpp
     src/game/drill/pong_drill.cpp
     src/game/misc/cm_operators.cpp
