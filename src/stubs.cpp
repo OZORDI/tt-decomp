@@ -724,7 +724,6 @@ extern "C" void cmNode_GetVector(void* a, void* b) { (void)a; (void)b; }
 // ============================================================================
 
 // ── BallHitMessage ──────────────────────────────────────────────────────────
-
 // BallHitMessage_ctor_69C8 — lifted in src/game/network/pong_network.cpp
 
 // ── CDelayEffect / CPeakMeterEffect / CShelvingFilterEffect ─────────────────
@@ -1407,7 +1406,6 @@ int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c
 void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
 void netStream_ReadS16(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 // ReadBallHitDataFromNetwork dependency (see src/game/network/pong_network_io.cpp).
-// util_1668 — sign-magnitude signed-8-bit bit-stream reader, not yet lifted.
 // netStream_ReadS8SignMagnitude (util_1668) — lifted in pong_network_io.cpp.
 void util_8FD0(void* a) { (void)a; }
 // util_AA38 — lifted in src/game/network/pong_network.cpp

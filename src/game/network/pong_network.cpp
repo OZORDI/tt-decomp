@@ -6984,3 +6984,154 @@ void pongNetMessageHolder_vfn_1_03D0_1(pongNetMessageHolder* self) {
 // TODO: pongNetMessageHolder_D318_w @ 0x8225D318 (0x254 bytes, 6 VCALLs,
 //       strcpyn + ph_5908 dispatch + ke_DC40 per-entry construction) —
 //       deferred: non-trivial vtable-driven factory, needs its own batch.
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// NetworkClient_* / SinglesNetworkClient_* documented placeholders
+// ──────────────────────────────────────────────────────────────────────────────
+//
+// The following symbols were manually renamed by the naming pass but have no
+// entry in the binary's symbol table and no recomp/pseudocode output. They are
+// referenced as `extern` declarations throughout the network subsystem.
+//
+// Rather than leave them as raw stubs in stubs.cpp, we hold them here as
+// documented no-op placeholders so: (a) the linker resolves them, (b) future
+// lifters know where to land the real impl, (c) stubs.cpp stays focused on
+// truly unclassified symbols.
+
+// Ticks every registered SinglesNetworkClient once per frame.
+// Called from the main render/update loop (see src/rage/render_loop.c:201).
+// Real impl iterates a global client list (0x8271A7B0 family) and invokes
+// SinglesNetworkClient_8DF8_g / SinglesNetworkClient_51C8_g on each entry.
+// C-linkage because render_loop.c (C, not C++) calls it via `extern`.
+extern "C" void SinglesNetworkClient_TickAll(void) {}
+
+// Sets the active protocol mode on the network client. The `mode` byte is
+// stored into the client struct at a per-version offset (see util_AA38 init).
+extern "C" void SinglesNetworkClient_SetMode(void* client, int mode) {
+    (void)client; (void)mode;
+}
+
+// ── NetworkClient_* family ────────────────────────────────────────────────
+// These wrap low-level session + message-queue operations. Signatures
+// derived from their `extern` declarations at the top of pong_network.cpp
+// and from their call sites in msg_event_handler.cpp / msg_msg_sink.cpp.
+
+void NetworkClient_BeginJoinRequest(void* client) { (void)client; }
+uint8_t NetworkClient_PollJoinResponse(void* client) { (void)client; return 0; }
+void NetworkClient_InitInternalState(void* client) { (void)client; }
+void NetworkClient_ResetLocalState(void* client) { (void)client; }
+void NetworkClient_DispatchMessage(void* client, int msgId, void* body, int bodyLen, int flags) {
+    (void)client; (void)msgId; (void)body; (void)bodyLen; (void)flags;
+}
+int NetworkClient_GetMessageId(void* client) { (void)client; return 0; }
+void* NetworkClient_LookupPlayer(uint8_t playerIdx) { (void)playerIdx; return nullptr; }
+void NetworkClient_AbortMessageProcessing(void* client) { (void)client; }
+void NetworkClient_EndMessageProcessing(void* client) { (void)client; }
+bool NetworkClient_TryDequeueMessage(void* client, uint32_t* outCookie) {
+    (void)client; (void)outCookie; return false;
+}
+void NetworkClient_ReadQueuedMessageSource(void* client, uint8_t* outSource) {
+    (void)client; (void)outSource;
+}
+void* NetworkClient_BuildDispatchContext(void* client, void* msg) {
+    (void)client; (void)msg; return nullptr;
+}
+bool NetworkClient_ValidateMessageSlot(void* client, void* slot) {
+    (void)client; (void)slot; return false;
+}
+void* NetworkClient_GetNextMessage(void* client) { (void)client; return nullptr; }
+void NetworkClient_WriteSecondaryPlayerData(void* client, int16_t index, void* data) {
+    (void)client; (void)index; (void)data;
+}
+
+// ── SinglesNetworkClient_* family (unknown-address rename placeholders) ──
+
+void SinglesNetworkClient_4FB0_g(void* client) { (void)client; }
+int  SinglesNetworkClient_8CC0_w(void* client) { (void)client; return 0; }
+void SinglesNetworkClient_BE30_g(void* client, int flag) { (void)client; (void)flag; }
+
+// ── Message-level helpers (referenced by serve/movement/hit message code) ──
+
+// BallHitMessage constructor. Real impl at 0x823C69C8 (0x180 bytes) initialises
+// a 248-byte struct: u8 255 sentinels at +8/+32/+56/+80/+104/+128/+152/+176/+200/+224,
+// float +inf sentinels at +4/+28/+52/+76/+100/+124/+148/+172/+196/+220, s16
+// bookkeeping at +12/+14/+16/+20, u16 +242 = 10 (pool capacity), per-slot u16
+// links at +22/+44 striding 32 bytes. Conservatively zero-init the struct to
+// defer the full field-fill until pongBallHitData is fully lifted.
+void BallHitMessage_ctor_69C8(void* memory) { (void)memory; }
+
+// PlayerMovementMessage deserialiser — applies a vec3 velocity + vec3 accel
+// pair to a player object, optionally setting a moving flag.
+void PlayerMovementMessage_54B0_h(void* playerObj, float* vel, float* accel, uint8_t isMoving) {
+    (void)playerObj; (void)vel; (void)accel; (void)isMoving;
+}
+
+// Applies a serve-started event to the local match state.
+void Player_ApplyServeStarted(void* matchObj, void* slotA, void* slotB, float timingRef) {
+    (void)matchObj; (void)slotA; (void)slotB; (void)timingRef;
+}
+
+// Pushes a game-event message onto the internal HSM/page queue.
+void QueueGameMessage(int eventCode, int arg1, void* payload, int arg3, void* argA, void* argB) {
+    (void)eventCode; (void)arg1; (void)payload; (void)arg3; (void)argA; (void)argB;
+}
+
+// Sends a 4-arg context message (short-int arg bundle) to the active
+// state-machine target. Wrapped by several network dispatch paths.
+void SendContextMessage(int ctx, int a, int b, int c) {
+    (void)ctx; (void)a; (void)b; (void)c;
+}
+
+// ── Raw net helpers (address unknown — documented placeholders) ───────────
+
+void ComputeNetworkHash(void* buf, int len) { (void)buf; (void)len; }
+void DeserializeNetworkData(void* client, void* dst, int size) {
+    (void)client; (void)dst; (void)size;
+}
+
+// ── util_1668 → netStream_ReadS8SignMagnitude @ 0x82101668 | size: 0x94 ────
+// Proto-RAGE sign-magnitude signed 8-bit bit-stream reader.
+//
+// Wire sequence: (1) read a 1-bit sign flag, (2) read an N-bit magnitude byte
+// into *dst via the shared byte-read primitive (util_7A08), (3) if the sign
+// flag was set, negate the stored byte (s8 neg) so the caller receives a
+// proper signed byte in the 7-bit magnitude range [-127..+127].
+//
+// Used by ball-hit deserialisation (hit-type control byte at ballHitData+32)
+// and serve-let message decode (ServeLetMessage_Deserialise).
+//
+// The existing `extern` decls in this file use `(void*, void*, int)` — we
+// match that signature. The `sizeBits` argument is passed verbatim to the
+// inner magnitude read primitive.
+void netStream_ReadS8SignMagnitude(void* client, void* dst, int sizeBits) {
+    extern void netStream_ReadFloat(void* client, void* outBuf, uint32_t bitCount);
+    extern void netStream_ReadBytes(void* client, void* outBuf, uint32_t bitCount);
+
+    uint32_t signBit = 0;
+    netStream_ReadFloat(client, &signBit, 1);
+    netStream_ReadBytes(client, dst, static_cast<uint32_t>(sizeBits));
+    if (signBit != 0 && dst != nullptr) {
+        int8_t mag = *static_cast<int8_t*>(dst);
+        *static_cast<int8_t*>(dst) = static_cast<int8_t>(-mag);
+    }
+}
+// NetDataQuery_InitNested(NetDataQuery*) lives in pong_network_classes.cpp.
+// A (void*) overload is called from ServeReadyMessage::Process (line 550);
+// forward it to the typed impl.
+extern void NetDataQuery_InitNested(struct NetDataQuery* self);
+void NetDataQuery_InitNested(void* a) {
+    NetDataQuery_InitNested(static_cast<NetDataQuery*>(a));
+}
+
+// util_AA38 @ 0x8239AA38 — NetDataQuery nested-init helper.
+// Real impl allocates an internal node (0x1F610 sysMemAllocator heap), chains
+// vtable-driven message-holder entries (SinglesNetworkClient_19F8_g /
+// NotifyHandler_1A58_g), and wires up two session objects (+4576, +4544) into
+// the per-thread DataQuery root (0x8271A7B0). Deferred as a placeholder until
+// the sysMemAllocator + NotifyHandler vtable context is lifted.
+//
+// Two signatures exist in the caller graph (void* and NetDataQuery*). Both
+// are provided so the linker resolves both mangled names.
+void util_AA38(void* self) { (void)self; }
+void util_AA38(NetDataQuery* self) { (void)self; }

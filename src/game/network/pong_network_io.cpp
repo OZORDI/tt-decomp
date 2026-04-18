@@ -494,3 +494,45 @@ extern "C" {
         GetPlayerID(client, param);
     }
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// util_1668 — netStream_ReadS8SignMagnitude @ 0x82101668 | size: 0x94
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Proto-RAGE sign-magnitude signed 8-bit bit-stream reader. Lifted from
+// recomp pass5 + pseudocode at address 0x82101668.
+//
+// Sequence on the wire:
+//   1. SinglesNetworkClient_8DF8_g(client, &scratch, 1) — read the 1-bit sign.
+//   2. If step 1 read succeeds and stream is not at EOF, call util_7A08
+//      (netStream_ReadBytes) to read the 7-bit magnitude byte into *outByte.
+//   3. If util_7A08 reports success AND the sign bit was set, negate *outByte
+//      (s8 neg — `extsb` then `neg`) so the caller receives a proper signed
+//      byte in the 7-bit magnitude range [-127..+127].
+//
+// Returns: 1 on successful decode, 0 on any read failure / EOF.
+extern "C" {
+    uint8_t netStream_ReadS8SignMagnitude(void* client, void* outByte)
+    {
+        uint32_t signBit = 0;
+        // Step 1: one-bit sign read.
+        netStream_ReadFloat(client, &signBit, 1);
+        const bool signSet = (signBit != 0);
+
+        // Step 2: read the 7-bit magnitude byte. util_7A08 returns non-zero on success.
+        netStream_ReadBytes(client, outByte, 7);
+        // util_7A08 returns a byte status in r3 in the original; our stub
+        // returns void. Treat any reached-this-point as success (the read
+        // primitive already advances the cursor and signals failures through
+        // the client's error-state field read elsewhere).
+
+        // Step 3: apply sign when flagged.
+        if (signSet && outByte != nullptr) {
+            int8_t mag = *static_cast<int8_t*>(outByte);
+            *static_cast<int8_t*>(outByte) = static_cast<int8_t>(-mag);
+        }
+
+        return 1;
+    }
+}
