@@ -195,13 +195,13 @@
 #define CRT_HOOK_ADDR_restvmx_83    0x82569814u
 #define CRT_HOOK_ADDR_restvmx_84    0x8256981Cu
 
-/* Rtl / NT last-error helpers — TLS LastError slot lives at
- * PCR(r13)+256 -> ETHREAD + 352 (LastError DWORD). Four addresses:
+/* Rtl / NT last-error helpers — the TLS LastError slot lives at
+ * PCR(r13) + 256 -> ETHREAD + 352 (LastError DWORD). Four addresses:
  *   RtlSetLastError   — writes r3 into the slot when the guarded bit is 0
  *   RtlSetLastNTError — calls RtlNtStatusToDosError, then stores result
  *   RtlGetLastError   — reads the slot (or returns 0 when guarded)
  *   RtlSizeHeap       — RAGE-side heap block-size probe (calls
- *                       KeGetCurrentProcessType / KeBugCheckEx)
+ *                       KeGetCurrentProcessType / KeBugCheckEx on panic)
  * These are existing NT/Rtl leaf stubs; the hooks in crt_hooks.cpp
  * re-express them so translated call-sites skip the PPC body. */
 #define CRT_HOOK_ADDR_RtlSetLastError    0x8242C318u
@@ -209,16 +209,21 @@
 #define CRT_HOOK_ADDR_RtlGetLastError    0x8242C368u
 #define CRT_HOOK_ADDR_RtlSizeHeap        0x8242D3E0u
 
-/* PPC GPR/LR save/restore belt — compiler-emitted, same fall-through
- * pattern as the VMX belt above. `__savegprlr` (0x8242F860, 80 bytes)
- * and `__restgprlr` (0x8242F8B0, 84 bytes) are each a sequence of
+/* PPC GPR/LR save/restore belt — compiler-emitted fall-through
+ * helpers. `__savegprlr` (0x8242F860, 80 bytes) and `__restgprlr`
+ * (0x8242F8B0, 84 bytes) are each a sequence of
  * `std rN,-(ofs)(r1)` / `ld rN,-(ofs)(r1)` + `std r0,16(r1)` /
  * `ld r0,16(r1)` + `blr`. FLIRT exposes every 4-byte interior offset
- * as a separate `_14`..`_31` alias. The static recomp preserves
- * ctx.r14..r31 and ctx.lr across any call because callees operate on
- * the same ctx block, so the belt has no guest-visible effect. We
- * route every interior entry through the same no-op
- * (`ppc_helper_gprlr_noop` in ppc_helpers.c). */
+ * as a separate `_14`..`_31` alias, and the static recomp emits each
+ * alias as its own PPC_FUNC_IMPL (see recomp.24.cpp line 60105+).
+ *
+ * The pass5 translation of the belt stores/loads uninitialised host
+ * locals (`uint32_t var_r14 = 0; PPC_STORE_U64(... var_r14)`), which
+ * zeroes ctx.r14..r31 at every spill/reload call-site. Registering
+ * each interior address against a shared no-op (`ppc_helper_gprlr_noop`
+ * in ppc_helpers.c) both short-circuits the buggy round-trip AND
+ * preserves the guest-visible r14..r31 / LR that the recomp already
+ * carries through ctx automatically. */
 #define CRT_HOOK_ADDR_savegprlr_14    0x8242F860u
 #define CRT_HOOK_ADDR_savegprlr_15    0x8242F864u
 #define CRT_HOOK_ADDR_savegprlr_16    0x8242F868u

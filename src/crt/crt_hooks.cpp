@@ -45,6 +45,16 @@
  * N registrations — see the bottom of this file and ppc_helpers.c. */
 extern "C" PPC_FUNC_IMPL(ppc_helper_vmx_noop);
 
+/* Canonical GPR+LR save/restore no-op, defined in ppc_helpers.c. The
+ * pass5 translation of `__savegprlr_NN` / `__restgprlr_NN` reads and
+ * writes uninitialised stack-local zero-valued uint32_t temporaries,
+ * which silently clobbers guest r14..r31 across every call that
+ * branches into the belt. Routing every interior entry to a no-op is
+ * both faster *and* correctness-preserving, because ctx.r14..r31 and
+ * ctx.lr already survive the call automatically in the static recomp.
+ * One impl, many registrations — see g_crt_hook_table[] at the bottom. */
+extern "C" PPC_FUNC_IMPL(ppc_helper_gprlr_noop);
+
 /* =====================================================================
  * PPC VARIADIC RECONSTRUCTION
  *
@@ -709,6 +719,132 @@ PPC_FUNC_IMPL(crt_hook_vsnprintf) {
 }
 
 /* =====================================================================
+ * RTL / NT LAST-ERROR HELPERS
+ *
+ * The Xbox 360 PCR pointer lives in r13; PCR + 256 is the current
+ * ETHREAD, and ETHREAD + 352 holds the thread's LastError DWORD. The
+ * original guest bodies guard reads/writes on a "skip-if-pinned" bit
+ * at PCR + 336 — we replicate the same guard here so hooked behaviour
+ * is indistinguishable from the translated PPC body.
+ *
+ *    PPC_LOAD_U32(r13 + 336) == 0  →  normal path (touch the slot)
+ *    PPC_LOAD_U32(r13 + 336) != 0  →  skip (LastError untouched / 0)
+ * ===================================================================== */
+
+namespace {
+constexpr uint32_t kPcrGuardOffset  = 336;   /* PCR + 336 — "last-error frozen" */
+constexpr uint32_t kPcrThreadOffset = 256;   /* PCR + 256 — ETHREAD*           */
+constexpr uint32_t kLastErrorOffset = 352;   /* ETHREAD + 352 — DWORD LastError */
+
+/* RtlNtStatusToDosError is an NT import already present in the pass5
+ * recomp (see recomp.30.cpp). Forward-declared here so the Set-NT-error
+ * hook can reuse it. */
+extern "C" PPC_FUNC_IMPL(__imp__RtlNtStatusToDosError);
+}  /* namespace */
+
+/**
+ * RtlSetLastError hook — 0x8242C318
+ *
+ * PPC: r3 = uint32_t err  →  void.
+ *
+ * Writes the error code into the current thread's LastError slot when
+ * the PCR guard bit is clear. The guest body is 24 bytes; the C
+ * equivalent is a two-load / one-store.
+ */
+PPC_FUNC_IMPL(crt_hook_RtlSetLastError) {
+    PPC_FUNC_PROLOGUE();
+    const uint32_t guard = PPC_LOAD_U32(ctx.r13.u32 + kPcrGuardOffset);
+    if (guard != 0) return;
+    const uint32_t thread = PPC_LOAD_U32(ctx.r13.u32 + kPcrThreadOffset);
+    PPC_STORE_U32(thread + kLastErrorOffset, ctx.r3.u32);
+}
+
+/**
+ * RtlSetLastNTError hook — 0x8242C330
+ *
+ * PPC: r3 = NTSTATUS status  →  void (converted DOS error left in r3).
+ *
+ * Converts an NTSTATUS to a Win32 error via RtlNtStatusToDosError, then
+ * stores the result into the thread's LastError slot under the PCR
+ * guard. The converted DOS error remains in r3 (matching the original).
+ */
+PPC_FUNC_IMPL(crt_hook_RtlSetLastNTError) {
+    PPC_FUNC_PROLOGUE();
+    __imp__RtlNtStatusToDosError(ctx, base);
+    const uint32_t guard = PPC_LOAD_U32(ctx.r13.u32 + kPcrGuardOffset);
+    if (guard != 0) return;
+    const uint32_t thread = PPC_LOAD_U32(ctx.r13.u32 + kPcrThreadOffset);
+    PPC_STORE_U32(thread + kLastErrorOffset, ctx.r3.u32);
+}
+
+/**
+ * RtlGetLastError hook — 0x8242C368
+ *
+ * PPC: (none)  →  r3 = uint32_t LastError.
+ *
+ * Reads the thread's LastError slot via PCR; returns 0 when the guard
+ * bit is set (matches the guest's "frozen" fall-through to `li r3,0`).
+ */
+PPC_FUNC_IMPL(crt_hook_RtlGetLastError) {
+    PPC_FUNC_PROLOGUE();
+    const uint32_t guard = PPC_LOAD_U32(ctx.r13.u32 + kPcrGuardOffset);
+    if (guard != 0) {
+        ctx.r3.s64 = 0;
+        return;
+    }
+    const uint32_t thread = PPC_LOAD_U32(ctx.r13.u32 + kPcrThreadOffset);
+    ctx.r3.u64 = PPC_LOAD_U32(thread + kLastErrorOffset);
+}
+
+/**
+ * RtlSizeHeap hook — 0x8242D3E0
+ *
+ * PPC: r3 = HANDLE heap,  r4 = uint32_t flags,  r5 = void* block
+ *      →  r3 = size_t block_size  (or (size_t)-1 when the freed bit is set).
+ *
+ * The original queries a flag byte at heap+20 bit 18 to decide whether
+ * to consult the RAGE process-type sentinel via KeGetCurrentProcessType
+ * and KeBugCheckEx. Production hosts do not route the RAGE custom heap
+ * through RtlSizeHeap — this hook simply returns the block's trailing
+ * size field (block[-8..-1]) using the same decode the guest body used:
+ *
+ *   header_byte  = block[-11]
+ *   if ((header_byte & 0x01) == 0)          → return (size_t)-1
+ *   if  (header_byte & 0x08) != 0:
+ *       base_size = block[-24..-21]         (u32)
+ *       trailing  = block[-16..-15]         (u16)
+ *       return base_size - trailing - 48
+ *   else:
+ *       trailing  = block[-16..-15]         (u16)
+ *       extra     = block[-10]              (u8)
+ *       return (trailing << 4) - extra
+ *
+ * The KeBugCheckEx path is unreachable on the host since the flag bit
+ * at heap+20:0x40000 is cleared by the heap-init stubs.
+ */
+PPC_FUNC_IMPL(crt_hook_RtlSizeHeap) {
+    PPC_FUNC_PROLOGUE();
+    const uint32_t block = ctx.r5.u32;
+    if (block == 0) {
+        ctx.r3.s64 = -1;
+        return;
+    }
+    const uint8_t  header   = PPC_LOAD_U8(block - 11);
+    if ((header & 0x01) == 0) {
+        ctx.r3.s64 = -1;
+        return;
+    }
+    const uint16_t trailing = PPC_LOAD_U16(block - 16);
+    if (header & 0x08) {
+        const uint32_t base_size = PPC_LOAD_U32(block - 24);
+        ctx.r3.u64 = static_cast<uint32_t>(base_size - trailing - 48);
+    } else {
+        const uint8_t extra = PPC_LOAD_U8(block - 10);
+        ctx.r3.u64 = static_cast<uint32_t>((static_cast<uint32_t>(trailing) << 4) - extra);
+    }
+}
+
+/* =====================================================================
  * HOOK TABLE
  * ===================================================================== */
 
@@ -805,6 +941,35 @@ const CrtHookEntry g_crt_hook_table[] = {
     { CRT_HOOK_ADDR_restvmx_82,     ppc_helper_vmx_noop,      "__restvmx_82"   },
     { CRT_HOOK_ADDR_restvmx_83,     ppc_helper_vmx_noop,      "__restvmx_83"   },
     { CRT_HOOK_ADDR_restvmx_84,     ppc_helper_vmx_noop,      "__restvmx_84"   },
+
+    /* ── Rtl / NT last-error helpers ─────────────────────────────── */
+    { CRT_HOOK_ADDR_RtlSetLastError,   crt_hook_RtlSetLastError,   "RtlSetLastError"   },
+    { CRT_HOOK_ADDR_RtlSetLastNTError, crt_hook_RtlSetLastNTError, "RtlSetLastNTError" },
+    { CRT_HOOK_ADDR_RtlGetLastError,   crt_hook_RtlGetLastError,   "RtlGetLastError"   },
+    { CRT_HOOK_ADDR_RtlSizeHeap,       crt_hook_RtlSizeHeap,       "RtlSizeHeap"       },
+
+    /* ── PPC GPR+LR save/restore belt (compiler-emitted, no-op) ──── */
+    { CRT_HOOK_ADDR_savegprlr_14,   ppc_helper_gprlr_noop,    "__savegprlr_14" },
+    { CRT_HOOK_ADDR_savegprlr_15,   ppc_helper_gprlr_noop,    "__savegprlr_15" },
+    { CRT_HOOK_ADDR_savegprlr_16,   ppc_helper_gprlr_noop,    "__savegprlr_16" },
+    { CRT_HOOK_ADDR_savegprlr_17,   ppc_helper_gprlr_noop,    "__savegprlr_17" },
+    { CRT_HOOK_ADDR_savegprlr_18,   ppc_helper_gprlr_noop,    "__savegprlr_18" },
+    { CRT_HOOK_ADDR_savegprlr_19,   ppc_helper_gprlr_noop,    "__savegprlr_19" },
+    { CRT_HOOK_ADDR_savegprlr_20,   ppc_helper_gprlr_noop,    "__savegprlr_20" },
+    { CRT_HOOK_ADDR_savegprlr_21,   ppc_helper_gprlr_noop,    "__savegprlr_21" },
+    { CRT_HOOK_ADDR_savegprlr_22,   ppc_helper_gprlr_noop,    "__savegprlr_22" },
+    { CRT_HOOK_ADDR_savegprlr_23,   ppc_helper_gprlr_noop,    "__savegprlr_23" },
+    { CRT_HOOK_ADDR_savegprlr_31,   ppc_helper_gprlr_noop,    "__savegprlr_31" },
+
+    { CRT_HOOK_ADDR_restgprlr_14,   ppc_helper_gprlr_noop,    "__restgprlr_14" },
+    { CRT_HOOK_ADDR_restgprlr_15,   ppc_helper_gprlr_noop,    "__restgprlr_15" },
+    { CRT_HOOK_ADDR_restgprlr_16,   ppc_helper_gprlr_noop,    "__restgprlr_16" },
+    { CRT_HOOK_ADDR_restgprlr_17,   ppc_helper_gprlr_noop,    "__restgprlr_17" },
+    { CRT_HOOK_ADDR_restgprlr_18,   ppc_helper_gprlr_noop,    "__restgprlr_18" },
+    { CRT_HOOK_ADDR_restgprlr_19,   ppc_helper_gprlr_noop,    "__restgprlr_19" },
+    { CRT_HOOK_ADDR_restgprlr_20,   ppc_helper_gprlr_noop,    "__restgprlr_20" },
+    { CRT_HOOK_ADDR_restgprlr_21,   ppc_helper_gprlr_noop,    "__restgprlr_21" },
+    { CRT_HOOK_ADDR_restgprlr_22,   ppc_helper_gprlr_noop,    "__restgprlr_22" },
 
     /* Sentinel */
     { 0, NULL, NULL }
