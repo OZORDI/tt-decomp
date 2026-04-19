@@ -6,8 +6,10 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * NOTE (open): fsmMachine, assetVersions{,Char,CharSpecific}, and
+ *       CCalMoviePlayer are fully typed.  Remaining `vfn_N()` slots on the
+ *       other skeleton classes still need return types / params filled
+ *       from recomp/structured_pass5_final/.
  */
 #pragma once
 #include <stdint.h>

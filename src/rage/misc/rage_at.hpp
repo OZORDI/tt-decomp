@@ -18,8 +18,10 @@
  * Everything beyond that is class-specific. See include/rage/atSingleton.hpp
  * and src/rage/memory.hpp for the real base class definition.
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * NOTE (open): the atSingleton base layout is documented below; the
+ *       derived-class overlays (pongPlayer, pongCreature, phSimulator,
+ *       gmLogicSinglesMatch, …) live with their respective classes.
+ *       atSafeDLListSimple is covered in include/rage/atList.hpp.
  */
 #pragma once
 #include <stdint.h>

@@ -6,8 +6,10 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * NOTE (open): fiAsciiTokenizer and fiDevice/fiPackfile have typed virtual
+ *       methods; the remaining `vfn_N()` slots on fiBinTokenizer,
+ *       fiDeviceLocal, fiDeviceMemory, fiDeviceTcpIp, and fiSerialize still
+ *       need return types / params filled from recomp/structured_pass5_final/.
  */
 #pragma once
 #include <stdint.h>

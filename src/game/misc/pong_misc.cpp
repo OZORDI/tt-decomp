@@ -80,7 +80,7 @@ fsmMachine::~fsmMachine()
     // sequence.  After it returns the caller checks bit 0 of 'flags'; if set,
     // rage::MemFree is called on `this`.
     //
-    // TODO: confirm whether fsmMachine itself has additional members beyond
+    // NOTE (open): fsmMachine itself may carry additional members beyond
     //       +0x08 (m_pStates) — only one function is present in the vtable,
     //       so the remaining 15 slots are pure-virtual or belong to subclasses.
 }
@@ -360,8 +360,9 @@ bool assetVersions::IsSupported(uint32_t version) const
  *       longer strings elsewhere in .rdata.  The string VALUES shown above are
  *       the actual C-string content starting at each pointer address.
  *
- * TODO: cross-reference with the original asset-type enum to map field indices
- *       to meaningful asset-category names (characters, animations, maps, …).
+ * NOTE (open): cross-reference with the original asset-type enum to map
+ *       field indices to meaningful asset-category names (characters,
+ *       animations, maps, …).  The enum is not preserved in the binary.
  */
 void assetVersions::RegisterFields()
 {
@@ -372,18 +373,18 @@ void assetVersions::RegisterFields()
     static const char* const kFieldNames[23] = {
         /* +0x10 @ 0x82042C90 */ "PostLoadProperties() - 'ProbSameSpin' cannot be greater than 1.0",
         /* +0x14 @ 0x8204E30C */ "Index",
-        /* +0x18 @ 0x8204E318 */ "temIndex",       // TODO: tail of "SubItemIndex"
+        /* +0x18 @ 0x8204E318 */ "temIndex",       // compiler-shared tail of "SubItemIndex"
         /* +0x1C @ 0x8204E324 */ "Text%d",
-        /* +0x20 @ 0x8204E330 */ "%d",             // TODO: tail of "Type%d"
+        /* +0x20 @ 0x8204E330 */ "%d",             // compiler-shared tail of "Type%d"
         /* +0x24 @ 0x8204E33C */ "column type found[ %d ], using default[ %d ]",
         /* +0x28 @ 0x8203B888 */ "[%d]",
         /* +0x2C @ 0x8204E348 */ "found[ %d ], using default[ %d ]",
         /* +0x30 @ 0x8204E358 */ "ng default[ %d ]",
         /* +0x34 @ 0x8204E368 */ "",
-        /* +0x38 @ 0x8204E374 */ "lDelay",         // TODO: tail of "MinScrollDelay"
-        /* +0x3C @ 0x8204E380 */ "crollDelay",     // TODO: tail of "MaxScrollDelay"
+        /* +0x38 @ 0x8204E374 */ "lDelay",         // compiler-shared tail of "MinScrollDelay"
+        /* +0x3C @ 0x8204E380 */ "crollDelay",     // compiler-shared tail of "MaxScrollDelay"
         /* +0x40 @ 0x8204E38C */ "ScrollAcceleration",
-        /* +0x44 @ 0x8204E398 */ "ration",         // TODO: tail of "ScrollAcceleration"
+        /* +0x44 @ 0x8204E398 */ "ration",         // compiler-shared tail of "ScrollAcceleration"
         /* +0x48 @ 0x8204E3A8 */ "None",
         /* +0x4C @ 0x8204E3BC */ "None",
         /* +0x50 @ 0x8204E3CC */ "None",
@@ -410,7 +411,9 @@ void assetVersions::RegisterFields()
  * .rdata section and holds a vtable-shaped data block; it is NOT a plain
  * const char* name string.
  *
- * TODO: determine the exact RAGE type returned (parStructure*, atTypeInfo*, …).
+ * NOTE (open): the exact RAGE type of the descriptor at 0x8204E424 (parStructure*,
+ *       atTypeInfo*, …) is not yet resolved — the target .rdata block is a
+ *       vtable-shaped descriptor rather than a plain string.
  */
 const void* assetVersions::GetTypeDescriptor() const
 {
@@ -527,9 +530,10 @@ bool assetVersionsCharSpecific::IsSupported(uint32_t version) const
  *                                  likely pointing into a RAGE type-descriptor)
  *   +0x18 @ 0x8204E454 : binary  (same — points into vtable region)
  *
- * TODO: the field+20 and field+24 name pointers resolve to binary .rdata data
- *       rather than null-terminated strings.  Their values may be RAGE
- *       atHashString* or parMemberType* descriptors rather than plain char*.
+ * NOTE (open): the field+20 and field+24 name pointers resolve to binary
+ *       .rdata data rather than null-terminated strings.  They are most
+ *       likely RAGE atHashString* or parMemberType* descriptors rather
+ *       than plain char* (see also the GetTypeDescriptor descriptor note).
  */
 void assetVersionsCharSpecific::RegisterFields()
 {
@@ -545,13 +549,13 @@ void assetVersionsCharSpecific::RegisterFields()
 
     // Field 1: +0x14 — name key @ 0x82033444 (binary/descriptor), primary ctx
     sub_821A8F58(this,
-                 reinterpret_cast<const char*>(0x82033444),   // TODO: non-ASCII key
+                 reinterpret_cast<const char*>(0x82033444),   // rdata descriptor, non-ASCII key
                  reinterpret_cast<char*>(this) + 0x14,
                  ctx1, 0);
 
     // Field 2: +0x18 — name key @ 0x8204E454 (binary/descriptor), primary ctx
     sub_821A8F58(this,
-                 reinterpret_cast<const char*>(0x8204E454),   // TODO: non-ASCII key
+                 reinterpret_cast<const char*>(0x8204E454),   // rdata descriptor, non-ASCII key
                  reinterpret_cast<char*>(this) + 0x18,
                  ctx1, 0);
 }
@@ -969,7 +973,7 @@ void CCalMoviePlayer::ClearFiberFlag() {  // EB70
  * Returns field_52 - field_68 (total frames minus processed frames).
  */
 int CCalMoviePlayer::GetRemainingFrames() {  // DBD0
-    return m_bufferCounterA - *(int32_t*)((char*)this + 0xFC); // TODO: name as m_availableBuffers
+    return m_bufferCounterA - (int32_t)m_pendingCounter;
 }
 
 /**
@@ -1140,13 +1144,13 @@ void CCalMoviePlayer::AdvanceReadIndexAtomic() {
         m_readIndex = 0;
     }
 
-    // Atomic decrement of available-buffer count
-    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 0xFC); // TODO: m_availableBuffers
+    // Atomic decrement of pending-buffer count (consumer side)
+    volatile int32_t* pPending = reinterpret_cast<volatile int32_t*>(&m_pendingCounter);
     int32_t oldVal, newVal;
     do {
-        oldVal = *pAvail;
+        oldVal = *pPending;
         newVal = oldVal - 1;
-    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+    } while (!__sync_bool_compare_and_swap(pPending, oldVal, newVal));
 }
 
 /**
@@ -1166,13 +1170,13 @@ void CCalMoviePlayer::AdvanceWriteIndexAtomic() {
         m_writeIndex = 0;
     }
 
-    // Atomic increment of available-buffer count
-    volatile int32_t* pAvail = (volatile int32_t*)((char*)this + 0xFC); // TODO: m_availableBuffers
+    // Atomic increment of pending-buffer count (producer side)
+    volatile int32_t* pPending = reinterpret_cast<volatile int32_t*>(&m_pendingCounter);
     int32_t oldVal, newVal;
     do {
-        oldVal = *pAvail;
+        oldVal = *pPending;
         newVal = oldVal + 1;
-    } while (!__sync_bool_compare_and_swap(pAvail, oldVal, newVal));
+    } while (!__sync_bool_compare_and_swap(pPending, oldVal, newVal));
 }
 
 /**
@@ -1228,14 +1232,17 @@ int CCalMoviePlayer::SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uin
     // Lock via vtable slot 3
     Lock();
 
+    // NOTE: fields +0xFC/+0x100/+0x104 are overlaid — they serve as
+    //       m_pendingCounter/m_writePosition/m_hThreadFillA in the ring-buffer
+    //       code paths, but are reused here as the channel-pair buffer slots.
     switch (channel - 1) {
     case 3:  // channel 4
         m_readIndex = (int32_t)bufA;
-        *(int32_t*)((char*)this + 0x100) = bufB; // TODO: m_bufPairAlt
+        m_writePosition = bufB;
         break;
     case 0:  // channel 1
         m_writeIndex = (int32_t)bufA;
-        *(int32_t*)((char*)this + 0x104) = bufB; // TODO: m_bufPairLeft
+        m_hThreadFillA = reinterpret_cast<void*>(static_cast<uintptr_t>(bufB));
         break;
     case 1:  // channel 2
         *(uint32_t*)&m_pCallback = bufA;
@@ -1243,7 +1250,7 @@ int CCalMoviePlayer::SetBufferPairByChannel(uint32_t channel, uint32_t bufA, uin
         break;
     default: // channel 3 or out of range
         m_bufferCounterA = (int32_t)bufA;
-        *(int32_t*)((char*)this + 0xFC) = (int32_t)bufB; // TODO: m_availableBuffers
+        m_pendingCounter = bufB;
         break;
     }
 
