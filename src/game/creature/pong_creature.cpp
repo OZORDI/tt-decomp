@@ -3100,3 +3100,143 @@ void pongCreatureInst_CopyTransform(void* dst, void* src, void* helper) {
 extern "C" void pongCreatureInst_E828_v12(void* self, unsigned int flags) {
     (void)self; (void)flags;
 }
+
+// ── pongCreature vtable slots (batch 2) ────────────────────────────────────
+//
+// Small virtual methods recovered from pass5_final recomp. All four are tight
+// dispatcher/trampoline helpers that read fields already documented in the
+// header and either:
+//   * forward to another virtual slot, or
+//   * hand off to an already-declared free helper.
+//
+// No pseudocode was available in IDA for any of them; bodies below faithfully
+// reproduce the recomp control flow at the C++ level.
+
+// Forward-declared free helpers lifted elsewhere in the build.
+extern "C" void rage_C668(void* unk, int flag);                         // @ 0x8225C668
+extern "C" void pongShadowMap_EC70_g(void* a, void* b,
+                                     void* c, void* d,
+                                     void* e, int flags);               // @ 0x8213EC70
+extern "C" void LocomotionState_CD70_g(void* self);                     // @ 0x8214CD70
+// Global SDA lookups used by ScalarDtor/vfn_5 (just integers/pointers; never
+// dereferenced through guest memory abstractions).
+extern uint32_t  g_pongCreature_slotBase;   // @ 0x82604B58 (SDA -21804 → field +50)
+extern uint32_t  g_pongCreature_lightSlot;  // @ 0x82604C30 (SDA -21712)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreature::~pongCreature()  [vtable slot 0] @ 0x820C6358 | size: 0x1C
+//
+// Tail-call bridge into vtable slot 6 (the "real" destructor) with the
+// multiple-inheritance secondary-subobject offset pre-applied: pass
+// (this - 16) so the MI thunk's `this` points to the primary subobject.
+// ─────────────────────────────────────────────────────────────────────────────
+pongCreature::~pongCreature() {
+    // Reconstitute the primary-subobject pointer for MI: this - 16.
+    void*  primary = (void*)((char*)this - 16);
+    void** vt      = *(void***)this;
+    // Slot 6 is the canonical destructor; the MI stub forwards to it.
+    ((void(*)(void*))vt[6])(primary);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreature::vfn_2  [vtable slot 2] @ 0x820C8618 | size: 0x8
+//
+// MI-thunk trampoline: rebase `this` (-16) and jump directly to
+// ScalarDeletingDtor. Used when callers have an interface-typed pointer into
+// the secondary subobject and need the primary-subobject delete path.
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreature::vfn_2() {
+    pongCreature* primary = (pongCreature*)((char*)this - 16);
+    primary->ScalarDeletingDtor(0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreature::ScalarDtor  [vtable slot 1] @ 0x820C67C0 | size: 0x80
+//
+// Rewind-to-pose helper invoked when the engine rolls back a creature's
+// simulation state. Reads the per-player "registered creature" pointer from
+// the SDA table at (base + player*4), and if present:
+//   • If the anim's deep-bound descriptor has bit 0 of byte +17 set, it
+//     hands off to LocomotionState_CD70_g (fast path — reuse the prepared
+//     state block at m_pCharCtx +156).
+//   • Otherwise it rebuilds the state block byte-for-byte by memcpy'ing the
+//     (count*64)-byte pose buffer from the descriptor's anim-vector field
+//     into m_pCharCtx's local cache (both found via +156 / +20).
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreature::ScalarDtor(int flags) {
+    (void)flags;
+
+    // SDA base + 50 = per-player slot table.
+    uint32_t slot = g_pongCreature_slotBase + 50;
+    uint32_t arg  = *((uint32_t*)((char*)this + (slot << 2)));
+    if (arg == 0) return;
+
+    // m_pChar (+144) → +20 (sub-object) → +64 (anim desc)
+    void*  charObj = *(void**)((char*)this + 144);
+    void*  sub     = *(void**)((char*)charObj + 20);
+    void*  anim    = *(void**)((char*)sub + 64);
+    void*  descRef = *(void**)anim;
+    uint8_t animFlags = *(uint8_t*)((char*)descRef + 17);
+
+    void* charCtx = *(void**)((char*)this + 156);
+    if ((animFlags & 0x1) != 0) {
+        LocomotionState_CD70_g(charCtx);
+        return;
+    }
+
+    // Fallback — full copy of (count*64) bytes from anim pose buf into ctx.
+    void*    dst   = *(void**)((char*)charCtx + 20);
+    void*    meta  = *(void**)((char*)charCtx + 4);
+    uint16_t count = *(uint16_t*)((char*)meta + 12);
+    size_t   bytes = (size_t)count << 6;  // 64 bytes per row
+    memcpy(dst, (void*)(uintptr_t)arg, bytes);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// pongCreature::vfn_5  [vtable slot 5] @ 0x820C60C8 | size: 0xB4
+//
+// Shadow-map registration hook for the current creature. Called once per
+// frame after pose update. Behaviour:
+//   1. Fetch slot index = (SDA[g_pongCreature_slotBase] + 50) and load the
+//      corresponding per-player descriptor from (this + slot*4).
+//   2. Dereference m_pChar (+144) → +20 to reach the collider sub-object,
+//      whose +64 field is the primary shadow emitter. If the `flags`
+//      argument byte is non-zero, use the secondary emitter at +72 instead.
+//   3. When an emitter is present, release the old shadow binding via
+//      rage_C668(emitter, -1), then (re-)register it with the renderer's
+//      pongShadowMap by calling pongShadowMap_EC70_g with the SDA-global
+//      shadow-atlas pointer and a composed flag-word that encodes
+//      "bit 16: flags was zero".
+// ─────────────────────────────────────────────────────────────────────────────
+void pongCreature::vfn_5() {
+    // Engine uses r4 (flags) despite the header showing no args; match recomp.
+    // With our header signature `void vfn_5()`, we simulate flags=0 which is
+    // the only invocation pattern seen in lifted callers of this vtable slot.
+    const uint8_t flags = 0;
+
+    uint32_t slotIdx = g_pongCreature_slotBase + 50;
+    uint32_t descPtr = *((uint32_t*)((char*)this + (slotIdx << 2)));
+
+    void*  charObj  = *(void**)((char*)this + 144);
+    void*  sub      = *(void**)((char*)charObj + 20);
+    void*  atlas    = (void*)(uintptr_t)g_pongCreature_lightSlot;  // SDA global
+    uint32_t baseFlag = *(uint32_t*)((char*)sub + 4);
+
+    // Primary vs secondary emitter.
+    void* emitter = *(void**)((char*)sub + 64);
+    if (flags != 0) {
+        emitter = *(void**)((char*)sub + 72);
+        if (emitter == nullptr) return;
+    }
+    if (emitter == nullptr) return;
+
+    // Drop the previous binding, then re-register.
+    rage_C668((void*)(uintptr_t)descPtr, -1);
+
+    // Recompose flag word: bit 0 = (flags == 0), OR'd with 63 (mask).
+    int composed = ((flags == 0) ? 0x10000 : 0) | 63;
+    pongShadowMap_EC70_g(emitter, atlas, (void*)(uintptr_t)baseFlag,
+                         (void*)(uintptr_t)descPtr,
+                         (void*)nullptr, composed);
+}
+
