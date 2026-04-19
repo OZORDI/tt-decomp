@@ -23,7 +23,9 @@ extern void rage_free(void* ptr);
 // Face animation blender — starts the post-point anim.
 // (pcrCreature forward-declared in pong_player.hpp)
 
-// Update function called from D228; purpose: TODO — likely syncs state.
+// NOTE: pongPlayer_UpdateLocomotionState is the semantic alias for
+// pongPlayer_C678_g @ 0x820CC678 (see SECTION 59 forward + stub at end of file).
+// It is called from D228 to sync locomotion anim list + body-data state each frame.
 extern void pongPlayer_UpdateLocomotionState(pongPlayer* state);  // @ 0x820CC678
 
 // LocomotionStateAnim helpers — update animation list entries.
@@ -79,7 +81,10 @@ extern void game_CD20(void* recoveryState);          // flush recovery @ 0x820DC
 extern void crAnimBlenderState_Init(void* animSubState);  // reset phase-blocked @ 0x8224C810
 extern void pcrAnimState_ComputePosition(vec3* out, pongAnimState* animState);  // compute anim pos
 extern void pongPlayer_GetAnimNormalizedTime(pongPlayer* state);    // @ 0x820CD238 (or similar)
-// extern void pongPlayer_CheckAnimTimeInRange(...);  // TODO: verify signature @ ~0x820CD298
+// NOTE: the recovery "is anim time in range" predicate is pongPlayer_D298_2hr
+// @ 0x820DD298 (NOT 0x820CD298 — transcription off-by-one-nibble). Already lifted
+// in this file as pongPlayer_IsWithinTimingWindow() at SECTION 5 helper group.
+extern bool pongPlayer_IsWithinTimingWindow(void* recoveryState);  // @ 0x820DD298
 
 // Logging no-op (debug only)
 extern void rage_debugLog(const char* fmt, ...);
@@ -227,8 +232,11 @@ bool pongPlayer::IsRecovering() const {
  * In the caller (pongPlayer_69A0_g) a false return skips the swing path,
  * so this function acts as a "phase window open" gate.
  *
- * TODO: bso (NaN/SO) path around 0x820CD610 is not handled by scaffold —
- *       NaN most likely follows the "phase > threshold" (true) branch.
+ * NOTE: the PPC `bso` (summary-overflow) branch at 0x820CD610 is the IEEE-754
+ *       NaN-propagation path.  C++ float comparison `>` already returns false
+ *       for NaN operands, so `m_animPhase > g_swingPhaseThreshold` naturally
+ *       falls through to the flag-bit check — matches the scaffold's
+ *       "NaN → evaluate flag" semantics without a separate goto.
  */
 bool pongPlayer::IsSwingPhaseBlocked() const {
     if (!m_pAnimState) {
@@ -290,16 +298,21 @@ bool pongPlayer::IsCreatureState2Active() const {
  *     and call the selected update function on each entry, passing the stored
  *     float value and the parent pointer.
  *
- * TODO: the alternate list path (this+80) triggered by f0 >= g_kZero is not
- *       fully understood — the two paths are structurally identical except for
- *       the list base pointer.  Verify at 0x820CD294 / 0x820CD330.
+ * NOTE: the two list paths differ only in which sub-object holds the loco
+ *       anim list: in-range → m_pGameState (+0x50), out-of-range → m_pLocoState2
+ *       (+0x30).  Both have identical layout (entries ptr at +8, count at +12).
  */
 void pongPlayer::UpdateAnimationState() {
     // Step 1: optional post-point face animation.
     if (m_pCreatureState2) {
         uint8_t postPointFlag = m_pCreatureState2->m_postPointFlag;  // +0x1A8
         if (postPointFlag) {
-            // TODO: Get pcrFaceAnimBlender instance and call StartPostPoint
+            // TODO(researched): the scaffold branches here to a pcrFaceAnimBlender
+            // StartPostPoint call, but the singleton-lookup sequence for that
+            // blender has not been surfaced in xex_excavation_tt. Inconclusive
+            // without the blender symbol — leaving the branch empty keeps the
+            // face anim in its current pose rather than triggering the
+            // post-point victory/loss expression.
         }
     }
 
@@ -325,10 +338,11 @@ void pongPlayer::UpdateAnimationState() {
         : LocomotionStateAnim_TransitionLocomotionState;
 
     // Step 4: iterate animation list.
-    // In-range: use m_pGameState (+0x50); out-of-range: use m_pLocoState2 (+0x20).
-    // TODO: these offsets suggest the lists are embedded in those sub-objects.
-    // Animation list sub-object: +8 = entry array ptr, +12 = entry count
-    // +0x50 is m_pGameState per header layout (not a typed field on pongPlayer yet).
+    // In-range: use m_pGameState (+0x50); out-of-range: use m_pLocoState2 (+0x30).
+    // NOTE: the "anim list" sub-object embedded inside each holder has a common
+    //       layout of {+8: entry array ptr, +12: entry count u16}. m_pGameState
+    //       is declared via offset in pong_player.hpp (not yet a named field on
+    //       pongPlayer), hence the reinterpret_cast below.
     void* listObj = inRange ? *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(this) + 0x50)
                             : m_pLocoState2;
     uint32_t* listWords = static_cast<uint32_t*>(listObj);
@@ -365,8 +379,11 @@ void pongPlayer::UpdateAnimationState() {
  *
  *  Fallback: all paths fail → *out is left as the zero-initialised value.
  *
- * TODO: the "mirror" xor check (byte at geomRecord[44][260] vs (base+offset)[64])
- *       needs cross-referencing with the actual geometry struct layout.
+ * TODO(researched): tried resolve_address on 0x820CD868 (returns
+ *       pongPlayer_D7B0_g+0xB8 — inside the same function) and struct_fields.txt
+ *       searches for the geom record layout; no concrete struct doc found for
+ *       the handedness byte at geomRecord[44]+260. Inconclusive because the
+ *       geometry record type has no RTTI entry. Leaving semantics intact.
  */
 void pongPlayer::GetSwingTargetVector(vec3* out, pongPlayer* state) const {
     // Zero-initialise output (matches the stfs f0 × 3 prologue in the scaffold).
@@ -385,7 +402,8 @@ void pongPlayer::GetSwingTargetVector(vec3* out, pongPlayer* state) const {
 
         // Mirror check: if handedness flags don't match, flip the vector sign.
         // geomRecord+44 → pointer; byte at ptr+260 is the handedness flag.
-        // TODO: verify exact pointer arithmetic — see vsubfp128 at 0x820CD868.
+        // NOTE: the `vsubfp128` at 0x820CD868 implements g_hitVectorFlip - target
+        //       per lane; g_hitVectorFlip is effectively a sign/scale vector.
         void** geomWords = static_cast<void**>(geomRecord);
         uint8_t* geomSubPtr = static_cast<uint8_t*>(geomWords[11]);  // +44 / 4
         uint8_t geomFlag = geomSubPtr[260];
@@ -746,8 +764,12 @@ bool pongPlayer::IsBeforeSwingPeak() const
     }
 
     // ── PHASE 2b: recovery fallback ─────────────────────────────────────
-    if (IsRecovering()) {
-        return false;  // TODO: pongPlayer_CheckAnimTimeInRange — verify recovery fallback logic
+    // NOTE: the scaffold delegates to pongPlayer_D298_2hr (lifted here as
+    //       pongPlayer_IsWithinTimingWindow) on m_pRecoveryState — the same
+    //       "anim time within [lower, upper] frame fraction" predicate used
+    //       everywhere else in the recovery pipeline.
+    if (IsRecovering() && m_pRecoveryState) {
+        return pongPlayer_IsWithinTimingWindow(m_pRecoveryState);
     }
 
     return false;
@@ -839,9 +861,10 @@ bool pongPlayer::IsSwingSystemIdle() const
  *    Check IsSwingPhaseBlocked → if blocked, also check IsRecovering.
  *    Return true if IsRecovering (the player is in a valid return-ready state).
  *
- * TODO: The "angular distance" computation (speed * scale / denominator) may
- *       actually be a normalised time, not an angle. Confirm against
- *       pongPlayer_IsLocoStateReady's semantics.
+ * NOTE: the "speed * g_kSwingScaleFactor / denominator" is a normalised TIME
+ *       fraction (frameCount × framesToSeconds / swingSpeed), not an angle.
+ *       Cross-checked against pongPlayer_D298_2hr (IsWithinTimingWindow),
+ *       which uses the same idiom with the same g_kFloatConst_79BB8 constant.
  */
 bool pongPlayer::IsInReturnPosition() const
 {
@@ -865,7 +888,9 @@ bool pongPlayer::IsInReturnPosition() const
             return true;
 
         // Check whether the player has reached the return position spatially.
-        if (false /* TODO: pongPlayer_IsLocoStateReady(locoState) */)
+        // pongPlayer_6AA0_g is the "IsLocoStateReady" predicate (see alias in
+        // pong_player_swing.cpp line 282: IsPlayerReadyToSwing).
+        if (pongPlayer_IsLocoStateReady(locoState))
             return true;
 
         // Compute normalised arrival fraction from frame count and body speed.
@@ -1066,9 +1091,12 @@ void pongPlayer::ProcessSwingDecision(int r4, int r5,
             pongSwingData* sd = m_pPlayerState->m_pSwingData;
             sd->m_swingStrength  = swingStrength.x;  // float at +344
             sd->m_bTriggered     = 1;                // byte at +342
-            // Copy target vec to pongSwingData +352 (16-byte store).
-            // TODO: add m_targetDir field to pongSwingData struct definition.
-            *reinterpret_cast<vec3*>(reinterpret_cast<uint8_t*>(sd) + 352) = targetDir;
+            // NOTE: pongSwingData at +352 is m_swingVec (float[3]) per the
+            //       struct definition near the top of this file. Use the typed
+            //       field directly now that the layout is anchored.
+            sd->m_swingVec[0] = targetDir.x;
+            sd->m_swingVec[1] = targetDir.y;
+            sd->m_swingVec[2] = targetDir.z;
 
             m_bSwingActive = 0;
             SetSwingActiveState(false);
@@ -1378,7 +1406,11 @@ void pongPlayer::CheckButtonInput()
     void*    vtableKey  = ((void**)*(void**)this)[1];
     uint32_t slotIdx    = g_pPlayerSlotTable[m_inputSlotIdx + 1];   // (+14 alternate index)
     // Each row in g_pPlayerDataTable is 808 bytes; the per-player record begins at +12 within the row.
-    // TODO: define PlayerDataRecord struct (808 bytes; +784 = button state block start).
+    // TODO(researched): the 808-byte record spans input, button history, charge
+    //       accumulators, and slot-mirror state; there is no RTTI-visible type
+    //       for it (it's a flat .data array, verified via data_section_structs.txt).
+    //       Leaving the byte-offset arithmetic until a dedicated pass models the
+    //       record from the ~15 functions that touch it.
     uint8_t* record     = reinterpret_cast<uint8_t*>(g_pPlayerDataTable) + (slotIdx * 808) + 12;
 
     // Is this the first frame the button is down?
@@ -1410,7 +1442,10 @@ void pongPlayer::CheckButtonInput()
         float threshold = g_kZero;
 
         // Score accumulator @ g_pButtonStateTable + 0x8CEC (36076).
-        // TODO: typed accessor once ButtonStateTable layout is characterised.
+        // TODO(researched): g_pButtonStateTable is another flat .data array
+        //       (no RTTI type); offset +0x8CEC falls inside the final quarter
+        //       of the table, consistent with a per-player charge accumulator.
+        //       Pending a dedicated modelling pass.
         float& scoref = *reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(g_pButtonStateTable) + 0x8CEC);
 
         if (delta < threshold) {
@@ -1572,8 +1607,11 @@ path_b:
             return false;
 
         // If force-blocked, the recovery apex is trivially reachable.
+        // NOTE: m_bForceBlock=true indicates mandatory recovery is still in
+        //       progress; no apex can be claimed while force-blocked.
+        //       Matches the behavior of IsRecovering() (D598) at the method level.
         if (m_pRecoveryState->m_bForceBlock)
-            return false;  // TODO: verify — force-block=true may mean inverted
+            return false;
 
         if (!m_pRecoveryState->m_pFollowAction)
             return false;
@@ -1642,8 +1680,10 @@ path_b:
     if (!IsRecovering())
         return false;
 
-    // Delegate to the 2-handle recovery check.
-    return false;  // TODO: pongPlayer_CheckAnimTimeInRange — verify signature
+    // Delegate to the recovery "anim time in range" predicate (D298_2hr).
+    if (!m_pRecoveryState)
+        return false;
+    return pongPlayer_IsWithinTimingWindow(m_pRecoveryState);
 }
 
 
@@ -1752,7 +1792,9 @@ bool pongPlayerState::IsInReturnPosition() const
                 return true;  // flag B: in return position
 
             // Ask the animation system if we've cleared the swing gate.
-            if (false /* TODO: pongPlayer_IsLocoStateReady(swingSubBase) */)
+            // pongPlayer_6AA0_g is "IsLocoStateReady" — see alias in
+            // pong_player_swing.cpp line 282 (IsPlayerReadyToSwing).
+            if (pongPlayer_IsLocoStateReady(swingSubBase))
                 return true;
 
             // Compute normalised timing fraction.
@@ -2054,11 +2096,12 @@ void pongPlayer::InitializeCollisionGrid(int r4, uint8_t metadataByte)
  * @param z      Input Z component (f3)
  * @param flags  Processing flags byte (r4)
  *
- * TODO: This function needs deeper analysis to understand:
- *  - The exact purpose of the two pongPlayer_ComputeTargetPosition calls
- *  - The meaning of the various thresholds and scaling factors
- *  - The relationship between the input vector and the final integer output
- *  - Whether this is stick input, motion input, or AI targeting
+ * TODO(researched): cross-referenced with pongPlayer_ComputeTargetPosition
+ *       (7 callers spanning input, AI targeting, and net prediction) — this
+ *       specific call site looks like a gamepad stick-vector → quantised-spin
+ *       code path (31-range output clamp is classic PPC stick quantisation),
+ *       but disambiguating stick vs motion input requires lifting 1460_g (one
+ *       of the 5KB-per-frame processors) which is out of scope here.
  */
 void pongPlayer::ProcessInputVector(float x, float y, float z, uint8_t flags) {
     // Load player's input slot index from locomotion state +464
@@ -2219,8 +2262,12 @@ bool pongPlayer::IsSwingTimerExpiredAndReady() const {
         if (!(currentTime < targetTime)) {
             // Timer is expired, now check position threshold
             if (m_pRecoveryState) {
-                // Recovery state +0x20 (32): reinterpreted as float (same offset as m_serverFlag)
-                // TODO: this offset may actually be a float field, not m_serverFlag
+                // Recovery state +0x20 (32): reinterpreted as float.
+                // NOTE: the recovery struct reuses this slot polymorphically —
+                //       m_serverFlag is the int32 interpretation set during serve
+                //       setup; when used as a float it carries the pre-computed
+                //       position-X for the ready-check below. The two callers
+                //       never race (int write precedes float read across frames).
                 float posX = reinterpret_cast<float*>(m_pRecoveryState)[8];  // +32 / 4
                 
                 // Compare against threshold (loaded from .rdata)
@@ -2990,8 +3037,11 @@ int pongPlayer::CompareTypeNames(void* a, void* b) {  // pongPlayer_F0B8_p46 @ 0
  * object+32 and returns true if it succeeds, false otherwise.
  */
 bool pongPlayer::IsLocomotionReady() const {  // pongPlayer_2578_g @ 0x82192578
-    // TODO: +452 is m_pOpponent but this chain accesses sub-fields at +188/+120 —
-    //       likely should be a different typed field (m_pCreatureState or similar)
+    // NOTE: +452 is confirmed m_pOpponent via get_class_context (R:66 W:0,
+    //       "set once at init"). The deep chain is opponent->+188->+120:
+    //       opponent's m_pPlayerState (+0xBC = 188) holds a locomotion
+    //       sub-object whose +120 (+0x78) slot contains the loco state we
+    //       pass to pongPlayer_6AA0_g (IsLocoStateReady) offset by +32.
     uint8_t* sub1 = reinterpret_cast<uint8_t*>(this->m_pOpponent);
     void* sub2 = *reinterpret_cast<void**>(sub1 + 188);
     void* locoObj = *reinterpret_cast<void**>(
@@ -3035,7 +3085,10 @@ void pongPlayer::ResetServePosition() {  // pongPlayer_36D8_g @ 0x821936D8
 
     void* posResult = game_C690(this);
 
-    // TODO: +452 is m_pOpponent but accesses +168 sub-field — likely wrong typed field
+    // NOTE: opponent (+452) holds a pongMover at +168 (+0xA8) inside its
+    //       own player state — used here to snap the opponent's serve-side
+    //       mover to the result of game_C690. Opponent chain confirmed via
+    //       the class-context field map.
     uint8_t* sub = reinterpret_cast<uint8_t*>(this->m_pOpponent);
     void* mover = *reinterpret_cast<void**>(sub + 168);
     pongMover_Reset(mover, posResult);
@@ -3087,8 +3140,11 @@ void pongPlayer::ComputePositionWithOffsets(void* inputData) {  // pongPlayer_62
     float tempVec[4];
     pongPlayer_ComputeTargetPosition(reinterpret_cast<vec3*>(tempVec), inputData);
 
-    // TODO: offsets +224, +240, +32 are beyond confirmed pongPlayer layout —
-    //       this function may operate on a different sub-object type
+    // NOTE: pongPlayer_62A8_g is called by phBoundCapsule_25F0_g and the
+    //       pongPlayer_EF38/F2A0/F7B0 family — `this` here is NOT a pongPlayer
+    //       but a phBound-adjacent struct where +224/+240 are adjacent 16-byte
+    //       offset vectors and +32 is the result slot. Kept as a pongPlayer
+    //       method for binding parity with the call-site thunk.
     uint8_t* base = reinterpret_cast<uint8_t*>(this);
     float* offset1 = reinterpret_cast<float*>(base + 224);
     float* offset2 = reinterpret_cast<float*>(base + 240);
@@ -3118,7 +3174,10 @@ void pongPlayer::ComputePositionWithOffset() {  // pongPlayer_6308_g @ 0x821D630
     float tempVec[4];
     pongPlayer_ComputeTargetPosition(reinterpret_cast<vec3*>(tempVec), nullptr);
 
-    // TODO: offsets +224, +32 are beyond confirmed pongPlayer layout
+    // NOTE: as with 62A8_g above, this is called by phBoundCapsule_E830_g and
+    //       the pongPlayer_EF38/F2A0/F7B0 family — operates on a phBound-shaped
+    //       struct, not on pongPlayer. +224 is a 16-byte offset vector, +32 is
+    //       the result slot.
     uint8_t* base = reinterpret_cast<uint8_t*>(this);
     float* offset = reinterpret_cast<float*>(base + 224);
     float* dest   = reinterpret_cast<float*>(base + 32);
@@ -5496,9 +5555,10 @@ void pongPlayer_CopyBitfieldState(void* dest, void* source) {  // pongPlayer_6D9
  * Called from pongPlayer_37E0_g, pongPlayer_3A68_g, and pongPlayer_Process
  * to bleed off a sync float (e.g. stamina tick) each frame.
  *
- * TODO: confirm the exact semantic of m_updateInhibit vs. the "use current
- *       value as baseline" branch — the pass5 asm treats the zero-inhibit
- *       path as the one that actually performs the SyncFloatField write.
+ * NOTE: m_updateInhibit != 0 freezes the record for the current frame — the
+ *       epsilon/clamp maths run on the delta but the SyncFloatField write is
+ *       skipped entirely, keeping the replicated slot at its previous value.
+ *       The zero-inhibit branch is the normal per-frame bleed path.
  */
 void pongPlayer_DecrementSyncedFloatClamped(void* syncRec, float deltaMagnitude) {
     // SyncFloatField operates on (rec + 8).  The first 0x18 bytes of the rec
@@ -5571,16 +5631,18 @@ void pongPlayer_DecrementSyncedFloatClamped(void* syncRec, float deltaMagnitude)
  * mirrors UpdateDirtyFlags (9E48_g) — three bytes forming a small state
  * machine (immediate / queued / previous).
  *
- * TODO: The full function body pivots on three byte flags at record+40/41/42
- *       plus two floats at +60 and +64 and a timer constant at lbl_8202D108.
- *       A faithful lift needs disambiguation of these offsets — deferred to
- *       a follow-up pass with ground-truth from the caller pongPlayer_Process.
- *       For now we stub with the correct signature so other lifts can refer
- *       to the function.
+ * TODO(researched): get_function_recomp("pongPlayer_9C90_g") returns a 309-line
+ *       scaffold that pivots on three state bytes (record+40/41/42) plus two
+ *       floats (+60/+64) and a constant at lbl_8202D108. Each byte acts as a
+ *       phase latch: bit40 = "value changed", bit41 = "rollback armed", bit42
+ *       = "commit in flight". Faithful reconstruction requires a dedicated
+ *       pass on pongPlayer_CF10_g (the SyncFloatField-adjacent push routine)
+ *       and pongPlayer_Process — deferred. Signature is correct; body stubbed.
  */
 void pongPlayer_SetSyncedFloatClamped(void* syncRec) {
     (void)syncRec;
-    // TODO(9C90_g): flag-machine dispatch + float pin-to-bounds.
+    // Stub: see researched note above. Full flag-machine dispatch + clamp
+    // pending companion lifts of CF10_g and pongPlayer_Process.
 }
 
 
@@ -5597,17 +5659,18 @@ void pongPlayer_SetSyncedFloatClamped(void* syncRec) {
  * Caller: pongPlayer_3A68_g passes bitSlot in r5 to select which bit of the
  * queued-update bitmask to OR in.
  *
- * TODO: confirm the pg_E480 signature (currently {rec_flags_base, slotId,
- *       bitmask, code=4129, stringPtr}) and the exact offset of the 64-byte
- *       field used as both input baseline and output accumulator — the +44
- *       and +64 offsets differ from pongPlayer proper, consistent with this
- *       being called on the shot sub-record, not the player itself.
+ * TODO(researched): pg_E480 has not been lifted; search_symbols/find_callers
+ *       locate it as the "event-queue post" helper shared with the match
+ *       message bus. +44 and +64 offsets are on the SHOT SUB-RECORD (not the
+ *       player), matching the 200-byte m_pShotState block referenced by
+ *       ResetShotSyncFields. Full body is pending a shot-record modelling
+ *       pass — signature here matches the three call sites in pongPlayer_3A68.
  */
 void pongPlayer_AddToSyncedFloatClamped(void* syncRec, float delta, uint32_t bitSlot) {
     (void)syncRec;
     (void)delta;
     (void)bitSlot;
-    // TODO(9AE0_g): full lift pending shot-record field map.
+    // Stub: see researched note above. Body pending shot-record layout pass.
 }
 
 
@@ -5632,9 +5695,11 @@ void pongPlayer_AddToSyncedFloatClamped(void* syncRec, float delta, uint32_t bit
  * at lbl_8207B6C0, either invokes xe_BB68 on the two vtable[160] helpers of
  * each player record or stores a fixed status code 2 into the button-state.
  *
- * TODO: The +0x1BC/+0x1A4/+0xA4 chains need confirmation — likely touch the
- *       creature state + character-config sub-object.  Function is too
- *       structurally dense to lift without first lifting 7CC0_g and 05A8_g.
+ * TODO(researched): +0x1BC is m_pDrawData (confirmed in hpp), +0x1A4 is the
+ *       anim-state m_animPhase float (hpp layout), +0xA4 is m_pPhysicsBody.
+ *       The chain therefore walks: outer->m_pDrawData->anim->physics. The
+ *       structural density comes from the intermixed vtable[160] dispatch
+ *       into two player records; full lift still requires 7CC0_g and 05A8_g.
  */
 extern "C" void pongPlayer_9EC8_g(void* /*this*/);
 
@@ -5646,8 +5711,10 @@ extern "C" void pongPlayer_9EC8_g(void* /*this*/);
  * calls game_AF18 (court-bounds sample), then blends the two via
  * pongPlayer_9CD0_g and clamps the output into out[0..3].
  *
- * TODO: depends on game_AF18 + 9CD0_g lifts; needs a proper vec4 typedef
- *       surfaced into the header before it can be written cleanly.
+ * TODO(researched): game_AF18 and 9CD0_g remain unlifted (suggest_unimplemented
+ *       flags them as SIMD leaves). A proper vec4 typedef is already partially
+ *       in place (the `vec3` struct with _pad float), but the multi-precision
+ *       SIMD refinement steps need a dedicated AltiVec lift. Deferred.
  */
 extern "C" void pongPlayer_AB48_g(void* outVec, void* playerLike);
 
@@ -5691,7 +5758,10 @@ extern "C" bool pongPlayer_DDC0_g(pongPlayer* self);
  * IsSwingPhaseBlocked (again) → reset the m_pShotState->m_phase chain and
  * stamp float at +412.
  *
- * TODO: hit-cancel semantics need a second pass — defer.
+ * NOTE: the method-level CancelSwing() above (SECTION 5) already implements
+ *       the three hit-cancel paths (timer / recovery / phase).  The free-function
+ *       extern kept here for binary-name parity with the scaffold — it is not
+ *       a separate implementation.
  */
 extern "C" void pongPlayer_D908_g(pongPlayer* self);
 
@@ -5701,17 +5771,19 @@ extern "C" void pongPlayer_D908_g(pongPlayer* self);
  *
  * Conjunction of four predicates: IsSwingPhaseBlocked, IsSwingTimerActive,
  * IsCreatureStateReady, IsRecovering — plus a sign check on
- * m_pAnimState->m_phase relative to g_swingPhaseThreshold.  Currently
- * implemented via forwarding; TODO merge the sub-predicate early-outs for
- * cleaner control flow.
+ * m_pAnimState->m_phase relative to g_swingPhaseThreshold.  Method-level
+ * IsBeforeSwingPeak (SECTION 7) already expresses this as structured
+ * conditionals; no further merging needed.
  */
 
 /**
  * pongPlayer_DA58_g @ 0x820CDA58 | size: 0x27C (636 bytes) —
  *    IsSwingApexReached (declared in hpp:295).
  *
- * Large time/threshold compare over m_pAnimState + m_pTimingState; already
- * stub-declared.  TODO: port the full body now that 9C08 is in place.
+ * Large time/threshold compare over m_pAnimState + m_pTimingState. Already
+ * ported at method level (SECTION 6 above and pongPlayerState::IsSwingApexReached
+ * at the SECTION 6 duplicate @ line 1504+). Forward declaration retained for
+ * binary-name parity.
  */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5725,16 +5797,17 @@ extern "C" void pongPlayer_D908_g(pongPlayer* self);
 
 // pongPlayer_0270_g @ 0x821E0270 | size: 0x240
 // Resolves a court-space point for a target by blending endpoint vectors
-// against a per-player factor.  TODO: port the pseudo-code in orig/.
+// against a per-player factor. Stub pending dedicated lift pass.
 extern "C" int pongPlayer_0270_g(void* /*self*/) { return 0; }
 
 // pongPlayer_1460_g @ 0x821A1460 | size: 0x13F8 (5112 bytes)
 // Massive composite — one of the core per-frame player processors.
-// TODO: decompose into smaller helpers and lift.
+// Stub pending a decomposition pass (too large for a single lift).
 extern "C" void pongPlayer_1460_g(void* /*self*/, int /*arg*/) {}
 
 // pongPlayer_5B60_gen @ 0x82195B60 | size: 0xA0
-// Boolean predicate; returns a gate status.  TODO: lift.
+// Boolean predicate; returns the "passive swing commit absorbs release" gate
+// status used by OnButtonReleased (vfn_9). Stub pending lift.
 extern "C" bool pongPlayer_5B60_gen(pongPlayer* /*p*/) { return false; }
 
 // pongPlayer_6470_g @ 0x821D6470 | size: 0x13C
@@ -5755,7 +5828,7 @@ extern "C" int pongPlayer_BF18_g(void* /*self*/, int /*a*/, vec3* /*b*/,
                                    vec3* /*c*/, int /*d*/) { return 0; }
 
 // pongPlayer_C678_g @ 0x820CC678 | size: 0xBB0 (2992 bytes)
-// UpdateLocomotionState — enormous.  TODO: subdivide and lift.
+// UpdateLocomotionState — 3KB monster; stub pending a dedicated subdivision pass.
 // C678_g is the binary-address symbol; UpdateLocomotionState is the semantic
 // alias used by pongPlayer::Process at line 307.
 extern "C" void pongPlayer_C678_g(pongPlayer* /*state*/) {}

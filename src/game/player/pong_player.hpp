@@ -392,7 +392,12 @@ struct pongPlayer {
 
 // ── Inner heap state: pongPlayerState ────────────────────────────────────
 // Same layout as pongPlayer; used for the heap-allocated state sub-object.
-// TODO: confirm whether this is a separate type or inheritance.
+// NOTE: get_class_context reports pongPlayer has 3 vtables (multiple
+//       inheritance or virtual-base) and rtti_classes.txt has no distinct
+//       `pongPlayerState` RTTI entry — consistent with pongPlayerState being
+//       a re-use of pongPlayer's layout at +0xBC, treated as inheritance
+//       here for compile-time typing. The methods below are apex/ready-check
+//       overrides that run against the inner state's own m_pTimingState etc.
 struct pongPlayerState : pongPlayer {
     bool IsSwingApexReached(float threshold) const;  // @ 0x820CDA58 (pongPlayerState override)
     bool IsBeforeSwingPeak()                const;  // @ 0x820CDCD8 (pongPlayerState override)
