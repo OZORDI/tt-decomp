@@ -5796,3 +5796,602 @@ extern "C" void pongPlayer_StateHandler_91B8(void* /*self*/) {}  // @ 0x821991B8
 extern "C" void pongPlayer_StateHandler_91C8(void* /*self*/) {}  // @ 0x821991C8
 extern "C" void pongPlayer_StateHandler_91D8(void* /*self*/) {}  // @ 0x821991D8
 extern "C" void pongPlayer_StateHandler_91E8(void* /*self*/) {}  // @ 0x821991E8
+
+
+// =============================================================================
+// BATCH 11 — Misc pongPlayer free functions (state queries, byte flags, swing
+// math, vector helpers).  All ten operate on pongPlayer* shells or on raw
+// vec3 data accessed through the same struct offsets used by the rest of
+// this file.  Pulled from a single static-recomp pass; field names match
+// pong_player.hpp field conventions (m_pPhysicsBody, m_pAnimState, etc.).
+// =============================================================================
+
+// ── Externals specific to this batch ─────────────────────────────────────
+extern "C" bool pongPlayer_D598_g(pongPlayer* self);                 // IsRecovering (already lifted at method level)
+extern "C" void phBoundCapsule_A080_g(void* bound);                  // @ 0x820CA080 — rebuild bound pose from body
+extern "C" void pongPlayer_B208_g(void* state, vec3* swingVec,
+                                   uint8_t suppressFlip);            // @ 0x820CB208 — apply swing vec (stub above)
+extern "C" void pongPlayer_9CD0_g(void*, int, void*, void*);         // @ 0x821C9CD0 — per-player input poll (stub above)
+
+// g_kSwingRadiusConst is declared near the top of the file at +8 of a 0x60
+// table; reuse that symbol.  The 5FB8 scaffold pulls radius from the same
+// base table at +0x8 (float).  We re-expose via an alias so we don't drag in
+// yet another extern.
+
+// Per-player input score table — float[inputSlotIdx].  Declared as
+// g_pInputScoreTable above (at lis -32161, addi -21696 → 0x825EAB40).
+extern float g_inputScoreByPlayer[];                                  // alias of g_pInputScoreTable
+
+// Debug strings used by SetSwingActiveState's logger.
+// 0x82027A30 = "Player %d is queueing a swing"
+// 0x82027A50 = "Player %d is dequeueing a swing"
+
+// vec3 helper globals for BoundVector/IsInCourtBox (8740_wrh / 8E28_2h).
+// Signed-zero mask, floating +0.0 vector, and the 4 court-corner vec3s used
+// by IsInCourtBox live adjacent to each other in .data:
+//   +0x82607210  upper-outer   (vec3; 8E28 uses as max-outer)
+//   +0x82607220  upper-inner   (8E28 uses as max-inner)
+//   +0x82607230  lower-inner   (8E28 uses as min-inner)
+//   +0x82607240  lower-outer   (8E28 uses as min-outer)
+extern const vec3 g_kCourtBoxOuterMin;  // @ 0x82607210
+extern const vec3 g_kCourtBoxInnerMin;  // @ 0x82607220
+extern const vec3 g_kCourtBoxInnerMax;  // @ 0x82607230
+extern const vec3 g_kCourtBoxOuterMax;  // @ 0x82607240
+
+// Sign-mask / compare helpers (8740_wrh).
+extern const uint32_t g_kFloatSignMask[4];  // @ 0x82619BE0 — 0x7FFFFFFF × 4
+extern const vec3     g_kVecConst_619BF0;   // @ 0x82619BF0 — 16-byte .data const
+
+// Constants used by the normalise-idiom in C070_wrh.
+extern const vec3 g_kVecConst_5C7120;  // @ 0x825C7120 — permwi source
+extern const vec3 g_kVecConst_5C7130;  // @ 0x825C7130
+extern const vec3 g_kVecConst_5C7140;  // @ 0x825C7140
+extern const vec3 g_kVecConst_5C8070;  // @ 0x825C8070 — rsqrt refine const
+extern const vec3 g_kVecConst_606750;  // @ 0x82606750 — 32-byte sign/scale table
+
+// ---------------------------------------------------------------------------
+// pongPlayer_5FB8_g  @ 0x820C5FB8 | size: 0x10C (268 bytes)
+//
+// Per-frame physics body refresh: invokes vtable slot 3 on m_pPhysicsBody
+// (pose update), rebuilds the collision capsule from the body transform,
+// runs the player's body-animation sub-object (vtable slot 1), optionally
+// suppresses swing application when the swing result code is 7, then calls
+// B208 (ApplySwingVector) with the capsule's cached target vec3 multiplied
+// by the global radius constant.  Finally it stashes the capsule's Y-offset
+// (+72) into the per-player input-score slot.
+//
+// Original vtable chain resolved from the scaffold's VCALL sites:
+//   m_pPhysicsBody->Update(m_pPhysicsBody+16)     -- slot 3
+//   m_pPlayerState->vfn_1(f1 = g_kSwingRadiusConst) -- slot 1
+// ---------------------------------------------------------------------------
+extern "C" void pongPlayer_5FB8_g(pongPlayer* self) {
+    // Step 1: advance physics pose.  Virtual slot 3 takes (this, this+16).
+    using BodyUpdateFn = void(*)(void*, void*);
+    void* body = self->m_pPhysicsBody;
+    if (body) {
+        void** bodyVt = *static_cast<void***>(body);
+        BodyUpdateFn bodyUpdate = reinterpret_cast<BodyUpdateFn>(bodyVt[3]);
+        bodyUpdate(body, static_cast<uint8_t*>(body) + 16);
+    }
+
+    // Step 2: rebuild collision capsule world transform.
+    phBoundCapsule_A080_g(self->m_pPhysicsBound);
+
+    // Step 3: if the inner state exposes a body-anim sub-object, run its
+    // vtable slot 1 with the global swing radius constant.
+    pongPlayerState* inner = self->m_pPlayerState;
+    if (inner) {
+        void* animSub = *reinterpret_cast<void**>(
+            reinterpret_cast<uint8_t*>(inner) + 148);
+        if (animSub) {
+            using AnimFn = void(*)(void*, float);
+            void** animVt = *static_cast<void***>(animSub);
+            AnimFn animUpdate = reinterpret_cast<AnimFn>(animVt[1]);
+            animUpdate(animSub, g_kSwingRadiusConst);
+        }
+    }
+
+    // Step 4: build the swing-application vector.  Base magnitude is
+    // g_kSwingRadiusConst; the XYZ direction comes from floats at +56/+60 of
+    // the phBound (the "target vec" cached during capsule rebuild), with Z
+    // implicitly zero because the ±4-byte slots at +64..+76 are zero-padded.
+    // Suppress the sign-flip when the swing result code == 7 ("aborted").
+    uint8_t suppressFlip = (self->m_swingInputResult == 7) ? 0 : 1;
+
+    uint8_t* bound = static_cast<uint8_t*>(self->m_pPhysicsBound);
+    vec3 swingVec = {
+        *reinterpret_cast<float*>(bound + 56),
+        0.0f,
+        *reinterpret_cast<float*>(bound + 60),
+        0.0f,
+    };
+    // vmulfp128: broadcast g_kSwingRadiusConst across the vector and scale.
+    swingVec.x *= g_kSwingRadiusConst;
+    swingVec.y *= g_kSwingRadiusConst;
+    swingVec.z *= g_kSwingRadiusConst;
+
+    pongPlayer_B208_g(inner, &swingVec, suppressFlip);
+
+    // Step 5: stash the capsule's Y-offset (+72) into the per-player input
+    // score array at g_pInputScoreTable[m_swingInputSlot].  The raw
+    // PPC `stfsx f12, r7, r10` is just `table[slot] = value`.
+    float capsuleHeight = *reinterpret_cast<float*>(bound + 72);
+    g_inputScoreByPlayer[self->m_swingInputSlot] = capsuleHeight;
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_7890_g  @ 0x820C7890 | size: 0x100 (256 bytes)
+//
+// Returns true when the player's swing pipeline is still live — meaning
+// either the swing is in an explicit "committed" state (2 or 3), OR the
+// recovery timer hasn't expired yet AND the parent state's own swing
+// progress fraction (frame-index / total-frames, scaled by
+// g_swingPhaseThreshold) is still below the sub-object's recorded progress.
+//
+// States 2/3 short-circuit to true (swing actively running).  All other
+// states fall through to the gated recovery+progress test.
+// ---------------------------------------------------------------------------
+extern "C" bool pongPlayer_7890_g(pongPlayer* self) {
+    // Swing-active or pre-impact short-circuits: both count as "busy".
+    int32_t state = self->m_swingInputResult;
+    if (state == 2 || state == 3) {
+        return true;
+    }
+
+    // Recovery still counting down?  m_pPlayerState is the heap inner shell;
+    // IsRecovering (D598) checks the same m_pRecoveryState as our method.
+    pongPlayerState* inner = self->m_pPlayerState;
+    if (!pongPlayer_D598_g(inner)) {
+        return false;
+    }
+    // Double-check — the scaffold queries D598 twice.  It's idempotent.
+    if (!pongPlayer_D598_g(inner)) {
+        return false;
+    }
+
+    // Recovery active.  Now compare the timing sub-state's stored progress
+    // against the outer parent's frame-index-based progress.  The raw
+    // computation is:
+    //
+    //     progressFrac = float(parentFrameIndex) * g_inputScoreScale
+    //                  / parentTargetDuration
+    //
+    // and we return (storedSwingProgress < progressFrac).
+    pongTimingSubState* sub = reinterpret_cast<pongTimingSubState*>(
+        *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(inner) + 128));
+    pongAnimState* parentAnim = reinterpret_cast<pongAnimState*>(
+        *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(sub) + 36));
+    if (!parentAnim) {
+        return false;
+    }
+
+    float storedProgress = *reinterpret_cast<float*>(
+        reinterpret_cast<uint8_t*>(sub) + 172);  // +0xAC
+    float parentDuration = parentAnim->m_swingPhase;  // +12 from blend root (0x19C on outer)
+    float threshold = g_kFloatConst_D110;  // 0x8202D110
+
+    // Only apply the scale when duration has advanced past the threshold.
+    if (parentDuration > threshold) {
+        // parent-frame-index lives at +20 on the inner anim state.
+        int32_t frameIndex = *reinterpret_cast<int32_t*>(
+            reinterpret_cast<uint8_t*>(parentAnim) + 20);
+        // scale constant @ 0x825E9BB8 (float) in the per-player input table.
+        extern const float g_kSwingProgressScale;  // @ 0x825E9BB8
+        float frac = (static_cast<float>(frameIndex) * g_kSwingProgressScale)
+                   / parentDuration;
+        threshold = frac;
+    }
+
+    return storedProgress < threshold;
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_7C78_g  @ 0x820C7C78 | size: 0x6C (108 bytes)
+//
+// SetSwingActiveState(flag): stores `flag` into m_bSwingActive (+197) and, if
+// the flag actually changed, logs "Player %d is queueing a swing" or
+// "Player %d is dequeueing a swing" tagged with m_swingInputSlot (+204).
+// The debug-log function (nop_8240E6D0) is a no-op in retail but the call
+// is retained for symbol parity with the scaffold.
+// ---------------------------------------------------------------------------
+extern "C" void pongPlayer_7C78_g(pongPlayer* self, uint8_t flag) {
+    uint8_t* base = reinterpret_cast<uint8_t*>(self);
+    uint8_t current = base[197];  // m_bSwingActive
+    if (current == flag) {
+        return;  // no change, nothing to log
+    }
+
+    int32_t playerSlot = *reinterpret_cast<int32_t*>(base + 204);  // m_swingInputSlot
+    const char* msg = flag ? "Player %d is queueing a swing"
+                           : "Player %d is dequeueing a swing";
+    nop_8240E6D0(msg, playerSlot);
+    base[197] = flag;
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_E000_g  @ 0x820CE000 | size: 0x8C (140 bytes)
+//
+// Compound predicate — used by the swing pipeline to decide whether a
+// queued input is still mechanically valid.  Returns true only if:
+//   (a) the timing sub-state exists AND its currentTime (+28) ≥ targetTime (+48),
+//       i.e. the swing window has already opened; AND
+//   (b) the sub-state sub-object at +120 exists AND the float stored at
+//       (sub+32)+128 is strictly greater than the threshold g_kFloatConst_D110.
+//
+// Otherwise the function returns false (r3 = 0).
+// ---------------------------------------------------------------------------
+extern "C" bool pongPlayer_E000_g(pongPlayer* self) {
+    uint8_t* base = reinterpret_cast<uint8_t*>(self);
+
+    // Gate A — timing sub-state at +124.
+    pongTimingState* timing = *reinterpret_cast<pongTimingState**>(base + 124);
+    bool timingExpired = false;
+    if (timing) {
+        float cur = timing->m_currentTime;       // +28
+        float tgt = timing->m_targetTime;        // +48
+        timingExpired = (cur >= tgt);            // bns/cntlzw idiom → ≥ compare
+    }
+    if (!timingExpired) {
+        return false;
+    }
+
+    // Gate B — sub-object at +120, float at (sub+32)+128 vs D110 threshold.
+    void* sub = *reinterpret_cast<void**>(base + 120);
+    if (!sub) {
+        return false;
+    }
+    uint8_t* subBase = static_cast<uint8_t*>(sub) + 32 + 128;
+    float subProgress = *reinterpret_cast<float*>(subBase);
+    return subProgress > g_kFloatConst_D110;
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_E3F0_p45  @ 0x820CE3F0 | size: 0x64 (100 bytes)
+//
+// Indexed getter: returns one of five pointer-valued fields on the player
+// state (+100, +104, +108, +112, +116) selected by `index` (0-4).  For
+// index > 4 returns nullptr.  Originally a jump table (jumptable_820CE410)
+// — rewrites as a trivial switch.
+// ---------------------------------------------------------------------------
+extern "C" void* pongPlayer_E3F0_p45(pongPlayer* self, uint32_t index) {
+    if (index > 4) {
+        return nullptr;
+    }
+    uint8_t* base = reinterpret_cast<uint8_t*>(self);
+    switch (index) {
+        case 0: return *reinterpret_cast<void**>(base + 100);
+        case 1: return *reinterpret_cast<void**>(base + 104);
+        case 2: return *reinterpret_cast<void**>(base + 108);
+        case 3: return *reinterpret_cast<void**>(base + 112);
+        case 4: return *reinterpret_cast<void**>(base + 116);
+    }
+    return nullptr;  // unreachable (guard above)
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_7358_g  @ 0x820D7358 | size: 0x19C (412 bytes)
+//
+// Snapshot copy: bitwise-clones the "match-relevant" portion of one player
+// into another.  Copies:
+//   +16  (m_pBody)           +20  (m_bActive+tail)    +24  (m_pMover)
+//   +28  (m_animTimerLow)    +32  (blend weight)      +36  (smoothed dt)
+//   +48..+63   (16B vec3)    +64..+79  (16B vec3)
+//   +80..+95   (16B vec3)    +96..+111 (16B vec3)
+//   +128..+131 (float pair)  +136,+137,+138 (3× u8 flag)
+//   +144..+159 (16B vec)     +160..+175 (16B vec)     +176..+191 (16B vec)
+//   +208..+223 (16B) +224..+239 +240..+255 +256..+271 +272..+287 (5× 16B vec)
+//   +288,+292  (floats)      +296,+300 (floats)
+//   +304,+306,+308,+310      (4× u16)
+//   +312,+313,+314            (3× u8)
+//
+// This is a structurally identical copy of the first ~315 bytes of the
+// match-state portion of pongPlayer — NOT the whole object.  No pointers
+// are reference-counted and no observers are invoked; callers must ensure
+// the destination isn't live.  Used in SinglesNetworkClient_74F8_h for
+// replay/roll-back snapshotting.
+// ---------------------------------------------------------------------------
+extern "C" void pongPlayer_7358_g(pongPlayer* dst, const pongPlayer* src) {
+    uint8_t* d = reinterpret_cast<uint8_t*>(dst);
+    const uint8_t* s = reinterpret_cast<const uint8_t*>(src);
+
+    // Scalar quads at +16/+20/+24  (m_pBody, flags, m_pMover) and
+    // their neighbouring floats at +28 / +32 / +36.
+    *reinterpret_cast<uint32_t*>(d + 16) = *reinterpret_cast<const uint32_t*>(s + 16);
+    *reinterpret_cast<uint32_t*>(d + 20) = *reinterpret_cast<const uint32_t*>(s + 20);
+    *reinterpret_cast<uint32_t*>(d + 24) = *reinterpret_cast<const uint32_t*>(s + 24);
+    *reinterpret_cast<float*>   (d + 28) = *reinterpret_cast<const float*>   (s + 28);
+    *reinterpret_cast<float*>   (d + 32) = *reinterpret_cast<const float*>   (s + 32);
+    *reinterpret_cast<float*>   (d + 36) = *reinterpret_cast<const float*>   (s + 36);
+
+    // Four 16-byte vector slots (AltiVec lvx/stvx): +48, +64, +80, +96.
+    auto copyVec16 = [](uint8_t* dp, const uint8_t* sp) {
+        // Copy 16 aligned bytes (compiler lowers to a single movdqu on x86).
+        for (int i = 0; i < 16; ++i) dp[i] = sp[i];
+    };
+    copyVec16(d + 48,  s + 48);
+    copyVec16(d + 64,  s + 64);
+    copyVec16(d + 80,  s + 80);
+    copyVec16(d + 96,  s + 96);
+
+    // Scratch floats + byte flags at +128..+138.
+    *reinterpret_cast<float*>  (d + 128) = *reinterpret_cast<const float*>  (s + 128);
+    *reinterpret_cast<float*>  (d + 132) = *reinterpret_cast<const float*>  (s + 132);
+    d[136] = s[136];
+    d[137] = s[137];
+    d[138] = s[138];
+
+    // Three more vec16 slots: +144, +160, +176.
+    copyVec16(d + 144, s + 144);
+    copyVec16(d + 160, s + 160);
+    copyVec16(d + 176, s + 176);
+
+    // Five-element vec16 array spanning +208..+287.
+    copyVec16(d + 208, s + 208);
+    copyVec16(d + 224, s + 224);
+    copyVec16(d + 240, s + 240);
+    copyVec16(d + 256, s + 256);
+    copyVec16(d + 272, s + 272);
+
+    // Trailing scalars: floats at +288/+292/+296/+300, u16 ×4 at
+    // +304/+306/+308/+310, u8 ×3 at +312/+313/+314.
+    *reinterpret_cast<float*>(d + 288) = *reinterpret_cast<const float*>(s + 288);
+    *reinterpret_cast<float*>(d + 292) = *reinterpret_cast<const float*>(s + 292);
+    *reinterpret_cast<float*>(d + 296) = *reinterpret_cast<const float*>(s + 296);
+    *reinterpret_cast<float*>(d + 300) = *reinterpret_cast<const float*>(s + 300);
+    *reinterpret_cast<uint16_t*>(d + 304) = *reinterpret_cast<const uint16_t*>(s + 304);
+    *reinterpret_cast<uint16_t*>(d + 306) = *reinterpret_cast<const uint16_t*>(s + 306);
+    *reinterpret_cast<uint16_t*>(d + 308) = *reinterpret_cast<const uint16_t*>(s + 308);
+    *reinterpret_cast<uint16_t*>(d + 310) = *reinterpret_cast<const uint16_t*>(s + 310);
+    d[312] = s[312];
+    d[313] = s[313];
+    d[314] = s[314];
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_8B90_fw  @ 0x820D8B90 | size: 0x174 (372 bytes)
+//
+// Network-smoothed transform update.  Takes two vec3 outputs (position @ r5,
+// velocity @ r6), a source transform block at r4 (which lays out three
+// 3-vectors at +0/+16/+32 plus a translation at +48 — i.e. a 3×4 matrix-like
+// layout), and the player at r3.  After zero-initialising the output vecs,
+// it calls pongPlayer_9CD0_g (the input poller) with the player's context
+// pointer at +400, then folds the poll result into the vectors via an
+// affine transform of the form:
+//
+//   out_pos = src_col0 * pos_x  +  src_col1 * pos_y  +  src_col2 * pos_z
+//           + src_translation
+//   out_vel = src_col0 * vel_x  +  src_col1 * vel_y  +  src_col2 * vel_z
+//           + src_translation_vel
+//
+// After writing, it validates the X and Z components: if out_pos.x > out_vel.x
+// OR out_pos.z > out_vel.z, the two 16-byte vectors are swapped.  This
+// enforces an axis-aligned min/max invariant on the extracted AABB.
+// ---------------------------------------------------------------------------
+extern "C" void pongPlayer_8B90_fw(pongPlayer* self, void* srcTransform,
+                                    vec3* outPos, vec3* outVel) {
+    uint8_t* base = reinterpret_cast<uint8_t*>(self);
+    uint8_t* src  = static_cast<uint8_t*>(srcTransform);
+
+    // Zero both outputs first (matches the vxor prologue).
+    outPos->x = outPos->y = outPos->z = outPos->_pad = 0.0f;
+    outVel->x = outVel->y = outVel->z = outVel->_pad = 0.0f;
+
+    // Poll input for this player's context pointer at +400.
+    void* inputCtx = *reinterpret_cast<void**>(base + 400);
+    pongPlayer_9CD0_g(reinterpret_cast<void*>(&g_inputScoreByPlayer[0]),
+                      0, inputCtx, nullptr);
+
+    // Floats now populated in outPos (components at +0/+4/+8) and outVel.
+    float px = outPos->x, py = outPos->y, pz = outPos->z;
+    float vx = outVel->x, vy = outVel->y, vz = outVel->z;
+
+    // Rows of the source transform matrix (column-major 3×4).
+    float m0x = *reinterpret_cast<float*>(src +  0);
+    float m0y = *reinterpret_cast<float*>(src +  4);
+    float m0z = *reinterpret_cast<float*>(src +  8);
+    float m1x = *reinterpret_cast<float*>(src + 16);
+    float m1y = *reinterpret_cast<float*>(src + 20);
+    float m1z = *reinterpret_cast<float*>(src + 24);
+    float m2x = *reinterpret_cast<float*>(src + 32);
+    float m2y = *reinterpret_cast<float*>(src + 36);
+    float m2z = *reinterpret_cast<float*>(src + 40);
+    float tx  = *reinterpret_cast<float*>(src + 48);
+    float ty  = *reinterpret_cast<float*>(src + 52);
+    float tz  = *reinterpret_cast<float*>(src + 56);
+
+    // Affine transform of (px,py,pz) by the 3×4 matrix.
+    outPos->x = m0x * px + m1x * py + m2x * pz + tx;
+    outPos->y = m0y * px + m1y * py + m2y * pz + ty;
+    outPos->z = m0z * px + m1z * py + m2z * pz + tz;
+
+    // Same for (vx,vy,vz).
+    outVel->x = m0x * vx + m1x * vy + m2x * vz + tx;
+    outVel->y = m0y * vx + m1y * vy + m2y * vz + ty;
+    outVel->z = m0z * vx + m1z * vy + m2z * vz + tz;
+
+    // Enforce min/max ordering on X and Z.  If pos > vel on either axis,
+    // swap the 16-byte vectors so caller's "min" and "max" semantics hold.
+    if (outPos->x > outVel->x || outPos->z > outVel->z) {
+        vec3 tmp = *outPos;
+        *outPos = *outVel;
+        *outVel = tmp;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_C070_wrh  @ 0x820DC070 | size: 0x128 (296 bytes)
+//
+// Cross-product + length normalisation.  Takes two input vec3s at r4+48 and
+// r4+64 (the "forward" and "up" candidates), computes:
+//
+//   perp        = forward × up                       (3D cross product)
+//   perpHatZero = zero-safe normalise(perp)          (returns 0 for |perp|≈0)
+//   refined     = zero-safe normalise(forward × perpHatZero)
+//
+// Stores the normalised cross into dst+0 (unit perpendicular) and the
+// refined normalised cross into dst+16 (unit forward-perp orthogonal).
+// The `vrsqrtefp` + Newton-Raphson step followed by `vcmpeqfp`/`vsel` is the
+// Xenon SIMD pattern for a zero-checked reciprocal-sqrt; we express it as a
+// conditional that returns 0 when the squared length is effectively zero.
+// ---------------------------------------------------------------------------
+extern "C" void pongPlayer_C070_wrh(vec3* dst, const void* srcMatrix) {
+    const uint8_t* src = static_cast<const uint8_t*>(srcMatrix);
+    // Load the two input vectors (rows 3 and 4 of the source, at +48/+64).
+    auto loadVec = [](const uint8_t* p) {
+        return vec3{
+            *reinterpret_cast<const float*>(p),
+            *reinterpret_cast<const float*>(p + 4),
+            *reinterpret_cast<const float*>(p + 8),
+            0.0f,
+        };
+    };
+    auto cross = [](vec3 a, vec3 b) {
+        return vec3{
+            a.y * b.z - a.z * b.y,
+            a.z * b.x - a.x * b.z,
+            a.x * b.y - a.y * b.x,
+            0.0f,
+        };
+    };
+    auto normalizeSafe = [](vec3 v) -> vec3 {
+        float lenSq = v.x * v.x + v.y * v.y + v.z * v.z;
+        if (lenSq < 1.0e-20f) {
+            return vec3{ 0.0f, 0.0f, 0.0f, 0.0f };
+        }
+        // Newton-Raphson-refined rsqrt to match the PPC idiom:
+        //   rsqrt_est → refine → multiply by lenSq's reciprocal root.
+        // C++ just uses 1/sqrt — the end result is identical.
+        float inv = 1.0f / std::sqrt(lenSq);
+        return vec3{ v.x * inv, v.y * inv, v.z * inv, 0.0f };
+    };
+
+    vec3 forward = loadVec(src + 48);
+    vec3 up      = loadVec(src + 64);
+    vec3 perp    = cross(forward, up);
+
+    // Temporarily store raw perp so the next cross-product reads the
+    // pre-normalised value (matches the scaffold's "stvx v13,...,r11" step).
+    uint8_t* dstBytes = reinterpret_cast<uint8_t*>(dst);
+    vec3 perpHat = normalizeSafe(perp);
+    *reinterpret_cast<vec3*>(dstBytes + 0) = perpHat;
+
+    // Build the refined axis: forward × perpHat, normalised.
+    vec3 refined    = cross(forward, perpHat);
+    vec3 refinedHat = normalizeSafe(refined);
+    *reinterpret_cast<vec3*>(dstBytes + 16) = refinedHat;
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_8740_wrh  @ 0x820E8740 | size: 0xEC (236 bytes)
+//
+// Per-axis "distance to bound" helper.  Computes:
+//
+//   for axis ∈ {x, y, z}:
+//     if  P[axis] < min[axis]: out[axis] = min[axis] - P[axis]   (negative-side violation)
+//     elif P[axis] > max[axis]: out[axis] = max[axis] - P[axis]  (positive-side violation)
+//     else:                   out[axis] = g_kFloatConst_D110 (0.0f signed-zero marker)
+//
+// Returns true iff ANY axis is inside the [min, max] box — i.e. at least one
+// axis returned the "inside" marker.  This is the sign test used by the
+// court-bounds / court-volume queries below.
+//
+// The final check is implemented with an AltiVec sign-mask AND followed by a
+// per-lane `vcmpeqfp.` against the zero vector; we express it as a direct
+// float equality check on g_kFloatConst_D110.
+// ---------------------------------------------------------------------------
+extern "C" bool pongPlayer_8740_wrh(const vec3* pos, const vec3* boundMin,
+                                     const vec3* boundMax, vec3* outDelta) {
+    const float zero = g_kFloatConst_D110;  // expected 0.0f
+
+    // X axis.
+    if (pos->x < boundMin->x) {
+        outDelta->x = boundMin->x - pos->x;
+    } else if (pos->x > boundMax->x) {
+        outDelta->x = boundMax->x - pos->x;
+    } else {
+        outDelta->x = zero;
+    }
+    // Y axis.
+    if (pos->y < boundMin->y) {
+        outDelta->y = boundMin->y - pos->y;
+    } else if (pos->y > boundMax->y) {
+        outDelta->y = boundMax->y - pos->y;
+    } else {
+        outDelta->y = zero;
+    }
+    // Z axis.
+    if (pos->z < boundMin->z) {
+        outDelta->z = boundMin->z - pos->z;
+    } else if (pos->z > boundMax->z) {
+        outDelta->z = boundMax->z - pos->z;
+    } else {
+        outDelta->z = zero;
+    }
+
+    // "Inside" test: true iff at least one axis landed in the zero slot.
+    // Equivalent to the PPC `vand`/`vcmpeqfp.` mask test: if none of the
+    // three deltas were zero, every lane was a violation → fully outside.
+    return (outDelta->x == zero) || (outDelta->y == zero) || (outDelta->z == zero);
+}
+
+
+// ---------------------------------------------------------------------------
+// pongPlayer_8E28_2h  @ 0x820E8E28 | size: 0x144 (324 bytes)
+//
+// Two-tier in-volume test: checks whether the input 3D position lies within
+// the inner court box [kCourtBoxInnerMin, kCourtBoxInnerMax], and if not,
+// whether it falls in the "angled gap" between the inner and outer box
+// (by linear interpolation on Y based on the X fraction between bounds).
+//
+// Returns:
+//   1  if P is fully inside the INNER box.
+//   ~1 in the angled-extension region (special-case return via "li r11,1").
+//   0  otherwise.
+//
+// The bso-cr6 paths in the scaffold are NaN-propagation; under IEEE-754 any
+// NaN coordinate fails the comparisons and falls through to the outer test.
+// ---------------------------------------------------------------------------
+extern "C" bool pongPlayer_8E28_2h(const vec3* pos) {
+    // Tier 1 — strict inner box.
+    if (pos->x > g_kCourtBoxInnerMax.x && pos->x >= g_kCourtBoxInnerMin.x &&
+        pos->y <= g_kCourtBoxInnerMax.y && pos->y >= g_kCourtBoxInnerMin.y &&
+        pos->z <= g_kCourtBoxInnerMax.z && pos->z >= g_kCourtBoxInnerMin.z) {
+        return true;
+    }
+
+    // Tier 2 — angled extension using the OUTER bounds.  Both X checks
+    // must be inside [outerMin.x, outerMax.x]; then Y is clamped into the
+    // interpolated wedge between innerMax.y and 0 as X moves from outerMax
+    // toward innerMax.
+    if (!(pos->x > g_kCourtBoxOuterMax.x)) return false;
+    if (pos->x < g_kCourtBoxOuterMin.x)    return false;
+
+    if (pos->y > g_kCourtBoxOuterMax.y) return false;
+    if (pos->y < g_kCourtBoxOuterMin.y) return false;
+
+    if (pos->z > g_kCourtBoxOuterMax.z) return false;
+    if (pos->z < g_kCourtBoxOuterMin.z) return false;
+
+    // Angled-wedge Y test: interpolate upper bound between outer and inner
+    // as X crosses the gap.  When the two bounds coincide, fall back to
+    // g_kFloatConst_D108 (the court's zero-timer float constant) to avoid
+    // divide-by-zero — matches the PPC scaffold at loc_820E8F44.
+    float xRange    = g_kCourtBoxInnerMax.x - g_kCourtBoxOuterMax.x;
+    float interpFrac;
+    if (xRange == 0.0f) {
+        interpFrac = g_kFloatConst_D108;
+    } else {
+        float xOffset = pos->x - g_kCourtBoxOuterMax.x;
+        interpFrac = xOffset / xRange;
+    }
+    float maxY = g_kCourtBoxInnerMax.y * interpFrac;
+    return pos->y <= maxY;
+}
