@@ -195,8 +195,10 @@ void phClothVerletBehavior::UpdateSimulation()
     float* boundLocalPos = (float*)(bound + kBoundLocalPosOffset);
 
     // Navigate to the sub-object that receives the transform:
-    //   m_pPhysicsInst -> field_0x04 -> field_0x0C -> target
-    // TODO: Type this chain once phInst layout is known
+    //   m_pPhysicsInst -> phInst.+0x04 -> (*).+0x0C -> target
+    // phInst+0x04 is a hot cluster (49 accesses); the chain lands on an
+    // object whose vtable exposes slots 6 and 37 — most likely a bound
+    // sub-object.  Left untyped until the exact sub-class is pinned down.
     uint8_t* physInst = (uint8_t*)m_pPhysicsInst;
     uint32_t subPtr1  = *(uint32_t*)(physInst + 4);
     uint32_t subPtr2  = *(uint32_t*)((uint8_t*)(uintptr_t)subPtr1 + 12);
@@ -223,16 +225,16 @@ void phClothVerletBehavior::UpdateSimulation()
     float radiusSplat[4] = { radius, radius, radius, radius };
     memcpy(target + 112, &radiusSplat, 16);
 
-    // Call target vtable[37] — apply transform
-    // TODO: Replace with typed virtual call once target class is identified
+    // Call target vtable[37] — apply transform.
+    // Target class unresolved; keep indirect-through-vtable dispatch.
     {
         void** vtbl = *(void***)target;
         typedef void (*ApplyTransformFn)(void*);
         ((ApplyTransformFn)vtbl[37])(target);
     }
 
-    // Call target vtable[6] — finalize transform with mirror plane
-    // TODO: Replace with typed virtual call once target class is identified
+    // Call target vtable[6] — finalize transform with mirror plane.
+    // Target class unresolved; keep indirect-through-vtable dispatch.
     {
         void** vtbl = *(void***)target;
         typedef void (*FinalizeTransformFn)(void*, const float*);
@@ -340,15 +342,17 @@ void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
     }
 
     // Navigate to the target sub-object for cloth activation:
-    //   boneData -> +0x10 -> +0x04 -> +0x0C -> target
-    // TODO: Type this chain once bone/skeleton layout is known
+    //   boneData -> +0x10 -> +0x04 -> +0x0C -> target.
+    // Mirrors the phInst chain in the sibling cloth-update method; the
+    // resolved sub-object exposes cloth vtable slots 1 (activate) and 3
+    // (bind).  Left untyped until the sub-class is pinned down.
     uint8_t* boneObj   = (uint8_t*)(uintptr_t)boneData;
     uint8_t* subObj1   = (uint8_t*)(uintptr_t)(*(uint32_t*)(boneObj + 16));
     uint8_t* subObj2   = (uint8_t*)(uintptr_t)(*(uint32_t*)(subObj1 + 4));
     void*    targetObj = (void*)(uintptr_t)(*(uint32_t*)(subObj2 + 12));
 
-    // Call target vtable[1] — activate cloth (param: 1 = enable)
-    // TODO: Replace with typed virtual call once target class is identified
+    // Call target vtable[1] — activate cloth (param: 1 = enable).
+    // Target class unresolved; keep indirect-through-vtable dispatch.
     {
         void** vtbl = *(void***)targetObj;
         typedef void (*ActivateFn)(void*, int);
@@ -360,8 +364,8 @@ void phClothVerletBehavior::AttachToCreatureInst(void* physFrameTable)
     subObj2   = (uint8_t*)(uintptr_t)(*(uint32_t*)(subObj1 + 4));
     targetObj = (void*)(uintptr_t)(*(uint32_t*)(subObj2 + 12));
 
-    // Call target vtable[3] — bind cloth to frame data at boneData+0xA0
-    // TODO: Replace with typed virtual call once target class is identified
+    // Call target vtable[3] — bind cloth to frame data at boneData+0xA0.
+    // Target class unresolved; keep indirect-through-vtable dispatch.
     {
         void** vtbl = *(void***)targetObj;
         typedef void (*BindFn)(void*, void*);

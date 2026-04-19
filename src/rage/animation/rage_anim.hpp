@@ -6,8 +6,8 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * Most method signatures remain as vfn_N stubs; cross-ref
+ * recomp/structured_pass5_final/ when lifting individual slots.
  */
 #pragma once
 #include <stdint.h>

@@ -32,7 +32,11 @@ struct phDemoWorld {
 
     virtual ~phDemoWorld();                   // [0] @ 0x8227E920
     virtual void ScalarDtor(int flags);       // [1] @ 0x8227E810
-    virtual void vfn_2();                     // [2] @ 0x8227E548  — TODO: name
+    // [2] @ 0x8227E548 — iterates the pending-object array at (+192 count,
+    //   +196 ptr), clearing the "pending" byte at +160 and dispatching
+    //   vtable slot 8 on each entry whose +20[+8] word != 0xFFFF.
+    //   Likely a "flush pending world objects" pass.  Signature unconfirmed.
+    virtual void vfn_2();                     // [2] @ 0x8227E548
     virtual void vfn_3();                     // [3] @ 0x8227E5C8
     virtual void vfn_5();                     // [5] @ 0x8227F378
     virtual void vfn_6();                     // [6] @ 0x8227E468

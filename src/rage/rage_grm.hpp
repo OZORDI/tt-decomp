@@ -406,12 +406,14 @@ struct spdApical {
 
     // ── virtual methods ──
     virtual ~spdApical();                           // [0] @ 0x82122750
-    // TODO: slot 1 was auto-labeled ScalarDtor but is NOT a destructor.
-    // Scaffold shows it takes (this, r4=dst_offset, r5=src_vec_ptr), copies
-    // 4 AltiVec vectors from r5 into the object, then calls
-    // LocomotionStateAnim_7B90_g and spdShaft_5160_h.  Likely an animation
-    // state init/update method.  Signature unverified — left as vfn_1.
-    virtual void vfn_1(void* dst, void* src);       // [1] @ 0x821226a8
+    // [1] @ 0x821226A8 — NOT a destructor (vtable slot 1 auto-label is stale).
+    //   Signature (verified from scaffold):
+    //     (this, uint32_t tag, const float* srcMat4x4)
+    //   Copies four 16-byte vectors from srcMat4x4 into this+224 (the pose
+    //   slot), then drives LocomotionStateAnim_7B90_g on this+160 and
+    //   spdShaft_5160_h(this, tag).  Semantically an animation-state
+    //   pose/update.  Name unresolved — leave as vfn_1.
+    virtual void vfn_1(uint32_t tag, const float* srcMatrix); // [1] @ 0x821226a8
     virtual void vfn_2(float value);  // [2] @ 0x82122730  unk_10 = value
     virtual void vfn_3(float value);  // [3] @ 0x82122738  unk_14 = value
     virtual void vfn_4(float value);  // [4] @ 0x82122740  unk_18 = value
@@ -429,11 +431,11 @@ struct spdShaft {
     void**      vtable;           // +0x00
 
     // ── virtual methods ──
-    // TODO: slot 1 was auto-labeled ScalarDtor but is NOT a destructor.
-    // Scaffold shows it calls spdApical_vfn_1 (base update), then iterates
-    // 6 animation bones via spdShaft_25A8, and writes a bool at +0x2C0.
-    // Signature unverified — left as vfn_1.
-    virtual void vfn_1(void* dst, void* src);       // [1] @ 0x821228b8
+    // [1] @ 0x821228B8 — override of spdApical::vfn_1 (NOT a destructor).
+    //   Calls spdApical::vfn_1(tag, srcMatrix) to run the base pose update,
+    //   then iterates 6 animation bones via spdShaft_25A8 and writes the
+    //   dirty bit at +0x2C0.  Name unresolved — leave as vfn_1.
+    virtual void vfn_1(uint32_t tag, const float* srcMatrix); // [1] @ 0x821228b8
     virtual void vfn_2();  // [2] @ 0x823d4b68
     virtual void vfn_3();  // [3] @ 0x823d4ce8
     virtual void vfn_4();  // [4] @ 0x823d4e68

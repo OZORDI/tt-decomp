@@ -35,13 +35,19 @@ struct phBound;
 //   +0x78  uint32_t  m_nSecondaryData   — copied from phys type +4 on articulated creation
 //   +0x7C  phInst*   m_pPhysicsInstance — owning physics instance
 // ---------------------------------------------------------------------------
+// NOTE: fields +0x58, +0x5C and +0x6C are never read/written by any lifted
+// method we have; they sit between the sgRMDrawable base and the secondary
+// render-entry vtable at +0x60 (and between that group and the hidden/
+// articulated byte block at +0x70).  Most likely layout padding inserted
+// by the multiple-vtable RTTI.  Left as opaque words until a reference
+// surfaces.
 struct sgPhysicalObject : sgRMDrawable {
-    uint32_t field_0x0058;         // +0x58  TODO: type unknown
-    uint32_t field_0x005C;         // +0x5C  TODO: type unknown
+    uint32_t field_0x0058;         // +0x58  opaque (likely MI/vtable pad)
+    uint32_t field_0x005C;         // +0x5C  opaque (likely MI/vtable pad)
     void**   m_pRenderEntryVtable; // +0x60  secondary vtable (render entry)
     float    m_fRenderDistance;    // +0x64  camera distance for LOD
     uint32_t m_nVisibility;        // +0x68  visibility/cull result
-    uint32_t field_0x006C;         // +0x6C  TODO: type unknown
+    uint32_t field_0x006C;         // +0x6C  opaque (likely flag/hidden pad)
     uint8_t  m_bIsHidden;          // +0x70  suppresses cleanup when invisible
     uint8_t  _pad71;               // +0x71
     uint8_t  m_bIsArticulated;     // +0x72  articulated (ragdoll) flag

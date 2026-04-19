@@ -110,21 +110,18 @@ phUpdateObject::~phUpdateObject()
 }
 
 /**
- * phUpdateObject::ScalarDtor(int flags) — scalar destructor
- * @ 0x8227D960 | size: 0xA8 (vtable slot 1)
+ * phUpdateObject::ScalarDtor(int flags) — scalar destructor (vtable slot 1)
+ * @ 0x8227D960 | size: 0xA8
  *
- * Copies the current transform from the per-frame source (m_pData or
- * the inline transform at +0x14) into the double-buffered destination
- * array using 4x AltiVec vector loads/stores (4 × 16 bytes = 64 bytes).
- * After the copy, if (flags & 1), frees this object via rage_free.
- *
- * The copy loop:
- *   src = (m_pData != NULL) ? m_pData + 16 : &this->inlineTransform + 16
- *   dst = m_pFrameBuffer + (g_phFrameIndex * 64)
- *   memcpy(dst, src, 64)  — using 4x lvx/stvx
- *
- * Note: g_phFrameIndex here is accessed via lis r10,-32160 + 26076 = 0x826065DC
- *       which is a separate SDA global (the copy path uses a different base).
+ * FIXME: the lift below is incorrect — the slot-1 scaffold is NOT a
+ *        destructor despite the auto-labeled "scalar_destructor" tag.  The
+ *        real function (see recomp phUpdateObject_vfn_1) copies a 4-row
+ *        matrix from `m_pData ? m_pData : &this->inlineTransform+16` into
+ *        the double-buffered slot at `m_pFrameBuffer + frameIdx*64`, then
+ *        post-multiplies three row vectors of that dst matrix by the
+ *        parent transform at `this+112`.  It never frees `this` and takes
+ *        no `flags` arg.  This stub preserves the existing signature until
+ *        the lift is replaced.
  */
 void phUpdateObject::ScalarDtor(int flags)
 {
@@ -141,9 +138,9 @@ void phUpdateObject::ScalarDtor(int flags)
     uint32_t frameOffset = g_phFrameIndex * 64;
     void* dst = static_cast<uint8_t*>(m_pFrameBuffer) + frameOffset;
 
-    // Copy 64-byte transform block (4x 16-byte AltiVec stores in original)
-    // TODO: verify exact source selection logic from scaffold — may use
-    //       inline matrix at +0x14 when m_pFrameBuffer is NULL
+    // Copy 64-byte transform block (4x 16-byte AltiVec stores in original).
+    // Upstream also multiplies dst rows 1..3 by the parent transform at
+    // this+112 — not implemented here, see FIXME above.
     __builtin_memcpy(dst, src, 64);
 
     if (flags & 1) {
