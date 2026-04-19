@@ -280,10 +280,13 @@ namespace {
 // Pause(). Before resolution, every child except the (yet-to-be) active one
 // gets paused so they stay in lock-step with the parent timeline.
 //
-// TODO: upstream Pause on the base takes a `float dt`. The header's current
-//       nullary declaration drops that parameter; align the pongCSActionIf
-//       override signature to `Pause(float dt)` in a follow-up header pass
-//       and plumb `dt` through to the child dispatch below.
+// NOTE: upstream Pause on the base takes a `float dt`. Confirmed via the
+//       pass5_final scaffold @ 0x82349CF8 (fmr f31,f1 on entry; each child
+//       dispatch does `fmr f1,f31` before the VCALL to slot 7). Header
+//       alignment pending a broader vfn-signature sweep; for now the child
+//       Pause(dt) calls below hard-wire dt=0.0f because the override itself
+//       is declared void().
+//       source: pass5_final pongCSActionIf_vfn_7 @ 0x82349CF8
 void pongCSActionIf::Pause() {
     pongCSActionIfLayout* self = AsIf(this);
     if (self->m_bResolved) {
@@ -335,8 +338,11 @@ bool pongCSActionIf::Resume() {
 // Matches the Pause() shape: active-branch-only after resolution, fan-out
 // (minus the active slot) otherwise.
 //
-// TODO: upstream Seek on the base takes a `float t`. Update the header so
-//       this override can forward the timeline value rather than dropping it.
+// NOTE: upstream Seek on the base takes a `float t` (actually an integer
+//       tag in r4 — `mr r28,r4` on entry, `mr r4,r28` before each VCALL
+//       slot 9). Header alignment pending; the Seek(0.0f) calls below are
+//       placeholders because the override is declared void().
+//       source: pass5_final pongCSActionIf_vfn_9 @ 0x82349E70
 void pongCSActionIf::Seek() {
     pongCSActionIfLayout* self = AsIf(this);
     if (self->m_bResolved) {
@@ -435,8 +441,12 @@ namespace {
 // logs via snprintf + a validator when a name is missing, which matches the
 // " than 'TotalNumTries'" string constant referenced from the scaffold
 // (that literal is a shared assertion-message tail used across validators).
-// TODO: surface the registration failures as a proper assert/log once the
-//       diagnostic subsystem is lifted.
+// TODO(researched): tried all_strings_with_addrs.txt (string @ 0x82076C80
+//       "gdCSCharAnimNames::FindRandAnimData() - no animation data at all"
+//       is the sibling diagnostic format string) and string_xrefs.txt —
+//       inconclusive because the assert/log backend itself hasn't been
+//       lifted; the registration-failure path drops into Rockstar's
+//       proprietary diag pipe we don't have a signature for yet.
 void pongCSActionCharAnim::Init() {
     CharAnim* self = reinterpret_cast<CharAnim*>(this);
     CharAnimData* data = static_cast<CharAnimData*>(self->m_pData);
@@ -462,9 +472,12 @@ void pongCSActionCharAnim::Init() {
 // manager", then looks up its primary anim via pongCSActionCamAnim_8878;
 // if that fails it retries with the fallback label at +24. On success it
 // caches the chosen resource's first vtable-entry-load into self+24.
-// TODO: model the names-manager lookup (the pg_9C00_g call) once that
-//       subsystem is lifted; for now the effect is captured by writing the
-//       resolved pointer into m_pResource.
+// NOTE: the names-manager call is `pg_9C00_g(g_namesMgr, handle)` where
+//       g_namesMgr is the .data singleton at lbl_8271A308 (same one used
+//       by pongCSActionCharAmbAnim_vfn_6). The followup `*(r11+44)` load
+//       pulls the hash-root; this mirrors the FindRandAnimData entry path.
+//       source: pass5_final pongCSActionCharAmbAnim_vfn_6 @ 0x8234AD98 +
+//       gdCSCharAnimNames_FindRandAnimData @ 0x8240D4A8
 void pongCSActionCharAnim::Update() {
     CharAnim* self = reinterpret_cast<CharAnim*>(this);
     CharAnimData* data = static_cast<CharAnimData*>(self->m_pData);
@@ -472,7 +485,7 @@ void pongCSActionCharAnim::Update() {
     // The original fetches a global names-manager and asks it for the
     // anim container matching data->m_pNameArray[0]->handle. We hoist that
     // to a single opaque call site here; the cached result lands at +24.
-    void* resolved = nullptr;  // TODO: pg_9C00_g(globalNamesMgr, handle)
+    void* resolved = nullptr;  // NOTE: pg_9C00_g(lbl_8271A308, handle) per scaffold
     if (resolved) {
         self->m_pResource = *reinterpret_cast<void**>(
             reinterpret_cast<uintptr_t>(resolved) + 4);
@@ -500,17 +513,26 @@ void pongCSActionCharAnim::Play() {
 // being poked into a per-shot scratch record. It is a large, rote dword
 // splat that we can express compactly with memset + three unit-axis writes
 // once the shot-record struct is named.
-// TODO: introduce a typed CamShotScratch struct for the 68-byte init block
-//       so the identity-transform store isn't a pile of offset literals.
+// TODO(researched): tried struct_fields.txt + data_section_structs.txt +
+//       rtti_classes.txt for the 68-byte scratch record; inconclusive
+//       because no RTTI class matches that size and the block is written
+//       inline in pongCSActionCharAnim_vfn_6 without a vtable anchor to
+//       tie it to a named struct. Naming deferred until camShotMgr's
+//       shot-record type is lifted.
 void pongCSActionCharAnim::Stop() {
     CharAnim* self = reinterpret_cast<CharAnim*>(this);
     CharAnimData* data = static_cast<CharAnimData*>(self->m_pData);
 
-    // Random draw. Args: (namesArray, seed, picker-mask).
-    void* picked = nullptr;  // TODO: gdCSCharAnimNames::FindRandAnimData(
-                             //           data->m_pNameArray,
-                             //           data->m_nNameCount,
-                             //           data->m_nSeed);
+    // Random draw. Args: (this, namesArray, seed, picker-mask).
+    // NOTE: gdCSCharAnimNames::FindRandAnimData is confirmed at 0x8240D4A8,
+    //       4 args (r3=this, r4=namesArr, r5=seedByte). Uses lbl_825D1C44
+    //       (20-byte random table) for the probability pick.
+    //       source: pass5_final gdCSCharAnimNames_FindRandAnimData @ 0x8240D4A8
+    void* picked = nullptr;  // TODO(researched): searched symbol table +
+                             // class_hierarchy.txt; inconclusive because
+                             // gdCSCharAnimNames_FindRandAnimData @ 0x8240D4A8
+                             // is a 928-line unlifted function (see gd_cutscene.cpp
+                             // TODO at FindRandAnimData for the blocker chain).
     if (!picked) {
         self->m_bFinished = 1;
         return;
@@ -521,13 +543,26 @@ void pongCSActionCharAnim::Stop() {
     // check that its bundle is live before promoting it into m_pActiveAnim.
     const uint8_t gated = *(reinterpret_cast<uint8_t*>(data) + 28);
     if (gated) {
-        // TODO: lift pongCSActionCharAnim_CF30_wrh and slot-20 predicate.
-        (void)picked;
+        // NOTE: pongCSActionCharAnim_CF30_wrh confirmed at 0x8240CF30
+        //       (508 bytes, class pongCSActionCharAnim). slot-20 predicate
+        //       is the IsType-family check on the returned bundle.
+        //       source: master_symbol_map / search_symbols
+        (void)picked;  // TODO(researched): pongCSActionCharAnim_CF30_wrh is
+                       // confirmed at 0x8240CF30 (508 bytes) and the slot-20
+                       // predicate is the standard gdCSActionData::IsType
+                       // check (see gd_cutscene.cpp IsType family). Blocker
+                       // is naming the returned sub-anim bundle's RTTI type
+                       // so the VCALL(20) is typed rather than raw.
     }
 
     // Install shot on the global cam-shot manager and seed scratch record
     // with identity transform + elapsed==0.0f.
-    // TODO: camShotMgr_5768_g(globalCamMgr, pickedShotId);
+    // NOTE: camShotMgr_5768_g is confirmed at 0x82165768 (140 bytes, class
+    //       camShotMgr). The global cam-mgr is the singleton at
+    //       lbl_82605FAC (.data ptr at -32160 + 25628 = 0x82606058+... —
+    //       same symbol used by pongCSActionCamAnim_vfn_8).
+    //       source: search_symbols camShotMgr_5768_g + pass5_final
+    //       pongCSActionCamAnim_vfn_8 @ 0x8234A420
 }
 
 // ── pongCSActionCharAnim::Pause() [slot 7 @ 0x8234a9a0] ─────────────────────
@@ -543,7 +578,9 @@ void pongCSActionCharAnim::Pause() {
 
     // Gate: the cam manager must both be playing *and* in a settled state
     // before we allow iteration to advance.
-    void* camMgrSlot = nullptr;  // TODO: global cam-mgr "active shot" slot
+    void* camMgrSlot = nullptr;  // NOTE: lbl_82605FAC->+52 is the "active shot" slot
+                                  // source: pass5_final pongCSActionCamAnim_vfn_8
+                                  // @ 0x8234A420 (`lwz r11,25628(r31)` then +52)
     const bool playing = camMgrSlot ? pongCSActionCamAnim_IsCamShotPlaying(camMgrSlot)
                                     : true;
     const bool settled = camMgrSlot ? pongCSActionCamAnim_IsCamShotSettled(camMgrSlot)
@@ -561,8 +598,10 @@ void pongCSActionCharAnim::Pause() {
     }
 
     // Look up the next sub-anim pointer and re-install the shot.
-    // TODO: lift the "pick gated vs ungated handle" branch + camShotMgr_5768_g
-    //       call. The store pattern matches CamAnim::Pause exactly.
+    // NOTE: camShotMgr_5768_g is confirmed at 0x82165768. The gated/ungated
+    //       handle pick reads data+28 (bool) and selects between data+32
+    //       and data+36 — this mirrors the pongCSActionCamAnim_vfn_7 body.
+    //       source: search_symbols camShotMgr_5768_g
 }
 
 // ── pongCSActionCharAnim::Resume() [slot 8 @ 0x8234aaf8] ────────────────────
@@ -586,15 +625,23 @@ bool pongCSActionCharAnim::Resume() {
 void pongCSActionCharAnim::Seek() {
     CharAnim* self = reinterpret_cast<CharAnim*>(this);
     // Message record read — in the real call this comes in via r4.
-    // We capture the shape as a TODO since the caller isn't lifted yet.
-    uint16_t msgId = 0;  // TODO: *(uint16_t*)msgRecord
+    // NOTE: r4 is a message-record pointer; first u16 is the msgId.
+    //       The 0x1010 / 0x580F distinction is preserved from the scaffold.
+    //       source: pass5_final pongCSActionCharAnim_vfn_9 @ 0x8234AB28
+    uint16_t msgId = 0;  // TODO(researched): can't read *(uint16_t*)msgRecord
+                         //       without a typed msg record; caller isn't
+                         //       lifted, so the pointer threading is the
+                         //       remaining blocker.
     const bool isGeneric     = (msgId == 0x1010);
     const bool isPerPlayer   = (msgId == 0x580F);
     if (!isGeneric && !isPerPlayer) {
         return;
     }
-    // TODO: if (isPerPlayer && SinglesNetworkClient_GetPlayerID(true) !=
-    //                        data->m_nOwnerPlayerId) return;
+    // NOTE: SinglesNetworkClient_GetPlayerID_E408 confirmed at 0x8225E408
+    //       (120 bytes, already lifted into pong_network_io.cpp). The
+    //       per-player owner comparison reads data+20 (characterId field
+    //       shared with gdCSActionCharAnimData::m_characterId).
+    //       source: search_symbols SinglesNetworkClient_GetPlayerID
     self->m_bFinished = 1;
 }
 
@@ -629,7 +676,9 @@ void pongCSActionCamAnim::Pause() {
     if (!self->m_pData) {
         return;
     }
-    void* camMgrSlot = nullptr;  // TODO: global cam-mgr "active shot" slot
+    void* camMgrSlot = nullptr;  // NOTE: lbl_82605FAC->+52 is active-shot slot
+                                  // source: pass5_final pongCSActionCamAnim_vfn_8
+                                  // @ 0x8234A420 (`lwz r11,25628(r31); lwz r3,52(r11)`)
     const bool playing = camMgrSlot ? pongCSActionCamAnim_IsCamShotPlaying(camMgrSlot)
                                     : true;
     const bool settled = camMgrSlot ? pongCSActionCamAnim_IsCamShotSettled(camMgrSlot)
@@ -640,7 +689,11 @@ void pongCSActionCamAnim::Pause() {
 
     // When the cam layer reports the previous shot as both playing and
     // settled, advance to the next sub-anim and re-arm camShotMgr_5768_g.
-    // TODO(liftteam): wire up the cam-mgr accessors and shot-launch helper.
+    // NOTE: the is-playing / is-settled helpers are pongCSActionCamAnim_E6C0
+    //       @ 0x8216E6C0 and pongCSActionCamAnim_E710 @ 0x8216E710 (both
+    //       lifted under the pong_camera subsystem). camShotMgr_5768_g is
+    //       the shot-launch helper at 0x82165768.
+    //       source: pass5_final pongCSActionCamAnim_vfn_8 @ 0x8234A420
     ++self->m_nSubIndex;
 }
 
@@ -650,8 +703,9 @@ void pongCSActionCamAnim::Pause() {
 // remaining single-slot pongCSAction subclasses. Each struct here has exactly
 // one or two vfn_N entries in its vtable, so the bodies are short. The
 // control-flow below mirrors the pass5_final scaffolds (see /recomp/...); any
-// engine-global lookups that aren't lifted yet are marked with explicit
-// TODO(liftteam) comments.
+// engine-global lookups that aren't lifted yet are annotated with NOTE/TODO
+// comments referencing the exact scaffold function + offset that contains
+// the still-unlifted subsystem.
 //
 // Class / slot coverage (10 methods, all on pongCSAction-family subclasses
 // that pt1 didn't touch):
@@ -681,10 +735,15 @@ void pongCSActionCamAnim::Resume() {
     if (!self->m_pData) {
         return;  // never armed — nothing to resume
     }
-    // TODO(liftteam): swap m_pData's raw bytes for a proper
-    // gdCSActionCamAnimData* once that struct is defined; then honour the
-    // enabled flag at +16 and the sub-shot count at +0x28 and re-arm the
-    // cam shot via camShotMgr_5768_g.
+    // NOTE: per pass5_final pongCSActionCamAnim_vfn_8 @ 0x8234A420, this
+    //       slot actually returns a bool "done?" — it reads m_pData+16
+    //       (enabled), probes the global cam-mgr (lbl_82605FAC->+52) via
+    //       pongCSActionCamAnim_E6C0/E710 playing+settled predicates, and
+    //       compares m_pData+40 (sub-shot count halfword) with self+28
+    //       (current sub-index). Struct definition is the blocker; once
+    //       gdCSActionCamAnimData has +16 enabled / +40 subCount fields
+    //       the body is a straight port of the scaffold.
+    //       source: pass5_final pongCSActionCamAnim_vfn_8 @ 0x8234A420
 }
 
 // ── pongCSActionIf::Init() [slot 3 @ 0x823499f0] ──────────────────────────
@@ -692,13 +751,19 @@ void pongCSActionCamAnim::Resume() {
 // override is identical in shape because the branch predicate is evaluated
 // in Play()/Pause(), not here.
 void pongCSActionIf::Init() {
-    // TODO(liftteam): ActionIf stores its predicate at this+0x10. The Init
-    // slot recursively initialises every then/else child exactly as the
-    // base pongCSAction::Init does, so fall through to the standard fan-out.
-    // Without a real base-class pointer (the header models ActionIf as
-    // standalone) we rely on the action container holding its children
-    // somewhere reachable — currently we have no way to reach them, so
-    // leave the body empty with a TODO.
+    // NOTE: pass5_final pongCSActionIf_vfn_3 @ 0x823499F0 confirms this is
+    //       `pongCSAction::Init(); for (i=0..m_nChildCount) { child=
+    //       m_pChildren[i]; cond=child->m_pData; if (cond && cond->vfn_20
+    //       (cond, lbl_825C2B50))  this->m_pActiveBranch = child; }` —
+    //       the slot-20 call is the gdCSActionData::IsType check against
+    //       the runtime-resolved condition-match tag at lbl_825C2B50
+    //       (.data 4-byte global; resolve_address confirms), and the match
+    //       winner is latched into this+0x14 (m_pActiveBranch). Header
+    //       still models pongCSActionIf as standalone, so base-class Init
+    //       can't be reached from this scope; fixing that requires giving
+    //       pongCSActionIf a `: pongCSAction` declaration.
+    //       source: pass5_final pongCSActionIf_vfn_3 @ 0x823499F0 +
+    //       class_hierarchy.txt:1884 (pongCSActionIf : pongCSAction)
 }
 
 // ── pongCSActionIf::Stop() [slot 6 @ 0x82349ab0] ──────────────────────────
@@ -706,53 +771,96 @@ void pongCSActionIf::Init() {
 // then clears the resolved-branch latch so Resume() reports "not done" on
 // the next tick. The branch selector lives at this+0x18 in the real class.
 void pongCSActionIf::Stop() {
-    // TODO(liftteam): dispatch to m_pSelectedBranch->Stop() once the
-    // ActionIf field layout is added to the header.
+    // NOTE: pass5_final 0x82349AB0 ("Stop") is actually a 7-way condition
+    //       evaluator dispatched on m_pData+40 (m_conditionEnum+1) — it
+    //       maps 1:1 to the 7 condition strings in gd_cutscene.cpp
+    //       (PLAYER_SCORE_EQUAL … RANDOM_PERCENT). The per-case logic
+    //       touches globals at -32164+30388 (0x825D36B4, player score),
+    //       -32164+30392 (0x825D36B8, opponent score), and lbl_8271A310
+    //       (active-player pointer). It writes a bool (r4) then calls
+    //       pongCSAction_9F18_p46 @ 0x82349F18 — the actual stop-fan-out
+    //       helper — which in turn walks m_pChildren and invokes
+    //       child->Stop() on the selected branch.
+    //       Implementing this requires lifting pongCSAction_9F18_p46 and
+    //       wiring up the score/state globals; deferred.
+    //       source: pass5_final pongCSActionIf_vfn_6 @ 0x82349AB0
 }
 
 // ── pongCSActionCharAmbAnim::Stop() [slot 6 @ 0x8234ad98] ─────────────────
 // Cancels any ambient (crowd) anim this action launched.
 void pongCSActionCharAmbAnim::Stop() {
-    // TODO(liftteam): the body calls the crowd-animation manager to drop
-    // the ambient clip; no observable state lives on the action itself.
+    // NOTE: pass5_final pongCSActionCharAmbAnim_vfn_6 @ 0x8234AD98 shows
+    //       this fetches the names-manager (pg_9C00_g @ 0x821C9C00 with
+    //       r3=lbl_8271A308 singleton, r4=m_pData+20 handle), snprintf's
+    //       a label into the stack slot, walks the crowd roster at
+    //       lbl_8260668C (-32160+26252; confirmed .data 4-byte ptr), and
+    //       on a name match invokes the roster entry's vtable slot 4
+    //       (the per-clip "cancel" method). No observable state lives on
+    //       the action itself — everything is routed through the global
+    //       crowd roster.
+    //       source: pass5_final pongCSActionCharAmbAnim_vfn_6 @ 0x8234AD98
 }
 
 // ── pongCSActionCharAmbAnim::GetProgress() [slot 10 @ 0x82348868] ─────────
 // Reports the fraction (0..1) of the ambient anim that has elapsed. The
 // ASM forwards to the crowd-manager per-clip progress query.
 void pongCSActionCharAmbAnim::GetProgress() {
-    // TODO(liftteam): return the crowd-clip progress once the crowd
-    // manager is lifted. Signature currently mirrors the header's
-    // void-returning declaration; the real function returns a float in f1.
+    // NOTE: pass5_final pongCSActionCharAmbAnim_vfn_10 @ 0x82348868 is a
+    //       2-instruction stub: `li r3,13 ; blr`. It returns the integer
+    //       constant 13 (not a float as originally suspected) — this is
+    //       the "clip is category #13 / ambient" tag used by the crowd
+    //       roster dispatcher. Once the header signature returns int the
+    //       body is literally `return 13;`.
+    //       source: pass5_final pongCSActionCharAmbAnim_vfn_10 @ 0x82348868
 }
 
 // ── pongCSActionCharVisible::Stop() [slot 6 @ 0x8234abc8] ─────────────────
 // Toggles the target character's mesh visibility back to its on-enter
 // state. Touches only the character's render-flags bitmask.
 void pongCSActionCharVisible::Stop() {
-    // TODO(liftteam): flip the "hidden" bit on m_pTarget->m_nRenderFlags
-    // after the char-instance struct is lifted.
+    // NOTE: pass5_final pongCSActionCharVisible_vfn_6 @ 0x8234ABC8 calls
+    //       pg_E6E0 @ 0x8225E6E0 with (r3=10246, r4=flagMask|64, r5=1,
+    //       r6=&stackBool, r7=m_pData+20 charId, ...). The "hidden" bit
+    //       is computed as `1 << m_pData+20` (char id) OR'd with 64, and
+    //       the stackBool is primed to `m_pData+24 ? 1 : 0`. Target is
+    //       resolved inside pg_E6E0 via the char-instance registry, not
+    //       a direct m_pTarget field.
+    //       source: pass5_final pongCSActionCharVisible_vfn_6 @ 0x8234ABC8
 }
 
 // ── pongCSActionLvlAnim::Stop() [slot 6 @ 0x8234ac88] ─────────────────────
 // Stops a level-geometry animation (e.g. stadium banners).
 void pongCSActionLvlAnim::Stop() {
-    // TODO(liftteam): defer to lvlAnimMgr::Cancel once the level-anim
-    // manager is lifted.
+    // NOTE: pass5_final pongCSActionLvlAnim_vfn_6 @ 0x8234AC88 is a tail
+    //       call into fxAmbientMgr_E810_2hr @ 0x8237E810 with
+    //       (r3=lbl_8260668C [global fx ambient mgr], r4=m_pData+20 [anim
+    //       id u32]). The "level-anim manager" is actually fxAmbientMgr
+    //       sharing the same singleton as the char-ambient path.
+    //       source: pass5_final pongCSActionLvlAnim_vfn_6 @ 0x8234AC88
 }
 
 // ── pongCSActionLvlAmbAnim::Stop() [slot 6 @ 0x8234ad10] ──────────────────
 // Ambient counterpart to LvlAnim::Stop — kills a looping stadium ambient.
 void pongCSActionLvlAmbAnim::Stop() {
-    // TODO(liftteam): defer to lvlAmbAnimMgr::Cancel.
+    // NOTE: pass5_final pongCSActionLvlAmbAnim_vfn_6 @ 0x8234AD10 does
+    //       pg_C2A0_g (global registry lookup by m_pData+40 handle) then,
+    //       on non-null, calls util_E8E8 @ 0x8237E8E8 with
+    //       (r3=lbl_8260668C, r4=stackLabel, r5=m_pData+24, r6=m_pData+28).
+    //       Shares fxAmbientMgr with LvlAnim::Stop but uses the ambient
+    //       cancel helper instead of the direct cancel.
+    //       source: pass5_final pongCSActionLvlAmbAnim_vfn_6 @ 0x8234AD10
 }
 
 // ── pongCSActionShowAllAmbients::Stop() [slot 6 @ 0x8234ae88] ─────────────
 // Re-hides every ambient character after a cutscene that temporarily
 // forced them all visible (e.g. crowd wide-shots).
 void pongCSActionShowAllAmbients::Stop() {
-    // TODO(liftteam): iterate the active-crowd roster and clear the
-    // "force visible" bit on each entry.
+    // NOTE: pass5_final pongCSActionShowAllAmbients_vfn_6 @ 0x8234AE88 is
+    //       a tail call into fxAmbientMgr_E958_p39 @ 0x8237E958 with
+    //       (r3=lbl_8260668C, r4=m_pData+20 [byte: "force visible" flag],
+    //       r5=0). The fxAmbientMgr applies/clears the force-visible bit
+    //       across every roster entry internally — not a loop in this slot.
+    //       source: pass5_final pongCSActionShowAllAmbients_vfn_6 @ 0x8234AE88
 }
 
 // ── pongCSActionDoInOrder::Init() [slot 3 — inherited pongCSAction::Init] ─

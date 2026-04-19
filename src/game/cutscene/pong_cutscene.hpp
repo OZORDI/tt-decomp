@@ -6,8 +6,11 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * NOTE: return types, params, and inheritance are progressively filled in as
+ * each method is lifted. Cross-reference recomp/structured_pass5_final/ when
+ * adding signatures. (Confirmed inheritance so far from class_hierarchy.txt:
+ * pongCSActionIf : pongCSAction; pongCSActionDoInOrder : pongCSAction;
+ * pongCSActionWait : pongCSAction.)
  */
 #pragma once
 #include <stdint.h>

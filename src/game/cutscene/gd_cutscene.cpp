@@ -436,13 +436,28 @@ void gdCSCharAnimNames::FindRandAnimData(uint32_t randomSeed, uint32_t selection
         return;
     }
     
-    // TODO: Full implementation requires understanding the random table structure
-    // and the exact weighting algorithm used
-    
+    // TODO(researched): tried pass5_final gdCSCharAnimNames_FindRandAnimData
+    //       @ 0x8240D4A8 (928 lines of scaffold), string_xrefs.txt for
+    //       "other character selected '%s'…" (@ 0x82076B54), and
+    //       resolve_address on lbl_825D1C44 (20-byte .data block — the
+    //       random table). Inconclusive because:
+    //         * the random table at lbl_825D1C44 is 20 bytes (5 u32s) with
+    //           no RTTI anchor, so its structure is still unnamed;
+    //         * the weighting algorithm uses a 64-bit Lehmer step
+    //           (multiply by 0x5DEECE66D-style constants at loc_82349BA8
+    //           in sibling code) that needs its own math-helper lift;
+    //         * the final selection loop (>0x8240D6E8) calls back through
+    //           pg_9C00_g + snprintf format "%s_%d" and dispatches slot 4
+    //           of an unnamed roster class we haven't mapped yet.
+    //       The three high-level steps documented above remain the current
+    //       best-effort summary. Full lift deferred until the random-table
+    //       and roster-class types are named.
+    //       source: pass5_final gdCSCharAnimNames_FindRandAnimData @ 0x8240D4A8
+
     // The function uses several temporary arrays:
     // - m_pSelectionFlags: Marks which animations pass time range filter
     // - m_pNameMatchFlags: Marks which animations match name filter
-    
+
     // Key steps from assembly analysis:
     // 1. Get random float value from random table (lbl_825D1C44 + offset)
     // 2. For each animation:
