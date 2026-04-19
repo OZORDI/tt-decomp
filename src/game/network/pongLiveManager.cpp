@@ -39,14 +39,10 @@ pongLiveManager::~pongLiveManager() {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Start a new Xbox Live multiplayer session
- * 
- * Initializes peer slots, spectator slots, and session state for online play.
- * 
- * TODO: Full implementation requires understanding session initialization flow
- */
-/**
  * pongLiveManager::StartSession @ 0x8239FEB0 | size: 0x10C
+ *
+ * Start a new Xbox Live multiplayer session — initialises peer slots,
+ * spectator slots, and session state for online play.
  *
  * Starts an Xbox Live multiplayer session. First checks if the
  * coordinator is in exhibition mode — if so, sets stat type to 4
@@ -121,16 +117,12 @@ void pongLiveManager::StartSession() {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * End the current Xbox Live session
- * 
- * Writes final statistics, disconnects peers, and cleans up session resources.
- * Debug string: "pongLiveManager::EndSession() called.."
- * Debug string: "pongLiveManager::EndSession() -- user is offline, can't end or write stats"
- * 
- * TODO: Full implementation requires understanding session teardown flow
- */
-/**
  * pongLiveManager::EndSession @ 0x823ADD68 | size: 0x178
+ *
+ * End the current Xbox Live session — writes final statistics,
+ * disconnects peers, cleans up session resources.
+ * Debug strings: "pongLiveManager::EndSession() called..",
+ *                "...user is offline, can't end or write stats"
  *
  * Ends the current Xbox Live session. Logs the call, checks if the
  * local user is signed in to Live (via xam_9608). If offline, logs
@@ -204,19 +196,11 @@ void pongLiveManager::EndSession() {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Find an available peer slot index
- * 
- * Searches through peer slots (0-31) to find an unused slot for a new peer.
- * Returns -1 if all slots are occupied.
- * 
- * Debug string: "pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!"
- * 
- * @return Peer slot index (0-31) or -1 if none available
- * 
- * TODO: Implement peer slot search logic
- */
-/**
  * pongLiveManager::GetAvailablePeerIndex @ 0x823AD240 | size: 0xBC
+ *
+ * Find an available peer slot (0-31) for a new peer.
+ * Returns -1 if all slots are occupied.
+ * Debug: "pongLiveManager::GetAvailablePeerIndex() Out of peer indexes!!!"
  *
  * Searches peer slots 0-31 for an unoccupied slot. For each slot,
  * checks the peer table entry in a 2D array indexed by
@@ -263,19 +247,11 @@ int pongLiveManager::GetAvailablePeerIndex(int sessionType) {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Find an available spectator slot index
- * 
- * Searches through spectator slots (0-31) to find an unused slot.
- * Returns -1 if all slots are occupied.
- * 
- * Debug string: "pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!"
- * 
- * @return Spectator slot index (0-31) or -1 if none available
- * 
- * TODO: Implement spectator slot search logic
- */
-/**
  * pongLiveManager::GetAvailableSpectatorIndex @ 0x823AD300 | size: 0x130
+ *
+ * Find an available spectator slot (0-31).
+ * Returns -1 if all slots are occupied.
+ * Debug: "pongLiveManager::GetAvailableSpectatorIndex() Out of peer indexes!!!"
  *
  * Finds an available spectator slot. First checks if the network
  * coordinator has an open spectator position via SinglesNetworkClient_A250.
@@ -383,14 +359,15 @@ void pongLiveManager::InitSessionDescriptor(void* descriptor) {
 /**
  * pongLiveManager::WriteSessionStats @ 0x823AF228 | size: 0x354
  *
- * Large function (852 bytes) — writes accumulated session statistics
- * to Xbox Live leaderboards. Handles exhibition and tournament stat
- * categories including weekly/yearly wins and losses.
- *
- * TODO: Full implementation requires understanding of XSessionWriteStats API
+ * Writes accumulated session statistics to Xbox Live leaderboards.
+ * Handles exhibition and tournament stat categories including weekly/
+ * yearly wins and losses. 852 bytes in the binary — deferred: needs a
+ * focused batch to model XSessionWriteStats + the per-mode leaderboard
+ * column tables. Once implemented, StatsReaderNotifyHandler above is
+ * its read-side symmetric counterpart.
  */
 void pongLiveManager::WriteSessionStats() {
-    // TODO: Implement — 852 bytes of Xbox Live stats writing logic
+    // Deferred — see doc comment.
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -398,21 +375,17 @@ void pongLiveManager::WriteSessionStats() {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Statistics reader notification handler
- * 
- * Processes Xbox Live statistics read notifications for exhibition and tournament modes.
- * Handles weekly/yearly wins/losses tracking for multiple game modes (4-player, 8-player).
- * 
- * This is a MASSIVE function (5504 bytes) with extensive statistics processing logic.
- * 
- * Debug strings indicate it handles:
- * - Exhibition stats vs Tournament stats
- * - Weekly wins/losses
- * - Yearly wins/losses
- * - 4-player and 8-player tournament stats
- * - Per-gamer statistics tracking
- * 
- * TODO: Full implementation requires understanding Xbox Live stats API
+ * pongLiveManager::StatsReaderNotifyHandler — statistics reader callback.
+ *
+ * Processes Xbox Live statistics read notifications for exhibition and
+ * tournament modes. Handles weekly/yearly wins/losses tracking for
+ * multiple game modes (4-player, 8-player).
+ *
+ * 5504-byte handler in the binary. First half (EXHIBITION STATS) is fully
+ * reconstructed from the scaffold; second half (TOURNAMENT STATS) is
+ * reconstructed from debug-string symmetry with the first half — see
+ * the in-body residual-items block near the tail for things a future
+ * scaffold re-dump should verify.
  */
 void pongLiveManager::StatsReaderNotifyHandler(void* notifyEvent) {
     // Debug strings referenced by this handler (resolved from scaffold):
@@ -707,15 +680,13 @@ void pongLiveManager::StatsReaderNotifyHandler(void* notifyEvent) {
     // unwind from the stack, and the handler falls through to the
     // epilogue. No other cleanup is emitted by the scaffold.
 
-    // TODOs still open on the second half:
+    // Residual items on the second half (held for a scaffold re-dump):
     //   - Confirm exact offsets 16..44 inside the 2784-byte gamer row
-    //     once the full scaffold is dumped (only +36 is proven from the
-    //     visible first-half slice).
-    //   - Wire the "gStartedMessage being sent %s" and
-    //     "ing Finalized Ball Hit Data This Frame ..." logs that live
-    //     in the tail VCALL region; they need the finalised stats
-    //     struct layout before they can be placed without violating the
-    //     project's no-raw-offset rule.
+    //     (only +36 is proven from the visible first-half slice).
+    //   - Place the "gStartedMessage being sent %s" and "ing Finalized
+    //     Ball Hit Data This Frame ..." log lines that live in the tail
+    //     VCALL region; they need the finalised stats struct layout
+    //     before they can be wired without raw offsets.
 }
 
 // ────────────────────────────────────────────────────────────────────────────

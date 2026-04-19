@@ -990,7 +990,10 @@ extern void snLeaveMachine_ReleaseHost(void* client, void* connectionRef);  // @
 extern void snLeaveMachine_ForceLeave(void* self);                          // @ 0x823F0438
 extern void snSession_KickAndClose(void* self);                             // @ 0x823F0778
 extern void snLeaveMachine_DropRemote(void* self);                          // @ 0x823F0880
-extern void SinglesNetworkClient_PeerLookupA250(void* sessionList, void* connection); // @ 0x823EA250
+// SinglesNetworkClient_A250_g @ 0x823EA250 | strcmp-keyed red-black-tree
+// peer lookup. Returns the matching node pointer, or nullptr if the peer key
+// is not present in the list.
+extern void* SinglesNetworkClient_PeerLookupA250(void* sessionList, void* connection); // @ 0x823EA250
 extern void SinglesNetworkClient_ResetJoinState(void* self);                // @ 0x823E7310
 extern void SinglesNetworkClient_InitConnRef(void* connRef);                // @ 0x823B3FD8
 
@@ -1215,11 +1218,10 @@ void snJoinMachine_OnEvent_JoinRequestArm(snJoinMachine* self) { // vfn_13 (inbo
 
         snSinglesNetClient* client = (snSinglesNetClient*)self->m_pSession;
         void* peerKey = (void*)((char*)eventObj + 16);
-        void* found = (void*)(uintptr_t)0;
-        SinglesNetworkClient_PeerLookupA250(client->m_pPeerList, peerKey);
-        (void)found;
+        void* found = SinglesNetworkClient_PeerLookupA250(client->m_pPeerList, peerKey);
 
-        bool peerKnown = false;
+        // Non-null => peer already in the session tree => reject as duplicate.
+        bool peerKnown = (found != nullptr);
         if (!peerKnown) {
             void* hsmCtx = vfn_11(self);
             snSession_AssociateConnection(hsmCtx, self, &self->m_AcceptingJoinRequest);  // +192
@@ -1241,9 +1243,10 @@ void snJoinMachine_OnEvent_JoinRequestArm(snJoinMachine* self) { // vfn_13 (inbo
 
         snSinglesNetClient* client = (snSinglesNetClient*)self->m_pSession;
         void* peerKey = (void*)((char*)eventObj + 16);
-        SinglesNetworkClient_PeerLookupA250(client->m_pPeerList, peerKey);
-        bool peerKnown = false;
+        void* found = SinglesNetworkClient_PeerLookupA250(client->m_pPeerList, peerKey);
 
+        // Non-null => peer already in the session tree => reject as duplicate.
+        bool peerKnown = (found != nullptr);
         if (!peerKnown) {
             void* hsmCtx = vfn_11(self);
             snSession_AssociateConnection(hsmCtx, self, &self->m_RequestingJoin);  // +216
@@ -1257,9 +1260,6 @@ void snJoinMachine_OnEvent_JoinRequestArm(snJoinMachine* self) { // vfn_13 (inbo
         snJoinMachine_97D0(self, &cfgEvt);
         return;
     }
-    // TODO[vfn_13]: the A250 peer-lookup result flows back into a bool via
-    // r3 in the recomp -- wire that through once the helper is lifted; for now
-    // we follow the "unknown peer" success branch, matching the common case.
 }
 
 // ============================================================================

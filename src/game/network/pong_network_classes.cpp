@@ -2111,8 +2111,9 @@ void pongNetMessageHolder_vfn_2_FFF8(void* self) {
 // ─────────────────────────────────────────────────────────────────────────────
 // pongNetMessageHolder::vfn_2_0260 @ 0x823C0260 | size: 0x64
 // Teardown for a 10 × 28-byte pool.
-// TODO: identify the paired allocator (likely vfn_1 at 0x823C0160 or nearby)
-//       and the ctor it calls — scaffold shows inline construction.
+// Paired with pongNetMessageHolder_vfn_1_0160_1 @ 0x823C0160 (252 B) which
+// lazy-allocates the 284-byte backing block and constructs each 28-byte entry
+// inline (scaffold shows no separate ctor call).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_2_0260(void* self) {
     pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/28);
@@ -2122,7 +2123,9 @@ void pongNetMessageHolder_vfn_2_0260(void* self) {
 // ─────────────────────────────────────────────────────────────────────────────
 // pongNetMessageHolder::vfn_2_04D0 @ 0x823C04D0 | size: 0x64
 // Teardown for a 10 × 32-byte pool.
-// TODO: identify paired allocator (likely vfn_1 at 0x823C03D0) and its ctor.
+// Paired with pongNetMessageHolder_vfn_1_03D0_1 @ 0x823C03D0 (256 B); that
+// allocator is already lifted in src/game/network/pong_network.cpp and
+// handles the 324-byte backing block with inline entry construction.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_vfn_2_04D0(void* self) {
     pnmh_destroy_and_free(self, /*entries=*/10, /*stride=*/32);

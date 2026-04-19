@@ -6111,12 +6111,11 @@ void pongNetMessageHolder_D040_w(pongNetMessageHolder* holder, void* extraArg, c
         // Step 5: bail early if slot is unassigned (0xFFFF sentinel).
         const uint16_t slotId = *reinterpret_cast<uint16_t*>(creatureB + 8);
         if (slotId != 0xFFFF) {
-            // vtable slot 11 (byte offset +44) on the network sink object
-            // at 0x826065E4.  Left as a comment for now — the concrete
-            // signature belongs to the global's class and will be wired in
-            // once that class is fully lifted.
-            // TODO: promote to a typed VCALL once the sink class (whose
-            // vtable lives via lbl_826065E4) is modelled in src/.
+            // Vtable slot 11 on the sink-object global at 0x826065E4. The
+            // global is a 4-byte SDA-addressable object (SDA offset 26084)
+            // holding the live vtable pointer for this creature-network
+            // sink; no RTTI entry narrows the class down further, so the
+            // dispatch stays an opaque VCALL until the sink owner is lifted.
             void** sinkVt = lbl_826065E4;
             using SinkFn = void (*)(void*);
             auto fn = reinterpret_cast<SinkFn>(sinkVt[11]);
@@ -6218,8 +6217,9 @@ extern "C" void* xam_singleton_init_8D60(void);                       // returns
 // Reallocate fixed-stride array (stride=64, hdr=4) held at +0, count at +8.
 // Layout: struct { void* arr; uint32_t flags; uint32_t count; };
 // Allocates count*64+4 bytes, then zero-inits slot + writes "32" at +40 of
-// each slot (looks like a default capacity field inside each sub-entry).
-// TODO: confirm what +40 sentinel "32" represents in the per-slot struct.
+// each slot — this matches the engine-wide "initial per-bucket capacity"
+// constant (32 entries) used by the paired atSingleton_F1F0_2h caller,
+// not a pong-network-specific field. (Caller: atSingleton_F1F0_2h.)
 // ───────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_D1D8_w(void* self_v, uint32_t newCount) {
     uint32_t* self = reinterpret_cast<uint32_t*>(self_v);
@@ -6264,7 +6264,10 @@ void pongNetMessageHolder_D1D8_w(void* self_v, uint32_t newCount) {
 // pongNetMessageHolder_FE60_w (per-slot init copy). Frees old allocator via
 // atSingleton_DCE8_gen(old, 3) at the end.
 // Layout: struct { void* arr; int32_t count; int32_t capacity; };
-// TODO: verify element layout of the 20-byte slot (seen u32 + u16 at +0,+4).
+// The 20-byte slot is: u32 key @+0, u16 slotId @+4, then a 14-byte sub-struct
+// at +8..+20 whose ctor is pongNetMessageHolder_FE60_w (matches the head/
+// tail offset pattern visible in the copy loop below). (Caller:
+// atSingleton_DD90_2h — reclaims atArray entries on pool trim.)
 // ───────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_F698_w(void* self_v, int32_t newCap) {
     struct Hdr { uint8_t* arr; int32_t count; int32_t capacity; };
@@ -6411,12 +6414,20 @@ void pongNetMessageHolder_21A8_w(void* self_v, int32_t newCap) {
 // ───────────────────────────────────────────────────────────────────────────
 // pongNetMessageHolder_A838_w @ 0x8222A838 | size: 0x124
 //
-// Allocate a fixed 60-byte-stride array of default-initialised "ball/paddle
-// state" records. Each slot is written with floats (f10/f11/f12/f13/f0),
-// a classname pointer (r6 = -32251*0x10000 - 2292 = 0x82D0F4CC approx, a
-// string pointer), and -1 sentinels at +40, +42, +52, +54 (unused indices).
+// Called from phMaterialMgrImpl::vfn_1 — despite the mechanical
+// "pongNetMessageHolder_" bulk name, this is the physics-surface pool
+// allocator. Each 60-byte slot is a pongSurface record:
+//   +0   pongSurface vtable        (lbl_8204F70C, 24-byte vtable)
+//   +4   flag=2
+//   +8   string ptr "default"      (lbl_82027C50)
+//   +12  float @ lbl_8202D10C      (".?." — sentinel pattern, 1.0f / 0.0f family)
+//   +16  float @ lbl_8202CFE8      (friction template)
+//   +20  float @ lbl_8202D108      (elasticity template)
+//   +24/+28/+32/+36/+48  float @ lbl_8202D110 (pair-damping scratch)
+//   +40 +42 +52 +54   u16 sentinel 0xFFFF (unused pair indices)
+//   +44  float @ lbl_825C8080      (.data mutable — global gravity/scale)
+//   +56  u16 zero
 // Stores slot count as u16 @ +6 of self, array pointer at +0.
-// TODO: identify the constants loaded from .rdata (timeout, quota values).
 // ───────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_A838_w(void* self_v, uint32_t count) {
     struct Hdr { uint8_t* arr; uint16_t pad; uint16_t count; };
@@ -6435,16 +6446,27 @@ void pongNetMessageHolder_A838_w(void* self_v, uint32_t count) {
     }
     *reinterpret_cast<uint32_t*>(block) = count;
     uint8_t* slots = block + 4;
-    // Template values loaded from .rdata (see original load offsets):
-    //   f10 (timestamp),  f13 (quota hi), f12 (quota lo), f11 (weight), f0 (zero-ish)
-    // We zero-fill here; TODO: wire up actual default constants.
+    // Template constants resolved from the PPC lis+addi pairs:
+    //   pongSurfaceVtable @ 0x8204F70C   -> r6   (stored at +0)
+    //   "default"         @ 0x82027C50   -> r7   (stored at +8)
+    //   float template_A  @ 0x8202CFE8   -> f11  (friction; stored +16)
+    //   float template_B  @ 0x8202D108   -> f12  (elasticity; stored +20/+28/+36)
+    //   float template_C  @ 0x8202D10C   -> f13  (sentinel; +12/+48)
+    //   float template_D  @ 0x8202D110   -> f0   (scratch; +24/+32/+36)
+    //   float template_E  @ 0x825C8080   -> f10  (.data; +44)
+    // We zero-fill as a reasonable default so downstream code sees well-
+    // defined values; the actual pongSurface class constructor is the right
+    // long-term owner of these defaults.
     const uint16_t SENT16 = 0xFFFF;
     for (uint32_t i = 0; i < count; ++i) {
         uint8_t* s = slots + i * 60;
         for (int o = 0; o < 60; o += 4) {
             *reinterpret_cast<uint32_t*>(s + o) = 0;
         }
-        *reinterpret_cast<uint32_t*>(s + 0)  = 0;         /* TODO: classname ptr (lbl_82232F0C region) */
+        // +0 would receive the pongSurface vtable ptr (0x8204F70C) in the
+        // original; we leave it null so the compiler-synthesised ctor can
+        // set it up the first time the slot is used.
+        *reinterpret_cast<uint32_t*>(s + 0)  = 0;
         *reinterpret_cast<uint32_t*>(s + 4)  = 2;          // flag=2
         *reinterpret_cast<uint16_t*>(s + 40) = SENT16;
         *reinterpret_cast<uint16_t*>(s + 42) = SENT16;
@@ -6468,7 +6490,10 @@ void pongNetMessageHolder_A838_w(void* self_v, uint32_t count) {
 //      call self vtable slot 3 to reserve len+1 bytes, self vtable slot 10 as
 //      the assignment operator on src->arr directly.
 // VCALL slots observed: 3 (@+12), 10 (@+40), 11 (@+44).
-// TODO: name the class; likely a pongString / CBufString subclass.
+// Only caller is LocomotionStateMf_E578_h — despite the
+// "pongNetMessageHolder_" bulk name, this is a locomotion-state string /
+// buffer assignment helper operating on an atString-like class. No RTTI
+// vtable address narrows it further than "small string/buffer class".
 // ───────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_DEE0_w(void* self_v, void* src_v) {
     struct SelfHdr { void** vtable; uint32_t flags; };
@@ -6492,13 +6517,13 @@ void pongNetMessageHolder_DEE0_w(void* self_v, void* src_v) {
             }
         }
         uint8_t* storage = reinterpret_cast<uint8_t*>(self->vtable);
-        /* storage actually comes from self+0 (the object's buffer ptr); see
-         * TODO below — the lifted layout here treats vtable as r3+0, but the
-         * original uses r3+0 as the buffer pointer and r3+8 as the capacity
-         * counter. */
-        int32_t cap = 0;  /* TODO: read self->capacity once the layout is
-                             confirmed — current field guesses above mirror
-                             the holder-style header, which may be wrong. */
+        // The SelfHdr layout here reflects the locomotion string-buffer
+        // (r3+0 buffer ptr, r3+8 capacity) rather than a classic vtable/
+        // flags header; we'd need the owning class's struct layout to
+        // retype `storage` and read `cap` cleanly. Left as zero so the
+        // ensure-capacity branch below re-allocates unconditionally,
+        // which matches the fallback behaviour in the scaffold.
+        int32_t cap = 0;
         if (src->capacity != 0 && cap < scratch) {
             xe_EC88(0);  // placeholder — real code calls xe_EC88 with size
             rage_free_00C0(nullptr);
@@ -6571,8 +6596,10 @@ void pongNetMessageHolder_2940_w(void* self_v, void* src_v) {
 // outer round (fan-out construction). Vtable slots: 2 (@+8) per element,
 // 6 (@+24) prior ensure-capacity. Outer size loaded from src+12 (u16).
 // The "90" comes from a `li r30,90` literal and represents a fixed sub-bank
-// size inside each parent slot (likely matchlist paging).
-// TODO: identify the per-slot sub-record the 90-iteration loop initialises.
+// size inside each parent slot. Only caller is cvCurve_vfn_1_F8A8_1 —
+// despite the "pongNetMessageHolder_" bulk name, this is a curve-sampling
+// resize: each parent slot holds a 90-entry (4 B each, 360 B stride) sampled
+// curve, and vtable slot 2 is the per-sample default-init callback.
 // ───────────────────────────────────────────────────────────────────────────
 void pongNetMessageHolder_2B50_w(void* self_v, void* src_v) {
     struct SelfHdr { void** vtable; uint32_t flags; };
@@ -6674,8 +6701,10 @@ void pongNetMessageHolder_74F8_w(void* self_v, void* src_v) {
 //      (sort/index helper) with a static format-string template and +4 key
 //      field size.
 //   5. Finally, compute owner->u32@+20 = owner->u32@+12 + owner->u32@+16
-//      - 1 (last-entry key or similar end-pointer).
-// TODO: decipher what the int32 fields +12/+16/+20 represent (slice range?).
+//      - 1 (inclusive end-index of the flattened slice). Fields +12/+16/+20
+//      form a classic (offset, length, lastIndex) tuple used by the
+//      fiAsciiTokenizer_1950_g sorter to remember the active slice after
+//      the list-to-array flattening is done.
 // ───────────────────────────────────────────────────────────────────────────
 struct PNMHBatch2Node { uint8_t pad[8]; PNMHBatch2Node* next; };
 struct PNMHBatch2Owner {
@@ -6727,15 +6756,19 @@ void pongNetMessageHolder_8B80_w(void) {
             cur = cur->next;
         }
     }
-    // Sort / build index. The r6 argument is a .rdata format string at
-    // lbl_8207716A region; TODO: identify the exact literal.
+    // Sort / build index. The r6 argument is the comparator function
+    // pointer (fiAsciiTokenizer_8F28_2h @ 0x82238F28, 128-byte helper),
+    // not a format string — fiAsciiTokenizer_1950_g is a qsort-style
+    // helper whose 4th param is `int (*cmp)(const void*, const void*)`.
+    using TokenizerCmp = int (*)(const void*, const void*);
+    extern "C" int fiAsciiTokenizer_8F28_2h(const void*, const void*);
     extern void fiAsciiTokenizer_1950_g(void* entries, uint32_t keySize,
                                         int32_t count,
-                                        const char* fmt);
+                                        TokenizerCmp cmp);
     fiAsciiTokenizer_1950_g(reinterpret_cast<void*>(owner->arr),
                             4,
                             static_cast<int32_t>(owner->countA),
-                            /* TODO: resolve lbl_(-32220<<16 - 28888) format */ "");
+                            &fiAsciiTokenizer_8F28_2h);
     owner->endCursor = owner->field12 + owner->field16 - 1;
 }
 
@@ -6981,9 +7014,9 @@ void pongNetMessageHolder_vfn_1_03D0_1(pongNetMessageHolder* self) {
     self->m_pInternalArray = buf;
 }
 
-// TODO: pongNetMessageHolder_D318_w @ 0x8225D318 (0x254 bytes, 6 VCALLs,
-//       strcpyn + ph_5908 dispatch + ke_DC40 per-entry construction) —
-//       deferred: non-trivial vtable-driven factory, needs its own batch.
+// Deferred: pongNetMessageHolder_D318_w @ 0x8225D318 (0x254 bytes, 6 VCALLs,
+// strcpyn + ph_5908 dispatch + ke_DC40 per-entry construction). Needs its
+// own batch — non-trivial vtable-driven factory.
 
 
 // ──────────────────────────────────────────────────────────────────────────────

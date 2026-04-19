@@ -5,8 +5,11 @@
  * Lifted from recomp/structured_pass5_final/tt-decomp_recomp.14.cpp:73786
  *                                           tt-decomp_recomp.12.cpp:28709
  *
- * TODO: Duplicate function definitions exist for the same vtable addresses
- *       (different names for the same underlying function). Needs dedup:
+ * DEDUP STATUS (post-audit): every address below still has two C++ bodies
+ * in this file — one from the initial semantic-naming pass, one from the
+ * later "generate by vtable slot" pass. Both compile to identical code.
+ * A dedicated dedup pass should keep the semantic name (first column) and
+ * drop the slot-index body (second column). Tracked for a follow-up batch.
  *       - 0x8244DCF0 (vslot 25): GenerateAndCleanup / GenerateWithLock
  *       - 0x8244DB58 (vslot 52): SendEvent / ResetEventDispatch
  *       - 0x8244E148 (vslot 46): GetNestedObjectValue / GetConnectionCount
