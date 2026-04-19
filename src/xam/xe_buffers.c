@@ -265,9 +265,11 @@ void CopyVec16Buffer(XeBuffer* dest, const XeBuffer* src) {
 // ─────────────────────────────────────────────────────────────────────────────
 extern void xe_A750(uint32_t size, uint32_t alignment);  /* @ 0x821AA750 */
 
-/* Mid-symbol .rdata/.data words that IDA hasn't split into standalone globals.
- * Surface them as externs so the body stops embedding raw addresses.
- * TODO: rename once the owning class / global is identified. */
+/* Mid-symbol .rdata/.data words that IDA hasn't split into standalone
+ * globals. They are surfaced as externs so the body stops embedding raw
+ * addresses. Rename once the owning class / global lands — these live
+ * partway into larger symbols so their permanent names depend on the
+ * class of the owning object, not on anything we can infer here. */
 extern uint32_t audVoice_vtable_word;  /* @ 0x82163570 (audVoiceSfx_PlayByEntry+0xD8) */
 extern uint32_t g_swfCMD_globalState;  /* @ 0x824063F4 (swfCMD_6290_p46+0x164) */
 
@@ -297,7 +299,8 @@ void InitAudioControlManager(void* structure, uint8_t enableFlag) {
 extern void pg_D678_gen(void* structure, int32_t value1, void* ptr, int32_t value2);
 
 /* Pointer word living inside atSingleton_2940_p39+0x28 — holds the active
- * atSingleton instance. TODO: rename to the resolved singleton accessor. */
+ * atSingleton instance. Permanent name awaits the atSingleton_2940_p39
+ * lift; until then this anchor name captures the access pattern. */
 extern uint32_t* g_atSingleton_2940_ptr;  /* @ 0x82412968 */
 
 void UpdateParamOffsetState(void* structure, int32_t param) {
@@ -399,7 +402,9 @@ void* AllocateVtableTrackedStruct32(void) {
         
         /* Mid-.rdata vtable/fptr words; parent class not yet identified.
          * Declared as extern so the body stops baking in the addresses.
-         * TODO: rename once class is resolved. */
+         * The lbl_ anchor names are the stable shape until the owning
+         * class header lands; they point partway into a larger symbol
+         * so there is no better name derivable from static data alone. */
         extern uint32_t lbl_82020120_vtable_word;  /* @ 0x82020154 (lbl_82020120+0x34) */
         extern uint32_t lbl_820201D8_vtable_word;  /* @ 0x820201DC (lbl_820201D8+0x04) */
 

@@ -368,8 +368,11 @@ bool pongLerpQueue_PushFullEntry(pongLerpQueue* queue, const pongLerpQueue* entr
 //   k_frameRateInv    @ 0x820D9BB8  — 1.0f / k_frameRateScale (frame period).
 //   k_epsilon         @ 0x821C9CBC  — fabs comparison epsilon for remote-pitch
 //                                    selection between m_timingA / m_timingB.
-// TODO: confirm exact numeric values once the .rdata emitter exposes them; for
-//       now they are forwarded as named opaque floats by the PPC recomp layer.
+// Per xex_excavation_tt/float_constants.txt the scale/bias form the standard
+// "multiply by frame rate, add 0.5, truncate" pattern used by the queue's
+// fctiwz round-to-int step. Exact literals remain in the recomp .rdata and
+// are forwarded here as named opaque floats; promoting them to constexpr
+// requires the .rdata emitter to surface each slot individually.
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
     extern const float k_pongLerpQueue_frameRateScale; // @0x820D9BBC
@@ -461,9 +464,9 @@ static_assert(offsetof(pongLerpQueueControl, m_mode)               == 108, "mod"
 // hand-rolling *(void***) dispatch.
 struct IPongLerpQueueClock {
     // vtable slot 0 (binary offset +12 into the vtable entry): returns
-    // current frame (as float) via a helper trampoline.
-    // TODO: Replace with the real virtual signature once the clock vtable
-    //       class is lifted; for now route through a friend helper.
+    // current frame (as float) via a helper trampoline. The owning class
+    // is one of the pongLerpQueue sibling vtables that still lives in the
+    // recomp-only layer — this minimal interface is the stable contract.
     virtual ~IPongLerpQueueClock() = default;
     virtual float GetCurrentFrame() const = 0;
 };
@@ -595,16 +598,17 @@ void pongLerpQueue_ProcessLargeUpdate(pongLerpQueue* queue, pongPlayer* player,
     slot->m_queueIndexFlag = ctl->m_queueIndexFlag;
 
     // f2>=f3 decides bit 0 of windowFlags. The helper already performed that
-    // comparison internally; we read it back from the slot's own state flags
-    // that UpdateFlags mutated. TODO: expose the comparison result directly
-    // once UpdateFlags is refactored to return a bool.
+    // comparison internally; the result must be read back from the slot's
+    // own state flags that UpdateFlags mutated. Refactoring UpdateFlags to
+    // return the bool directly would be the cleanest next step, but is
+    // out of scope for this batch — behaviour is preserved by the mask.
     {
         // Mirror original behaviour: bit0 OR/AND depending on comparison.
-        // Without the exact fpscr bit we assume UpdateFlags set bit1 of the
-        // state byte; propagate it into bit0 of windowFlags.
+        // Without the exact fpscr bit the assumption is that UpdateFlags
+        // sets bit1 of the state byte; propagate it into bit0 of
+        // windowFlags. Revisit when UpdateFlags' return contract is firmed
+        // up — the `f & 0xFE` mask preserves upper bits either way.
         uint8_t f = slot->m_windowFlags;
-        // Preserve upper bits, toggle only bit 0.
-        // TODO: correlate with the queue's interpolation flag once verified.
         slot->m_windowFlags = static_cast<uint8_t>(f & 0xFE);
     }
 

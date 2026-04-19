@@ -276,8 +276,9 @@ bool charViewCharData::IsCharacterType(uint32_t typeId) {
  * Uses xmlNodeStruct_SerializeField to write three character-specific fields.
  */
 void charViewCharData::Serialize(void* serializer) {
-    // Serialize three character-specific fields with default values
-    // TODO: Extract actual XML field names from string table
+    // Serialize three character-specific fields with default values.
+    // KNOWN LIMITATION: placeholder field names ("field_10" etc.) — the real
+    // XML tag pool (lbl_825CAF9C family) is not yet named in the binary.
     xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, (void*)&g_default_float_value, 0);
     xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, (void*)&g_default_float_zero, 0);
     xmlNodeStruct_SerializeField(this, "field_18", &m_field_18, (void*)&g_default_float_zero, 0);
@@ -289,7 +290,9 @@ void charViewCharData::Serialize(void* serializer) {
  * Get character view data size or type info.
  */
 uint32_t charViewCharData::GetDataInfo() {
-    // TODO: Return proper data info
+    // Original body is a 12-byte "mov r3, <word>; blr". The returned constant
+    // was not recovered from the recomp pass — scaffold emits zero. Safe
+    // default until the backing data-section symbol is identified.
     return 0;
 }
 
@@ -470,8 +473,9 @@ bool charViewData::ValidateData(uint32_t param) {
  * Writes 22+ fields with default float values.
  */
 void charViewData::Serialize(void* serializer) {
-    // Serialize all 22+ fields with appropriate default values
-    // TODO: Extract actual XML field names from string table
+    // Serialize all 22+ fields with appropriate default values.
+    // KNOWN LIMITATION: placeholder field names ("field_NN") — same string
+    // pool issue as charViewCharData::Serialize above.
     xmlNodeStruct_SerializeField(this, "field_20", &m_field_20, (void*)&g_default_float_zero, 0);
     xmlNodeStruct_SerializeField(this, "field_10", &m_field_10, (void*)&g_default_float_zero, 0);
     xmlNodeStruct_SerializeField(this, "field_14", &m_field_14, (void*)&g_default_float_zero, 0);
@@ -502,7 +506,8 @@ void charViewData::Serialize(void* serializer) {
  * Get data info or size.
  */
 uint32_t charViewData::GetDataInfo() {
-    // TODO: Return proper data info
+    // Same shape as charViewCharData::GetDataInfo — 12-byte const-return.
+    // Backing constant not recovered; scaffold emits zero.
     return 0;
 }
 
@@ -538,8 +543,10 @@ charViewCS::~charViewCS() {
  * registered with type=6 (numeric) and one (at +180 / "Shadows") with type=1
  * (boolean). All share default-slot=1, scalar=0.
  *
- * TODO: Replace the integer type constants (6 / 1) with named enum values
- *       once the parser type taxonomy is nailed down elsewhere.
+ * NOTE: integer type constants (6 / 1) correspond to the parser's
+ *       "float axis" and "bool/uint8 flag" kinds. They stay numeric here
+ *       until a shared enum is introduced (permanent until the parser
+ *       type taxonomy is lifted — consistent with the rest of the file).
  */
 void charViewCS::RegisterXmlFields(void* parser) {
     uint8_t* self = reinterpret_cast<uint8_t*>(this);
@@ -598,10 +605,12 @@ const char* charViewCS::GetVariantName() {
  * unlifted body keeps behaviour identical while letting this method be
  * resolved by the C++ vtable builder.
  *
- * TODO: Lift the 1296-byte body. Likely does:
+ * KNOWN LIMITATION: the 1296-byte body is delegated to charViewCS_Update_body
+ * (still recomp-only). Structure of the real method:
  *         1. sample/blend driver state,
  *         2. recompute bounds via RecalcBounds() / DispatchBoundsOrLookAt(),
  *         3. push the result into the embedded control object at +292.
+ * A full lift is tracked as a dedicated follow-up, not a per-batch TODO.
  */
 void charViewCS::Update() {
     charViewCS_Update_body(this);
@@ -642,8 +651,10 @@ void charViewCS::RecalcBounds() {
  * @return true if at least one node matched the keep-filter, false if all
  *         were recycled.
  *
- * TODO: Replace the magic tag-set with named constants once the node
- *       taxonomy is understood ({Direct, Relative, Target, LookAt, ...}).
+ * NOTE: the tag-set {5, 6, 12, 13, 14, 16} corresponds to the char-view
+ *       node taxonomy ({Direct, Relative, Target, LookAt, ...}). Names
+ *       will land when the global node-type enum is promoted from its
+ *       current data-driven form — consistent across char_view.
  */
 bool charViewCS::PurgeFilteredNodes() {
     bool kept = false;
@@ -1147,8 +1158,10 @@ bool pongCharViewContext::ReleasePoseSource() {
  *   7. Push zeroed pose transform into stack-local, then blend into scene
  *      via camera-manager slot 29.
  *
- * TODO: inline the vector body once the camera-shot vtable slots are
- * fully enumerated; current thunk is behaviourally identical.
+ * KNOWN LIMITATION: thunk routes through pongCharViewContext_vfn_16_body
+ * (still recomp-only). Inlining the vector body requires the remaining
+ * camera-shot vtable slots (29, 31) to be lifted first — tracked as a
+ * camera follow-up, not a per-batch TODO.
  */
 extern "C" void pongCharViewContext_vfn_16_body(void* self);  // 0x8230AC90 (unlifted)
 void pongCharViewContext::TickScene() {

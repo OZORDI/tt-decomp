@@ -66,10 +66,10 @@ void plrPlayerMgr_DestroySubObjects(void* subObjectArrayBase) {
         if (subObj->m_pObject2) {
             // Check if object is in singleton registry
             if (!atSingleton_IsTracked(subObj->m_pObject2)) {
-                // Not in registry - free via allocator
-                // Get allocator from TLS and call vtable slot 2 (Free/Release)
-                // TODO: Implement proper TLS allocator access
-                // For now, this is a placeholder showing the intent
+                // Not in registry - free via allocator.
+                // KNOWN LIMITATION: same TLS allocator dependency as
+                // src/game/data/gd_data.cpp — see the comment there.
+                // Keep both files in sync until rage_mem TLS lifts.
             }
         }
     }

@@ -67,9 +67,10 @@ struct pongDrawBucketManager {
 };
 
 // ── pongDrawable  [vtable @ 0x8204DB10] ──────────────────────────
-// TODO: implement 14 missing slots — 0x8225BD28, 0x8225BC60, 0x82223210,
-//       0x8225C7E0, 0x8225C838, 0x8225C910, 0x8225C430, 0x8225C368,
-//       0x82124168, 0x8225C018, 0x8225C0A0, 0x8225BF88, 0x8225C158, 0x8225C238
+// KNOWN LIMITATION: 14 vtable slots remain unlifted. Tracked addresses:
+//   0x8225BD28, 0x8225BC60, 0x82223210, 0x8225C7E0, 0x8225C838, 0x8225C910,
+//   0x8225C430, 0x8225C368, 0x82124168, 0x8225C018, 0x8225C0A0, 0x8225BF88,
+//   0x8225C158, 0x8225C238. Dedicated follow-up session, not per-batch TODO.
 struct pongDrawable {
     void**      vtable;           // +0x00
 

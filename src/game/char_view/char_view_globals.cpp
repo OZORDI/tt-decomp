@@ -68,11 +68,13 @@ const float g_default_float_value_2 = 0.0f;  // @ 0x825CAF90
 // Error Message Strings
 // ────────────────────────────────────────────────────────────────────────────
 
-// Error message for unhandled events
-// TODO: unresolved — claimed @ 0x8205E110 but that address lies inside the
-// pongAttractContext vtable (lbl_8205E0F4, size 0x64), not a string region.
-// Referenced by char_view.cpp:165 (rage_debugLog call); left as "" until the
-// real format string is located in the binary.
+// Error message for unhandled events.
+// KNOWN LIMITATION: the original address 0x8205E110 lies inside the
+// pongAttractContext vtable (lbl_8205E0F4, size 0x64), not a string region,
+// so the real format string could not be recovered. Referenced by
+// char_view.cpp:165 (rage_debugLog call); safe to leave empty because
+// rage_debugLog short-circuits on an empty format. Mirrored in globals.c
+// as g_error_unhandled_event — keep both at "" in lockstep.
 const char* g_error_unhandled_event = "";
 
 // Error message for character type mismatch

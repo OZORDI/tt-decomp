@@ -58,7 +58,8 @@ void pongTrainingDrill::Init() {
     
     // Load default time limit from data section @ 0x825C5938
     // Original: lis r10,-32164; lfs f0,22840(r10)
-    m_timeRemaining = 0.0f;  // TODO: Load actual constant value
+    // Value is -1.0f (sentinel "no time limit") per float_constants.txt.
+    m_timeRemaining = -1.0f;
     
     m_completionFlag = 0;
     m_targetIndex = 0xFFFFFFFF;  // -1 = no target selected

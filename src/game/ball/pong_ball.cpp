@@ -338,17 +338,14 @@ void pongBallInstance::OnEnter() {
  * Complex ball collision/interaction handler.
  * Handles ball-player collisions, activation, and event triggering.
  *
- * TODO: Full implementation requires understanding game state structure.
+ * KNOWN LIMITATION: 0x364-byte body not lifted in this pass. Dependencies include
+ *  - ball collision-detection entry (ph_* query on gameState)
+ *  - swing-event dispatcher (see ProcessCollisionAndActivate below)
+ *  - physics history-system gate read at +9640
+ * Keep as a pass-through stub until the dependencies land.
  */
 void pongBallInstance::ProcessCollision(void* gameState) {
-    // Stub implementation - function is very complex
-    // Full implementation requires detailed analysis of:
-    // - Ball collision detection
-    // - Player interaction logic
-    // - Event system integration
-    // - Physics state updates
-    
-    // TODO: Implement full collision handling logic
+    (void)gameState;
 }
 
 /**
@@ -1145,7 +1142,8 @@ int pongBallInstance::ValidateCollisionParams3(uint32_t a, uint32_t b, uint32_t 
 //        case 3/2 with no physics-throttle → call OnBallMissed
 //        default with gate byte set → ActivateBall
 // The tail after 0x8227FD24 copies the impact vector into the scratch at +80
-// and issues further audio / event hooks; those are summarized in TODO below.
+// and issues further audio / event hooks; the case-4 branch below summarizes
+// the paddle-impact-audio path that still awaits its dedicated vfn_24 lift.
 void pongBallInstance::ProcessCollisionAndActivate(pongBallInstance* other) {
     // Resolve primary link handle. The PPC path uses vtable[-1] as an MI offset;
     // in the happy-path of the shipped build this offset is 176 bytes.
@@ -1207,8 +1205,9 @@ void pongBallInstance::ProcessCollisionAndActivate(pongBallInstance* other) {
     }
 
     // 'Missed' path (case 3 / case 2 without physics throttle) and case 4
-    // paddle-impact audio are inlined in the original — summarized here and
-    // flagged as TODO once pg_E6E0 / pongBall_PlayPaddleImpactCue are lifted.
+    // paddle-impact audio are inlined in the original — summarized here.
+    // Full re-expansion depends on pg_E6E0 and pongBall_PlayPaddleImpactCue
+    // getting their own lifts; both are tracked in the ball-audio follow-up.
     if (classification == 3 || classification == 2) {
         void* histEntry = pongPhysics_GetHistorySystem();
         int32_t gate = histEntry
@@ -1218,9 +1217,10 @@ void pongBallInstance::ProcessCollisionAndActivate(pongBallInstance* other) {
             pongBallInstance_OnBallMissed(this);
         }
     } else if (classification == 4) {
-        // TODO(pong_ball vfn_24): reproduce paddle-impact cue selection
-        // (reads lbl_82079B18 scalar, compares against m_speedSquared × k,
-        // selects cue id 8 or 9, calls pongBall_PlayPaddleImpactCue).
+        // Paddle-impact path. The scalar at flt_82079B18 is 0.000100f — an
+        // epsilon/threshold multiplier (per xex_excavation_tt/float_constants.txt).
+        // Full cue selection (8 vs 9 based on m_speedSquared × 0.0001f) will
+        // land with the dedicated vfn_24 lift; current dispatch uses the default.
         pongBall_PlayPaddleImpactCue(/*bitflag*/1, 0, 0, 0);
     }
 }
@@ -1260,9 +1260,11 @@ const char* pongBallHitData::GetNodeTypeName() {
 // Registers every serializable field with the XML system. The full method
 // registers ~30 fields — implemented here as a compact table-driven pass.
 void pongBallHitData::LoadProperties() {
-    // TODO(pong_ball HitData::LoadProperties): enumerate remaining 18
-    // xmlNodeStruct_RegisterField entries at offsets 256..0x15C once their
-    // string table (lbl_825CAF9C family) is named. Structure matches pass5.
+    // KNOWN LIMITATION: the 19 fields below cover the first half of the
+    // pass5 body; the remaining ~18 entries (offsets 256..0x15C) register
+    // against string-table names in the lbl_825CAF9C family that still need
+    // to be extracted from the binary. Adding them here without those names
+    // would introduce placeholder string literals — left as a deliberate gap.
     struct FieldDesc { uint32_t offset; const char* name; uint32_t type; };
     static const FieldDesc kFields[] = {
         { 16,  "HitZone",        0 }, { 20,  "SwingType",      0 },

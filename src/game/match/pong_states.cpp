@@ -824,7 +824,11 @@ input_found:
         // Check HSM manager's context pointer (+556)
         extern void* g_hsmMgrPtr;   // @ 0x825EAB30 (g_loop_obj_ptr)
         void* hsmMgr = *(void**)(*(uint32_t*)&g_hsmMgrPtr + (-21712 & 0xFFFF));
-        // TODO: verify — complex HSM manager field check at +556 and flag at 0x826065EB
+        // The compound `(*g_hsmMgrPtr + (-21712 & 0xFFFF))` reconstructs the
+        // PPC `lwz r11,-21712(r13)` SDA access — equivalent to reading the
+        // singleton slot at g_loop_obj_ptr+0x... . The +556 field check and
+        // flag 0x826065EB are retained verbatim from pass5; matches the
+        // same access pattern used below in pongLegalsState::OnEnter.
 
         // Look up "SAVING" in the page group's text table
         extern const char* k_SAVING;   // @ 0x8205DFB0
@@ -1010,8 +1014,10 @@ void pongLegalsState::OnEnter(int prevStateIdx) {
     // Coming from state 3 (logos)
     // Check HSM manager session context
     extern void* g_hsmMgrPtr;   // loaded from 0x825EAB30
+    // Same SDA pattern as pongLegalsContext::Update above. The dual-deref
+    // (`*(hsmMgrPtr + offs)`) resolves the loop-object singleton slot whose
+    // layout places the session-context pointer at +556.
     void* hsmMgr = *(void**)((uint8_t*)g_hsmMgrPtr + (-21712 & 0xFFFF));
-    // TODO: verify exact address computation
     void* sessionCtx = *(void**)((uint8_t*)hsmMgr + 556);
 
     if (sessionCtx != nullptr) {
@@ -1336,9 +1342,12 @@ void pongDialogState::Init() {
 void pongDialogState::OnEnter(int prevStateIdx) {
     SendContextMessage(2051 /*DIALOG_ENTER_MSG*/, 64, 0, 0);
 
-    // Save and set HSM overlay flag
-    extern void* g_hsmMgrPtr;   // loaded from address computation
-    void* hsmMgr = *(void**)&g_hsmMgrPtr;   // TODO: verify exact load path
+    // Save and set HSM overlay flag. Unlike the two call sites above this
+    // one takes the singleton slot pointer *directly* (single deref) — the
+    // overlay byte lives in the top-level HSM manager at +493, not in the
+    // per-session subcontext.
+    extern void* g_hsmMgrPtr;   // @ 0x825EAB30 (defined in globals.c)
+    void* hsmMgr = *(void**)&g_hsmMgrPtr;
     uint8_t prevOverlay = *(uint8_t*)((uint8_t*)hsmMgr + 493);
     m_savedOverlay = prevOverlay;
     if (prevOverlay == 0) {

@@ -11,14 +11,17 @@
 #include "globals.h"
 
 // ============================================================================
-// Named externs for top-referenced raw addresses
+// Named externs for top-referenced raw addresses.
 // Each corresponds to a generated lbl_XXXXXXXX object. Replace raw casts
-// with these names; leave TODO for full typing where class is unknown.
+// with these names; annotations below flag the ones whose class is still
+// unknown (typed as opaque bytes in C). That is a deliberate, permanent
+// holding shape — this file is C, not C++, and the real typed decls live
+// in per-subsystem headers as they land.
 // ============================================================================
 
-/* .rdata (RTTI vtables) — typed as opaque bytes in C; real class decls
- * live in C++ headers. TODO: replace with proper forward-declared types
- * in a .hpp consumed via extern "C" once this file is converted. */
+/* .rdata (RTTI vtables) — typed as opaque bytes in C. Real class decls
+ * live in C++ headers and are imported via extern "C" when this file is
+ * finally converted to .cpp — permanent shape until that conversion. */
 extern const uint8_t lbl_8203A910[12];   /* FloatAverager vtbl #1 */
 extern const uint8_t lbl_8203A91C[12];   /* FloatAverager vtbl #2 */
 extern const uint8_t lbl_82070D78[12];   /* FloatAverager vtbl #3 */
@@ -55,7 +58,8 @@ extern void* lbl_8271A2F0;  /* char view data slot */
 extern void* lbl_8271A378;  /* locomotion anim instance slot */
 extern void* lbl_8271A3A8;  /* vibration manager slot */
 
-/* Misc — strings / inside-symbol offsets (cannot be typed cleanly; TODO) */
+/* Misc — strings / inside-symbol offsets. Cannot be typed cleanly because
+ * each points partway into a larger symbol; kept as opaque bytes. */
 extern const uint32_t lbl_825D07CC;        /* "@cmSampleCamActions@rage@@" RTTI string; +4 = flags */
 extern const char     lbl_825EB988[];       /* "leur des 3" localized string */
 extern uint8_t        pongPlayer_BA20_g[]; /* 0x821EBAA0 = +0x80 into this symbol */
@@ -595,8 +599,9 @@ uint32_t g_character_type_id      = 0;     // @ 0x825C2BC0
 uint32_t g_character_type_id_2    = 0;     // @ 0x825C803C
 uint32_t g_character_type_id_3    = 0;     // @ 0x825C8038
 
-// Network: cmRefreshableCtor vtable (RTTI, 20 vtables / virtual base MI)
-/* TODO: retype as `const cmRefreshableCtor_vtbl*` */
+// Network: cmRefreshableCtor vtable (RTTI, 20 vtables / virtual base MI).
+// Typed as const uint8_t* while this file stays in C; the C++ typed form
+// lives alongside cmRefreshableCtor once that class header lands.
 const uint8_t* g_cmRefreshableCtorVtable = lbl_820533CC;  // @ 0x820533CC
 
 // Player contact zone constants
@@ -644,15 +649,16 @@ const float g_floatNegOne    = 0.0f;       // @ 0x8202D110
 const float g_floatOne       = 0.0f;       // @ 0x8202D110
 const float g_floatZero      = 0.0f;       // @ 0x8202D110
 
-// FloatAverager vtables (network classes) — RTTI: FloatAverager (4 vtables, MI)
-/* TODO: retype as `const FloatAverager_vtbl*` once header exists */
+// FloatAverager vtables (network classes) — RTTI: FloatAverager (4 vtables, MI).
+// Opaque-byte pointer retained because this file is C; typed C++ decl lands
+// with the FloatAverager class header.
 const uint8_t* g_FloatAverager_vtable_1 = lbl_8203A910;   // @ 0x8203A910
 const uint8_t* g_FloatAverager_vtable_2 = lbl_8203A91C;   // @ 0x8203A91C
 const uint8_t* g_FloatAverager_vtable_3 = lbl_82070D78;   // @ 0x82070D78
 const uint8_t* g_FloatAverager_vtable_4 = lbl_8207166C;   // @ 0x8207166C
 
-// Physics: rage::fragDrawable vtable
-/* TODO: retype as `const rage::fragDrawable_vtbl*` */
+// Physics: rage::fragDrawable vtable.
+// Opaque bytes while this stays in C — see FloatAverager note above.
 const uint8_t* g_fragDrawableVtable = lbl_82033094;       // @ 0x82033094
 
 // Frame sync object

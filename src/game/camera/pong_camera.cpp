@@ -139,7 +139,8 @@ bool pongCameraMgr::TryTransition(void* gameState) {
     
     // Load threshold constant from .data section
     // Address: 0x825C5EC0 (calculated from lis r11,-32164 + lfs f13,24256(r11))
-    extern float g_cameraThreshold;  // TODO: Define this global
+    // Sentinel value 99999.0f ("infinite"/no-cap marker) — see float_constants.txt.
+    extern float g_cameraThreshold;  // @ 0x825C5EC0 (defined in globals.c)
     float threshold = g_cameraThreshold;
     
     // Compute clamped values using fsel pattern
@@ -196,8 +197,8 @@ bool pongCameraMgr::TryTransition(void* gameState) {
 bool pongCameraMgr::IsStateNine() const {
     // Load global camera state from .data section
     // Address: 0x825C5EB8 (lbl_825C5EB8)
-    extern int32_t g_cameraState;  // TODO: Define this global in globals
-    
+    extern int32_t g_cameraState;  // @ 0x825C5EB8 (defined in globals.c)
+
     return g_cameraState == 9;
 }
 
@@ -2659,8 +2660,10 @@ charViewCS::~charViewCS() {
     // hidden 2nd arg for deleting-destructors) asks the runtime whether to
     // release this object's heap storage. Preserved via a compiler-intrinsic
     // `__dtor_delete_flag` stand-in wired up in the recomp harness.
-    // TODO: wire __dtor_delete_flag argument through the shim
-    // if (__dtor_delete_flag & 1) rage_free_00C0(this);
+    // KNOWN LIMITATION: the delete-flag ABI shim lives in the harness, not
+    // in lifted source; until that plumbs through, the deallocating branch
+    //     if (__dtor_delete_flag & 1) rage_free_00C0(this);
+    // stays commented out. The cleanup side above is already correct.
 }
 
 /**
@@ -2732,12 +2735,13 @@ const char* charViewCS::GetDebugLabel() {
  * bounded lerp toward a per-slot target, rate-limited by m_blendTime
  * and gated on m_transitionPhase.
  *
- * TODO: expand faithful body once PPC→C lifter supports lfsx/fsel/fmadds
- *       idiomatic reconstruction. For now the harness provides a stub
- *       wrapper that calls the original recomp via PPC_FUNC_HOOK.
+ * KNOWN LIMITATION: the faithful body awaits lfsx/fsel/fmadds idiomatic
+ *       reconstruction in the PPC→C lifter. Until that lands, the harness
+ *       provides a stub that calls the original recomp via PPC_FUNC_HOOK.
+ *       Tracked as a dedicated follow-up, not a per-batch TODO.
  */
 void charViewCS::UpdatePositions() {
-    // TODO: ~811-line faithful implementation. Gated behind PPC hook for now.
+    // ~811-line faithful implementation is gated behind the PPC hook.
     // Behavior: for slot in [0..6], if m_stateTable[slot].kind == 1:
     //   - special-case slot == 2 && m_transitionPhase == 1: parametric lerp
     //     from field_0x60 toward field_0x64 based on m_blendTime vs

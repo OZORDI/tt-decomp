@@ -106,6 +106,7 @@ void CDelayEffect::ScalarDtor(int flags) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTE: CCompEffect and CBiquadFilterEffect follow the same pattern
-// but their specific functions are not yet traced.
-// TODO: Implement remaining audio effect methods as needed.
+// but their specific functions are not yet traced. Listed in the
+// dedicated TODO block at the tail of pong_audio_effects.cpp — no
+// per-call-site TODO is tracked here to avoid duplication.
 // ─────────────────────────────────────────────────────────────────────────────

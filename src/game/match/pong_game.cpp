@@ -656,9 +656,11 @@ int pongGameContext::Process(void* eventState, void* event) {
     case 0x2019:  // 8217 — msgNet::kJoinFromHudRequested (72-byte modal argpack)
         HandleMsg_JoinFromHudRequested(event);
         return 1;
-    case 0x201B:  // 8219 — input-state-forked UI enqueue; body shares modal
+    case 0x201B:  // 8219 — input-state-forked UI enqueue. Body shares modal
                   // scaffolding with 0x2019 but uses a different ID table.
-                  // TODO: lift dedicated handler; see loc_823D62B4..loc_823D6420.
+                  // KNOWN LIMITATION: dedicated handler (loc_823D62B4..
+                  // loc_823D6420) not yet lifted; absorbing the message
+                  // without a body matches the pass5 no-op for this slot.
         return 1;
     case 0x2027:  // 8231 — msgUI::kPostNetTourneyUIEnd (tourney done → frontend)
         HandleMsg_TourneyFinishedBackToFrontend(event);

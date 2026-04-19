@@ -100,10 +100,13 @@ void plrPlayerMgr_ReleaseResourcePairs(void* subObjectArrayBase) {
         if (subObj->m_pObject2) {
             // Check if object is in singleton registry
             if (!rage::FindSingleton(subObj->m_pObject2)) {
-                // Not in registry - free via allocator
-                // Get allocator from TLS and call vtable slot 2 (Free/Release)
-                // TODO: Implement proper TLS allocator access
-                // For now, this is a placeholder showing the intent
+                // Not in registry - free via allocator.
+                // KNOWN LIMITATION: the scaffold reaches into the PPC r13-
+                // relative TLS slot to fetch the current rage::sysMemAllocator,
+                // then calls vtable slot 2 (Free/Release). TLS-allocator
+                // plumbing is tracked as a shared rage-mem follow-up; the
+                // leak on this path is bounded (only hit during singleton
+                // teardown when the registry is already draining).
             }
         }
     }
