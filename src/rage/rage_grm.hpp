@@ -269,18 +269,61 @@ struct grmShaderFx {
     virtual void vfn_3();  // [3] @ 0x820efb30
     virtual void vfn_4();  // [4] @ 0x820efbe0
     virtual void vfn_5();  // [5] @ 0x820efd28
-    virtual void vfn_6();  // [6] @ 0x820efa08
-    virtual void vfn_7();  // [7] @ 0x820efae8
-    virtual void vfn_8();  // [8] @ 0x820ef928
-    virtual void vfn_9();  // [9] @ 0x820ef9c8
-    virtual void vfn_10();  // [10] @ 0x820ef9e8
-    virtual void vfn_11();  // [11] @ 0x820ef060
-    virtual void vfn_12();  // [12] @ 0x820f0710
-    virtual void vfn_13();  // [13] @ 0x820f0738
+    // [6] Top-level draw dispatcher — publishes this as the active shader,
+    //     snaps the global variant index, decides between a raw-param path
+    //     (r6==0 → per-pass entry from techniqueData[] at offset +64)
+    //     and a direct-call path (r6!=0 → use caller-supplied VA), then
+    //     tail-calls the inner draw routine grmShaderFx_AF90_w.
+    virtual void Dispatch(uint32_t passIndex,
+                          uint32_t callerContext,
+                          uint32_t directEntry);     // [6] @ 0x820efa08  size 0xdc
+    // [7] Drops the active-shader pointer: zeroes g_grmShaderFx_activeState
+    //     (lbl_825EBA68), runs util_9CF0 on the old g_grmShaderFx_activeInstance
+    //     (lbl_825EBC4C), then zeroes that instance pointer.
+    virtual void ClearActive();                       // [7] @ 0x820efae8  size 0x44
+    // [8] Binds a shader-constant slot (effect-parameter register): looks
+    //     up the parameter descriptor via the global parameter table at
+    //     index (varIndex + 3), calls rage_8C48 to upload it, then
+    //     records the live descriptor into this->+16 so the next call
+    //     can short-circuit when unchanged.
+    virtual void BindConstantSlot(int32_t varIndex);  // [8] @ 0x820ef928  size 0x9c
+    // [9] Partial reset of the global constant cache: snapshots offsets
+    //     +532 and +540 inside the active-instance record and zeroes
+    //     the constant-set high-water slot (+532).
+    virtual void ResetConstantState();                // [9] @ 0x820ef9c8  size 0x1c
+    // [10] Reads the shader-type classId for this shader: indexes the
+    //      global technique registry at lbl_825EAF88 by this->m_shaderId
+    //      (uint16 at +6) and returns the first dword of the selected
+    //      registry entry.
+    virtual uint32_t GetTypeClassId();                // [10] @ 0x820ef9e8  size 0x1c
+    // [11] Technique/pass lookup for the current variant: reads the
+    //      global variant index (lbl_825C9A5C/lbl_825C9A64), fetches the
+    //      pass descriptor at this->techniqueData[variant][passIndex],
+    //      resolves it through the active device's slot table at +512
+    //      and returns the pass's +4 callable.
+    virtual uint32_t GetTechniquePass(int32_t passIndex); // [11] @ 0x820ef060  size 0x64
+    // [12] Reads the variable-count for this shader type: same registry
+    //      lookup as GetTypeClassId but returns the uint16 at +36 of
+    //      the selected registry entry.
+    virtual uint16_t GetVariableCount();              // [12] @ 0x820f0710  size 0x1c
+    // [13] Copies the 14-dword (56-byte) descriptor for variable
+    //      `varIndex` out of the registry entry (source:
+    //      entry->variableArray[varIndex]) into the caller-provided
+    //      destination buffer.
+    virtual void CopyVariableDescriptor(int32_t varIndex,
+                                        uint32_t* destBuffer); // [13] @ 0x820f0738  size 0x44
     virtual void vfn_14();  // [14] @ 0x820ef7a0
     virtual void vfn_15();  // [15] @ 0x820ef880
-    virtual void vfn_16();  // [16] @ 0x820f0730
-    virtual void vfn_17();  // [17] @ 0x820f0578
+    // [16] Returns the auxiliary-data pointer stashed at +60.  Single-
+    //      instruction getter — used by material/FX binding code to
+    //      reach the cached render-state block.
+    virtual uint32_t GetAuxData();                    // [16] @ 0x820f0730  size 0x8
+    // [17] Releases every owned resource: destroys the effect object
+    //      at +16 (rage_5BF8), frees the handle table at +20, releases
+    //      per-variable slots via rage_A1F8 using the registry entry,
+    //      frees the technique table at +64, zeroes the handle fields,
+    //      then tail-calls rage_F340 to destroy the base grmShader.
+    virtual void ReleaseResources();                  // [17] @ 0x820f0578  size 0x7c
 };
 
 // ── rage::grmShaderGroup  [vtable @ 0x8202F528] ──────────────────────────

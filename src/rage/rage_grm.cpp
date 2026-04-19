@@ -402,3 +402,407 @@ uint8_t fragDrawable_41B8(void* pParam1, void* pParam2)
 }
 
 } // namespace rage
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  rage::grmShaderFx — 10 vtable methods
+//  Lifted from vtable @ 0x8202F2DC (see rage_grm.hpp).  Addresses cover the
+//  contiguous 0x820EF060..0x820F0730 block of the effect-framework runtime.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+//  Global-state aliases (SDA / .data):
+//    lbl_825EBA68 — g_grmShaderFx_activeState     (active-state flag cell)
+//    lbl_825EBC4C — g_grmShaderFx_activeInstance  (current-shader pointer)
+//    lbl_825EBC50 — g_grmShaderFx_boundParam      (last-uploaded param descriptor)
+//    lbl_825EBC54 — g_grmShaderFx_boundContext    (context cached inside +16)
+//    lbl_825EAF88 — g_grmShaderFx_registry        (shader-type registry, 512B)
+//    lbl_825EBBD8 — g_grmShaderFx_variantTable    (forced-variant override root)
+//    lbl_825C9A5C — g_grmShaderFx_forcedVariantId (-1 = use override table)
+//    lbl_825C9A64 — g_grmShaderFx_defaultVariant  (fallback variant index)
+//    lbl_825EBB1C — g_grmShaderFx_flushRequired   (post-bind flush latch)
+//    lbl_825EBAB4 — g_grmShaderFx_forceResetFlag  (force-state-reset latch)
+//    lbl_825C9010 — g_grmShaderFx_frameCounter    (frame-counter snapshot)
+//
+// File-scope extern "C" declarations (block-scope linkage-specs are illegal
+// under [dcl.link]; all helper symbols live here).
+extern "C" {
+    // Collaborator functions already lifted / stubbed elsewhere.
+    void     util_9CF0(uint32_t self);                     // @ 0x82159CF0
+    void     rage_8C48(uint32_t descriptor, uint32_t data); // @ 0x82158C48
+    void     rage_9E70(uint32_t paramDesc);                 // @ 0x82159E70
+    void     rage_5BF8(uint32_t effectObj);                 // @ 0x82445BF8
+    void     rage_A1F8(uint32_t target, uint32_t registry); // @ 0x8215A1F8
+    void     rage_F340(uint32_t self);                      // @ 0x820EF340
+    void     hudFlashBase_B138_g();                         // @ 0x8215B138
+    void     grmShaderFx_AF90_w(uint32_t effectSlot,
+                                uint32_t paramA,
+                                uint32_t paramB);           // @ 0x8215AF90
+
+    // SDA-resident globals used by the grmShaderFx runtime.
+    extern uint32_t g_grmShaderFx_activeState;      // @ 0x825EBA68
+    extern uint32_t g_grmShaderFx_activeInstance;   // @ 0x825EBC4C
+    extern uint32_t g_grmShaderFx_boundParam;       // @ 0x825EBC50
+    extern uint32_t g_grmShaderFx_boundContext;     // @ 0x825EBC54
+    extern uint32_t g_grmShaderFx_registry[128];    // @ 0x825EAF88  (512-byte table)
+    extern uint32_t g_grmShaderFx_variantTable[];   // @ 0x825EBBD8
+    extern int32_t  g_grmShaderFx_forcedVariantId;  // @ 0x825C9A5C
+    extern uint32_t g_grmShaderFx_defaultVariant;   // @ 0x825C9A64
+    extern uint32_t g_grmShaderFx_flushRequired;    // @ 0x825EBB1C
+    extern uint32_t g_grmShaderFx_forceResetFlag;   // @ 0x825EBAB4
+    extern uint32_t g_grmShaderFx_frameCounter;     // @ 0x825C9010
+}
+
+namespace rage {
+
+// Small helper to recover the active variant index with the same
+// decision tree the PPC bodies inline in every caller of the variant
+// table.  Factored so vfn_6 and vfn_11 read identically.
+static uint32_t grmShaderFx_resolveVariantIndex() {
+    const int32_t forced = g_grmShaderFx_forcedVariantId;
+    if (forced != -1) {
+        return static_cast<uint32_t>(forced);
+    }
+    // No forced variant — consult the variant table root.  Word 1 of
+    // lbl_825EBBD8 holds the "override present" flag; when non-zero
+    // the override cell sits 4 bytes before g_grmShaderFx_defaultVariant.
+    const uint32_t overrideFlag =
+        reinterpret_cast<const uint32_t*>(&g_grmShaderFx_variantTable[0])[1];
+    if (overrideFlag != 0) {
+        return *(&g_grmShaderFx_defaultVariant - 1);
+    }
+    return g_grmShaderFx_defaultVariant;
+}
+
+// Each effect descriptor in g_grmShaderFx_registry has the RAGE shape:
+//   +0x00  class-id / type tag           (uint32)
+//   +0x20  variable-descriptor array     (ptr to 56-byte entries)
+//   +0x24  variable count                (uint16 at +36)
+// The lookup idiom in vfn_10/12/13/17 rotates m_shaderId left by 2 (≡ *4)
+// to index the pointer table at lbl_825EAF88.
+static inline uint32_t grmShaderFx_registryEntry(uint16_t shaderId) {
+    return g_grmShaderFx_registry[shaderId];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::Dispatch                               [vtable slot 6]
+ * @ 0x820EFA08 | size: 0xDC (220 bytes)
+ *
+ * Top-level draw entry.  Publishes `this` as the active shader, captures
+ * the current frame-counter into the per-shader snapshot slot at +44,
+ * resolves the active variant index, conditionally flushes the render
+ * state (when the flush-latch or force-reset flag is set), and then
+ * delegates to grmShaderFx_AF90_w.
+ *
+ * Two call shapes:
+ *   directEntry != 0  → use the caller-supplied entry pointer
+ *   directEntry == 0  → index the per-variant pass table at
+ *                       this->techniqueData[passIndex + variantBase]
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::Dispatch(uint32_t passIndex,
+                           uint32_t callerContext,
+                           uint32_t directEntry) {
+    auto* self = reinterpret_cast<uint8_t*>(this);
+
+    // Snapshot the frame counter into our per-instance slot (+44)
+    // and publish `this` as the active shader.
+    const uint32_t frame = g_grmShaderFx_frameCounter;
+    g_grmShaderFx_activeState = reinterpret_cast<uintptr_t>(this);
+    *reinterpret_cast<uint32_t*>(self + 44) = frame;
+
+    // Resolve variant index (forced / override / default).
+    const uint32_t variantIndex = grmShaderFx_resolveVariantIndex();
+
+    // Post-publish render-state flush: either the flush latch is set
+    // or a global force-reset is pending.  hudFlashBase_B138_g runs
+    // the renderer's "drop all state" routine.
+    if (g_grmShaderFx_flushRequired != 0 ||
+        g_grmShaderFx_forceResetFlag != 0) {
+        hudFlashBase_B138_g();
+    }
+
+    // Fast path: caller passed a direct entry — hand it straight to
+    // the inner draw routine along with the effect object at +16.
+    const uint32_t effectSlot = reinterpret_cast<uintptr_t>(self + 16);
+    if (directEntry != 0) {
+        grmShaderFx_AF90_w(effectSlot, directEntry, callerContext);
+        return;
+    }
+
+    // Slow path: resolve the pass entry through the per-technique
+    // array stored at this+64.  Index math mirrors the PPC rlwinm
+    // idiom:  offset = ((variantIndex * 4) + passIndex) * 4.
+    const uint32_t* techniqueData =
+        *reinterpret_cast<uint32_t**>(self + 64);
+    const uint32_t flatIndex = (variantIndex << 2) + passIndex;
+    const uint32_t passEntry = techniqueData[flatIndex];
+    grmShaderFx_AF90_w(effectSlot, passEntry, callerContext);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::ClearActive                            [vtable slot 7]
+ * @ 0x820EFAE8 | size: 0x44 (68 bytes)
+ *
+ * Drops the active-shader binding.  Zeroes g_grmShaderFx_activeState,
+ * hands the old g_grmShaderFx_activeInstance to util_9CF0 (the renderer's
+ * shader-unbind routine), then clears the instance pointer.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::ClearActive() {
+    g_grmShaderFx_activeState = 0;
+    const uint32_t oldInstance = g_grmShaderFx_activeInstance;
+    util_9CF0(oldInstance);
+    g_grmShaderFx_activeInstance = 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::BindConstantSlot                       [vtable slot 8]
+ * @ 0x820EF928 | size: 0x9C (156 bytes)
+ *
+ * Uploads constant-register slot `varIndex` into the active device
+ * context and caches the resulting descriptor so that a subsequent
+ * upload for the same slot can short-circuit.
+ *
+ * Steps (PPC order):
+ *   1. Read the active shader instance via (&g_grmShaderFx_boundParam - 1),
+ *      i.e. g_grmShaderFx_activeInstance.
+ *   2. Walk instance->paramArray[varIndex + 3] — the +3 is the RAGE
+ *      convention skipping the 3-word descriptor prologue (type-id,
+ *      shader-index, binding-index).
+ *   3. Call rage_8C48(activeInstance, paramDesc) to perform the upload.
+ *   4. Compare the newly-bound context (this+16+16, i.e. +32) against
+ *      g_grmShaderFx_boundContext; update if changed.
+ *   5. If the upload either changed context or is targeting a different
+ *      active instance than last time, publish the new instance into
+ *      g_grmShaderFx_boundParam and run rage_9E70 (the descriptor-
+ *      commit routine).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::BindConstantSlot(int32_t varIndex) {
+    auto* self = reinterpret_cast<uint8_t*>(this);
+
+    const uint32_t activeInstance = g_grmShaderFx_activeInstance;
+    // paramArray pointer lives at +516 of the active instance.
+    const uint32_t paramArrayVA =
+        *reinterpret_cast<const uint32_t*>(
+            reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(activeInstance)) + 516);
+    const uint32_t paramDesc =
+        reinterpret_cast<const uint32_t*>(
+            static_cast<uintptr_t>(paramArrayVA))[varIndex + 3];
+
+    rage_8C48(activeInstance, paramDesc);
+
+    // The bound-context slot lives at (this+16)+16 = this+32 in
+    // PPC arithmetic.  Compare/publish against the global cache.
+    uint32_t* boundCtx = reinterpret_cast<uint32_t*>(self + 32);
+    const uint32_t currentCtx = *boundCtx;
+    const uint32_t nextCtx    = g_grmShaderFx_boundContext;
+
+    bool contextChanged = false;
+    if (currentCtx != nextCtx) {
+        *boundCtx = nextCtx;
+        contextChanged = true;
+    }
+
+    // Short-circuit: skip the commit if nothing changed AND the bound
+    // instance already matches the live one.  Otherwise publish and
+    // commit through rage_9E70.
+    const uint32_t liveInstance = g_grmShaderFx_activeInstance;
+    if (!contextChanged && g_grmShaderFx_boundParam == liveInstance) {
+        return;
+    }
+    g_grmShaderFx_boundParam = liveInstance;
+    rage_9E70(liveInstance);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::ResetConstantState                     [vtable slot 9]
+ * @ 0x820EF9C8 | size: 0x1C (28 bytes)
+ *
+ * Snapshots the constant-set high-water mark into the standby slot and
+ * clears it.  Accesses two fields inside the current active instance:
+ *   +532 : live high-water counter
+ *   +540 : standby slot (receives the pre-clear snapshot)
+ *
+ * Used by the render pipeline at the start of every pass that wants
+ * to re-upload its parameter set from scratch.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::ResetConstantState() {
+    const uint32_t instance = g_grmShaderFx_activeInstance;
+    auto* instanceBytes =
+        reinterpret_cast<uint8_t*>(static_cast<uintptr_t>(instance));
+    uint32_t* liveCounter    = reinterpret_cast<uint32_t*>(instanceBytes + 532);
+    uint32_t* standbyCounter = reinterpret_cast<uint32_t*>(instanceBytes + 540);
+    const uint32_t snapshot = *liveCounter;
+    *liveCounter = 0;
+    *standbyCounter = snapshot;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::GetTypeClassId                         [vtable slot 10]
+ * @ 0x820EF9E8 | size: 0x1C (28 bytes)
+ *
+ * Returns the RTTI-style class-id cached at the head of this shader's
+ * registry entry (first dword).  Registry lookup pattern:
+ *   shaderId = *(uint16*)(this + 6)                (rotlwi r9,r10,2 ≡ *4)
+ *   entry    = g_grmShaderFx_registry[shaderId]
+ *   return  *(uint32_t*)entry
+ * ═══════════════════════════════════════════════════════════════════════════ */
+uint32_t grmShaderFx::GetTypeClassId() {
+    const uint16_t shaderId =
+        *reinterpret_cast<const uint16_t*>(
+            reinterpret_cast<const uint8_t*>(this) + 6);
+    const uint32_t entry = grmShaderFx_registryEntry(shaderId);
+    return *reinterpret_cast<const uint32_t*>(static_cast<uintptr_t>(entry));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::GetTechniquePass                       [vtable slot 11]
+ * @ 0x820EF060 | size: 0x64 (100 bytes)
+ *
+ * Returns the callable pointer for pass `passIndex` of the currently-
+ * active variant.  The lookup walks:
+ *
+ *   variant    = resolveVariantIndex()                 (same as Dispatch)
+ *   techTable  = this->techniqueData                   (this+64)
+ *   passDesc   = techTable[variant * 4 + passIndex]
+ *   device     = *(this+16)->activeDevice              (offset +512)
+ *   slot       = passDesc.shaderSlotId                 (16-bit at +0)
+ *   entry      = device->slotTable[slot]
+ *   return entry->callable                             (offset +4)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+uint32_t grmShaderFx::GetTechniquePass(int32_t passIndex) {
+    auto* self = reinterpret_cast<const uint8_t*>(this);
+
+    const uint32_t variantIndex = grmShaderFx_resolveVariantIndex();
+    const uint32_t* techniqueData =
+        *reinterpret_cast<const uint32_t* const*>(self + 64);
+    const uint32_t passDesc =
+        techniqueData[(variantIndex << 2) + static_cast<uint32_t>(passIndex)];
+
+    // device is *(this + 16); its slotTable is at +512.
+    const uint32_t effectObj =
+        *reinterpret_cast<const uint32_t*>(self + 16);
+    const uint32_t deviceSlotTable = *reinterpret_cast<const uint32_t*>(
+        reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(effectObj)) + 512);
+
+    // passDesc is a 32-bit "(shaderSlotId << 16) | (...)" packed word;
+    // the slot index is bits 16..29 and is byte-scaled (rlwinm r5,r6,16,16,29).
+    const uint32_t slotByteOffset = (passDesc >> 14) & 0xFFFC;
+    const uint32_t slotEntry = *reinterpret_cast<const uint32_t*>(
+        reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(deviceSlotTable)) + slotByteOffset);
+
+    // Return the +4 callable field.
+    return *reinterpret_cast<const uint32_t*>(
+        reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(slotEntry)) + 4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::GetVariableCount                       [vtable slot 12]
+ * @ 0x820F0710 | size: 0x1C (28 bytes)
+ *
+ * Identical registry lookup to GetTypeClassId, but reads the uint16
+ * variable-count stored at offset +36 of the selected registry entry.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+uint16_t grmShaderFx::GetVariableCount() {
+    const uint16_t shaderId =
+        *reinterpret_cast<const uint16_t*>(
+            reinterpret_cast<const uint8_t*>(this) + 6);
+    const uint32_t entry = grmShaderFx_registryEntry(shaderId);
+    return *reinterpret_cast<const uint16_t*>(
+        reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(entry)) + 36);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::CopyVariableDescriptor                 [vtable slot 13]
+ * @ 0x820F0738 | size: 0x44 (68 bytes)
+ *
+ * Copies the 56-byte variable descriptor for `varIndex` out of the
+ * registry entry's variable array (ptr at registry_entry + 32).  The
+ * hand-rolled PPC loop moves 14 dwords; we emit the same via a plain
+ * 14-iteration dword copy so the compiler can still reduce it.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::CopyVariableDescriptor(int32_t varIndex,
+                                         uint32_t* destBuffer) {
+    const uint16_t shaderId =
+        *reinterpret_cast<const uint16_t*>(
+            reinterpret_cast<const uint8_t*>(this) + 6);
+    const uint32_t entry = grmShaderFx_registryEntry(shaderId);
+    const uint32_t variableArrayVA = *reinterpret_cast<const uint32_t*>(
+        reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(entry)) + 32);
+
+    const uint32_t* source =
+        reinterpret_cast<const uint32_t*>(
+            reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(variableArrayVA))
+            + static_cast<uint32_t>(varIndex) * 56);
+
+    for (int i = 0; i < 14; ++i) {
+        destBuffer[i] = source[i];
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::GetAuxData                             [vtable slot 16]
+ * @ 0x820F0730 | size: 0x08 (8 bytes)
+ *
+ * Trivial getter: returns the 32-bit auxiliary-data pointer cached at
+ * offset +60.  Used by material-binding code to reach the shader's
+ * extended render-state block without widening the hot vtable.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+uint32_t grmShaderFx::GetAuxData() {
+    return *reinterpret_cast<const uint32_t*>(
+        reinterpret_cast<const uint8_t*>(this) + 60);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * grmShaderFx::ReleaseResources                       [vtable slot 17]
+ * @ 0x820F0578 | size: 0x7C (124 bytes)
+ *
+ * Full teardown of owned resources before chaining to the base-class
+ * destructor (rage_F340).  Owned state:
+ *   +16  effect instance        — destroyed via rage_5BF8
+ *   +20  handle table           — released via rage_free_00C0
+ *   +16  re-walked to run rage_A1F8 against the registry entry
+ *   +64  technique-table buffer — released via rage_free_00C0
+ *   +68  uint16 handle-count    — zeroed
+ *   +70  uint16 handle-capacity — zeroed
+ *
+ * After this returns, the base grmShader slice is in a safe state for
+ * rage_F340 to finish the chain.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+void grmShaderFx::ReleaseResources() {
+    auto* self = reinterpret_cast<uint8_t*>(this);
+
+    // +16: effect instance (the rage_5BF8 destructor).
+    uint32_t* effectSlot = reinterpret_cast<uint32_t*>(self + 16);
+    if (*effectSlot != 0) {
+        rage_5BF8(*effectSlot);
+        *effectSlot = 0;
+    }
+
+    // +20: handle table — unconditionally freed (guest free() tolerates null).
+    uint32_t* handleTableSlot = reinterpret_cast<uint32_t*>(self + 20);
+    rage_free_00C0(*handleTableSlot);
+    *handleTableSlot = 0;
+
+    // Walk the registry entry (via shaderId at +6) and release
+    // per-variable slots.  First arg is this+16 (effect slot group),
+    // second arg is the registry entry's variable-array header at +8.
+    const uint16_t shaderId =
+        *reinterpret_cast<const uint16_t*>(self + 6);
+    const uint32_t entry = grmShaderFx_registryEntry(shaderId);
+    const uint32_t variableArrayHeaderVA =
+        static_cast<uint32_t>(entry + 8);
+    rage_A1F8(reinterpret_cast<uintptr_t>(self + 16),
+              variableArrayHeaderVA);
+
+    // +64: technique-table buffer.
+    uint32_t* techniqueTableSlot = reinterpret_cast<uint32_t*>(self + 64);
+    rage_free_00C0(*techniqueTableSlot);
+    *techniqueTableSlot = 0;
+
+    // +68 / +70: handle-count / handle-capacity (packed 16-bit pair).
+    *reinterpret_cast<uint16_t*>(self + 68) = 0;
+    *reinterpret_cast<uint16_t*>(self + 70) = 0;
+
+    // Chain to the base grmShader destructor body.
+    rage_F340(reinterpret_cast<uintptr_t>(this));
+}
+
+} // namespace rage
