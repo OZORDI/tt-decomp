@@ -1254,6 +1254,14 @@ extern "C" const float g_audVolumeClampMax;   // @ 0x8202D108 — clamp ceiling 
 extern "C" const float g_audGroupVolumeCeiling; // @ 0x8202D110 — full-gain ceiling for GetEffectiveVolume
 extern "C" void util_24C8(void* pThis);       // 0x821624C8 — audControl teardown epilogue
 
+// audControl destructor body lives under the symbol `util_1568` in the symbol
+// table (the static-recomp miscategorised it as a utility because it is
+// shared between audControl::~audControl and audControl::ScalarDtor).
+// It stores the base audControl vtable into +0x00, calls audControl::Stop,
+// decrements refcounts on the wrapped voice and owning group, and (when the
+// "stop-notify" flag at +0x18 is set) also fires util_24C8.
+extern "C" void audControl_DestructorBody(void* self) __asm__("util_1568");
+
 // audControlMgr / audControlGroup list-state globals.
 extern "C" uint8_t  g_audCtrlMgrInitFlag;         // @ 0x8260640F — cleared on Initialize
 extern "C" uint8_t  g_audCtrlMgrEnableNeeded;     // @ 0x825EBCA3 — set if banks need (re)loading
@@ -1261,12 +1269,26 @@ extern "C" void*    g_audCtrlMgrControlListHead;  // @ 0x82606414 — head of au
 extern "C" void*    g_audCtrlMgrControlPrimary;   // @ 0x82606410 — primary context (same as g_pAudSystemContext)
 extern "C" void*    g_audCtrlMgrStopList;         // @ 0x825EBCA8 — StopExcept walks this list (next@+68, id@+12)
 
-// External helpers invoked from audControlMgr methods.
-extern "C" void audControlMgr_InitInternal(void* self);   // @ 0x82161610 — zeroes pools / linked-list sentinels
-extern "C" void audBank_LoadDefault(int32_t bankId);      // @ 0x821AAD18 — audBank_AD18_g
-extern "C" void audBank_FinalizeStartup(void);            // @ 0x821AADE8 — audBank_ADE8_gen
+// External helpers invoked from audControlMgr methods.  Exported under the
+// raw static-recomp symbol names so the linker matches by address.
+extern "C" void audControlMgr_InitInternal(void* self) __asm__("game_1610");
+extern "C" void audBank_LoadDefault(int32_t bankId) __asm__("audBank_AD18_g");
+extern "C" void audBank_FinalizeStartup(void) __asm__("audBank_ADE8_gen");
 extern "C" void audControlMgr_SetEnabled(void* control,
-                                          uint32_t enable); // @ 0x82162B48 — flips enable flag + reschedules
+                                          uint32_t enable) __asm__("audControlMgr_2B48");
+
+// datParser parameter-registration helpers.  In the symbol table these carry
+// the misleading "pongHairData_" prefix (the first-discovered client class),
+// but the real owner is rage::datParser — these functions are called from
+// vfn_3 / vfn_12 across ~18 unrelated RTTI classes to register a tunable
+// field against a named parser record.
+//   datParser_RegisterRecord   @ 0x82177B60 — register a tunable field
+//   datParser_AppendChildGroup @ 0x82177AD0 — allocate + link a child group
+extern "C" void* datParser_AppendChildGroup(void* parser, void* parent) __asm__("pongHairData_7AD0_g");
+extern "C" void  datParser_RegisterRecord(void* parser, int32_t valueKind,
+                                           const char* name, void* fieldAddr,
+                                           int32_t enableFlag, int32_t unused,
+                                           int32_t zero) __asm__("pongHairData_7B60_g");
 
 namespace rage {
 
@@ -1507,10 +1529,13 @@ void audControl3d::SetMaxDistance(float /*unused*/) {
     (void)sink;
 }
 
-// TODO: slots 0/1/2/3/7 (dtor / scalar-dtor / SetPosition / SetOrientation /
-// Update) still unlifted — require audControl3d_C678_2hr, 0D08 and 13C8_w
-// helpers to be lifted first (they do the real linked-list surgery that the
-// update path depends on).
+// TODO: slots 2/3/7 (SetPosition / SetOrientation / Update) still unlifted —
+// their inner loop walks the control linked list and triggers the global
+// init helper audControl3d_InitAll @ 0x8257C678 (already lifted above) plus
+// the list-surgery helpers at 0x8257_0D08 and 0x8257_13C8 which still need
+// to be lifted before the update path can be reconstructed cleanly.
+// Slot 0 (dtor) is now lifted below.  Slot 1 (ScalarDtor) for audControl3d
+// mirrors the base audControl::ScalarDtor state machine and is still TODO.
 
 // ═════════════════════════════════════════════════════════════════════════════
 // audControlMgr — Lifecycle and Mass-Control Helpers
@@ -1721,5 +1746,96 @@ void audControl::ScalarDtor(int /*flags*/) {
     reinterpret_cast<UpdateFn>(myVtbl[7])(this);
     *reinterpret_cast<uint32_t*>(self + 0x14) = 0;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// audControl — Virtual Destructor (vfn_0)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// @ 0x82161518 | size: 0x50
+// audControl::~audControl (vfn_0) — dispatches the shared destructor body,
+// then — when the scalar-delete flag (bit 0 of the deletion param) is set —
+// frees the object through the RAGE allocator.  The body lives under the
+// util_1568 symbol because ScalarDtor (vfn_1) reuses it as the teardown
+// epilogue when the state-machine finishes its stop/release sequence.
+audControl::~audControl() {
+    audControl_DestructorBody(this);
+}
+
+// Note: scalar-deleting variant (`operator delete`-style) is dispatched via
+// vtable slot 1 (ScalarDtor) which is already lifted further up in this
+// file — it runs the state machine, then when called from delete-expression
+// context rage_free'd the object through the same `util_1568` epilogue.
+
+// ═════════════════════════════════════════════════════════════════════════════
+// audControlGroup — Update + Parameter-Loading
+// ═════════════════════════════════════════════════════════════════════════════
+
+// @ 0x82162AD0 | size: 0x74
+// audControlGroup::UpdateAllControls (vfn_3) — walks every audControl node
+// threaded off g_audCtrlMgrControlListHead (next-ptr at +60, child-parser at
+// +56), allocates a matching datParser child group via datParser_AppendChildGroup,
+// then dispatches slot 12 on the control (LoadParameters) so each control can
+// register its own tunable fields against the new parser record.
+//
+// Parameter flow matches camViewCS::RegisterParamHooks and fxTrailData::vfn_3:
+// the incoming `parserState` pointer is the RAGE tunable-parameter host, and
+// each control's LoadParameters writes its fields through datParser_RegisterRecord.
+void audControlGroup::UpdateAllControls(void* parserState) {
+    uint8_t* control = reinterpret_cast<uint8_t*>(g_audCtrlMgrControlListHead);
+
+    while (control != nullptr) {
+        void* childParser = *reinterpret_cast<void**>(control + 56);
+        void* record = datParser_AppendChildGroup(parserState, childParser);
+
+        // slot 12 on the control (LoadParameters) — each subclass routes its
+        // own tunable fields into the record we just allocated.
+        void** ctrlVtbl = *reinterpret_cast<void***>(control);
+        using LoadParamsFn = void (*)(void*, void*);
+        reinterpret_cast<LoadParamsFn>(ctrlVtbl[12])(control, record);
+
+        control = *reinterpret_cast<uint8_t**>(control + 60);
+    }
+}
+
+// Field-name strings referenced by audControlGroup::LoadParameters.  These
+// live back-to-back in .rdata starting at 0x82035790 and are decoded from the
+// static-recomp scaffold's `addi r5, r11, 22224` / `... 22240` / ... stride.
+extern const char g_str_audControlGroup_field14[]; // @ 0x82035790 — float field at +20
+extern const char g_str_audControlGroup_field1C[]; // @ 0x820357A0 — float field at +28
+extern const char g_str_audControlGroup_field20[]; // @ 0x820357A8 — float field at +32
+extern const char g_str_audControlGroup_field24[]; // @ 0x820357B0 — float field at +36
+extern const char g_str_audControlGroup_field2C[]; // @ 0x820357B8 — bool/byte field at +44
+extern const char g_str_audControlGroup_field2D[]; // @ 0x820357C4 — bool/byte field at +45
+extern const char g_str_audControlGroup_field2E[]; // @ 0x820357D4 — bool/byte field at +46
+
+// @ 0x821629B8 | size: 0x114
+// audControlGroup::LoadParameters (vfn_12) — registers the group's seven
+// tunable scalars against the incoming datParser record so editor/ini code
+// can round-trip them.  The +0 value-kind column matches datParser's type
+// enum: 6 = float, 1 = byte/bool.  Offsets map to the group struct:
+//    +20 m_volume, +28 m_pitch, +32 m_pan, +36 m_rolloff,
+//    +44/+45/+46 three enable/mute bytes.
+void audControlGroup::LoadParameters(void* parserRecord) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    constexpr int32_t kKindFloat = 6;
+    constexpr int32_t kKindByte  = 1;
+
+    datParser_RegisterRecord(parserRecord, kKindFloat,
+        g_str_audControlGroup_field14, self + 20, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindFloat,
+        g_str_audControlGroup_field1C, self + 28, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindFloat,
+        g_str_audControlGroup_field20, self + 32, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindFloat,
+        g_str_audControlGroup_field24, self + 36, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindByte,
+        g_str_audControlGroup_field2C, self + 44, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindByte,
+        g_str_audControlGroup_field2D, self + 45, 1, 0, 0);
+    datParser_RegisterRecord(parserRecord, kKindByte,
+        g_str_audControlGroup_field2E, self + 46, 1, 0, 0);
+}
+
 
 } // namespace rage
