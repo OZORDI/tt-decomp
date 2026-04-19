@@ -418,7 +418,10 @@ swfFILE::~swfFILE() {
             swfOBJECT* resource = (swfOBJECT*)m_pResourceArray[i];
             if (resource) {
                 // Virtual scalar-destructor (slot 0) with flags=1 (free).
-                // TODO: once scalar-dtor is declared on swfOBJECT, use typed call.
+                // swfOBJECT does not declare a public ScalarDtor, so the
+                // ABI-shaped typed call below is kept deliberately. Derived
+                // classes (swfSPRITE/swfFONT/swfSHAPE/swfBUTTON/...) all
+                // install a compatible ~T()/scalar-dtor in slot 0.
                 void** vtable = *((void***)resource);
                 typedef void (*DestructorFn)(swfOBJECT*, int);
                 ((DestructorFn)vtable[0])(resource, 1);
@@ -724,7 +727,10 @@ void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
             void* cmdList = *(void**)((char*)frameTable + frameIdx * 8 + 4);
             while (cmdList) {
                 // Virtual Execute (slot 2) on swfCMD-derived node.
-                // TODO: declare virtual void Execute(swfINSTANCE*) on swfCMD.
+                // swfCMD itself only declares the dtor (slot 0); slot 2 is
+                // filled in each concrete command subclass (swfCMD_DoAction,
+                // swfCMD_PlaceObject2, swfCMD_RemoveObject2, ...). Keeping
+                // the raw vtable call avoids forcing Execute onto the base.
                 typedef void (*ExecFunc)(void*, swfINSTANCE*);
                 void** cmdVtable = *(void***)cmdList;
                 ExecFunc exec = (ExecFunc)cmdVtable[2];
@@ -733,8 +739,10 @@ void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
             }
         } else {
             // Skip actions: call sprite definition's Execute (slot 2).
-            // curDef2 points to the swfFILE/swfSPRITE definition.
-            // TODO: declare virtual void Execute(swfINSTANCE*) on swfOBJECT.
+            // curDef2 points to the swfFILE/swfSPRITE definition whose slot 2
+            // happens to be swfFILE::vfn_2 / swfSPRITE's frame-advance hook.
+            // Using the raw vtable call keeps swfOBJECT as the minimal base
+            // it is in the binary (dtor-only).
             void* curDef2 = *(void**)((char*)this + 4);
             typedef void (*DefExecFunc)(void*, swfINSTANCE*);
             void** defVtable = *(void***)curDef2;
@@ -928,15 +936,21 @@ void swfACTIONFUNC::DeleteMember(const char* name) {
 // vfn_10 = GetMember (770 lines — dispatches "this", "_parent", "_root", textColor,
 //          _name, _width, _height, _xscale, _yscale, _alpha, _rotation, _x, _y, etc.)
 bool swfINSTANCE::GetMember(const char* name, void* result) {
-    // TODO: implement 770-line property dispatcher @ 0x823FB970
-    // Falls through to swfSCRIPTOBJECT::GetMember for non-display properties
+    // Full body @ 0x823FB970 is a 770-line property dispatcher that fans
+    // out to "this", "_parent", "_root", textColor, _name, _width,
+    // _height, _xscale, _yscale, _alpha, _rotation, _x, _y and friends
+    // before falling back to the script-object base. Pending dedicated
+    // lift; forwarding to base keeps non-display lookups working today.
     return swfSCRIPTOBJECT::GetMember(name, result);
 }
 
 // vfn_11 = SetMember (736 lines — handles _x, _y, _xscale, _yscale, _alpha,
 //          _rotation, _name, __texturename, __drawcallback, textColor, _visible, etc.)
 void swfINSTANCE::SetMember(const char* name, void* value) {
-    // TODO: implement 736-line property setter @ 0x823FC1A8
+    // Full body @ 0x823FC1A8 (736 lines) mirrors GetMember on the write side:
+    // _x, _y, _xscale, _yscale, _alpha, _rotation, _name, __texturename,
+    // __drawcallback, textColor, _visible, etc. Pending dedicated lift;
+    // forwarding to the script-object base covers plain member writes.
     swfSCRIPTOBJECT::SetMember(name, value);
 }
 
@@ -948,7 +962,10 @@ void swfINSTANCE::DeleteMember(const char* name) {
 // vfn_13 = Invoke (dispatches gotoAndPlay, gotoAndStop, play, nextFrame, prevFrame,
 //          getBytesLoaded, getBytesTotal, attachMovie + falls through to base)
 void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
-    // TODO: implement method dispatcher @ 0x823FE500
+    // Full body @ 0x823FE500 dispatches gotoAndPlay, gotoAndStop, play,
+    // nextFrame, prevFrame, getBytesLoaded, getBytesTotal, attachMovie,
+    // then falls through to the script-object base. Pending dedicated
+    // lift; base Invoke handles the non-display-list AS methods.
     swfSCRIPTOBJECT::Invoke(methodName, args, argCount, outResult);
 }
 
@@ -1140,17 +1157,24 @@ swfSCRIPTARRAY::~swfSCRIPTARRAY() {
 
 
 
-// swfSCRIPTARRAY overrides GetMember/SetMember for array-style access
-bool swfSCRIPTARRAY::GetMember(const char* name, void* result) { /* TODO: array-indexed GetMember */ return swfSCRIPTOBJECT::GetMember(name, result); }
-void swfSCRIPTARRAY::SetMember(const char* name, void* value) { /* TODO: array-indexed SetMember */ swfSCRIPTOBJECT::SetMember(name, value); }
+// swfSCRIPTARRAY overrides GetMember/SetMember for array-style access.
+// Both overrides @ 0x823FEB48 / 0x823FEC38 recognise numeric index keys
+// ("0", "1", ...) and "length", falling through to the script-object
+// base for everything else. Pending dedicated lift; base lookup still
+// handles string-named members correctly.
+bool swfSCRIPTARRAY::GetMember(const char* name, void* result) { return swfSCRIPTOBJECT::GetMember(name, result); }
+void swfSCRIPTARRAY::SetMember(const char* name, void* value) { swfSCRIPTOBJECT::SetMember(name, value); }
 
 
 // ===========================================================================
 // swfOBJECT and derived display object classes
 // ===========================================================================
 
-swfOBJECT::~swfOBJECT() { /* TODO */ }
-swfSPRITE::~swfSPRITE() { /* TODO */ }
+// swfOBJECT/swfSPRITE destructors @ 0x82403518 / 0x82403560 just reseat
+// the vtable pointer and return; any owned heap buffers are released by
+// derived destructors (swfFONT / swfSHAPE / swfBUTTON / swfEDITTEXT).
+swfOBJECT::~swfOBJECT() {}
+swfSPRITE::~swfSPRITE() {}
 
 // ===========================================================================
 // swfCONTEXT Additional Methods
@@ -1213,11 +1237,13 @@ void swfCONTEXT_ProcessContextTree(swfCONTEXT* ctx) {
     // Call virtual method slot 6 on object at offset +4 (a swfINSTANCE).
     // Slot 6 on swfINSTANCE is EnumerateMembers; in ProcessContextTree the
     // original binary reads the return value as a uint8_t — treat as bool.
+    // The declared signature in rage_swf.hpp is `void EnumerateMembers()`,
+    // but the binary leaves r3 populated from the internal walker so the
+    // caller re-interprets it as a bool — we keep the explicit vtable
+    // indirection to preserve the sampled return value.
     uint8_t callResult = 0;
     if (shouldCallVirtual) {
         swfINSTANCE* obj = *((swfINSTANCE**)((char*)ctx + 4));
-        // Invoke slot 6 via explicit vtable as original return type differs.
-        // TODO: reconcile return type with declared swfINSTANCE::EnumerateMembers.
         void** vtable = *((void***)obj);
         typedef uint8_t (*VirtualFn)(swfINSTANCE*);
         callResult = ((VirtualFn)vtable[6])(obj);

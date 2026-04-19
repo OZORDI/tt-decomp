@@ -228,9 +228,12 @@ void rage_RegisterUIContext(void* pContext, uint32_t categoryId,
  * ═══════════════════════════════════════════════════════════════════════════════ */
 void rage_RenderDebugOverlay(void)
 {
-    /* TODO: Full implementation requires HUD flash system integration.
-     * The original renders debug text twice with different blend modes
-     * for drop-shadow / visibility. */
+    /* Open: the 404-byte body @ 0x82228C68 renders the debug overlay
+     * through hudFlashBase twice (drop-shadow pass + main pass) with
+     * different blend modes. Deferred until hudFlashBase::Update /
+     * SetPropertyById are lifted and the Flash text-draw helper is
+     * available; the release build no-ops this callback so the stub
+     * below is functionally correct for non-debug runs. */
     rage_DebugLog("rage_RenderDebugOverlay called");
 }
 

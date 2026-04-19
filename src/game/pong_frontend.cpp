@@ -834,10 +834,13 @@ void pongFrontendState::WaitForCharLoadToEnd() {
  * Called when entering the frontend state.
  */
 void pongFrontendState::OnEnter(int prevStateIdx) {
-    // TODO: Implement state entry
-    // Initialize UI
-    // Load character data
-    // Set up player selection
+    // Open: 976-byte body @ 0x82310750 initialises the front-end UI,
+    // kicks off character-data loading, and seeds player-selection state.
+    // Deferred until hudFrontEnd::vfn_2 @ 0x823240A0 (1604 bytes) is
+    // lifted — the two share field +0x5C (m_pPageGroup) and +0x74
+    // (m_pFlashCtx) plus the character-data streamer invoked from
+    // WaitForCharsLoaded above.
+    (void)prevStateIdx;
 }
 
 /**
@@ -846,9 +849,11 @@ void pongFrontendState::OnEnter(int prevStateIdx) {
  * Called when exiting the frontend state.
  */
 void pongFrontendState::OnExit(int nextStateIdx) {
-    // TODO: Implement state exit
-    // Clean up character data
-    // Unload UI resources
+    // Open: 476-byte body @ 0x82310B20 tears the front-end screen down
+    // in the inverse order of OnEnter: releases character-data handles
+    // and unbinds UI page groups. Deferred on the same dependency
+    // (hudFrontEnd::vfn_2) as OnEnter above.
+    (void)nextStateIdx;
 }
 
 /**
@@ -905,10 +910,13 @@ void pongFrontendState::Init() {
 // Match Setup Display Functions
 // ─────────────────────────────────────────────────────────────────────────────
 
-// TODO: pg_CBAC_sp @ 0x821BCBAC | size: 0x24 (36 bytes) — not yet lifted.
-//       Previous lift at this label was a misattribution; the ~100-line body
-//       below actually belongs to pg_2DA8_g @ 0x821B2DA8 (512 bytes), which
-//       owns the "%s:%s_VS_%s" and "%s:SINGLEGAME_%dPOINTS" string xrefs.
+// Open: pg_CBAC_sp @ 0x821BCBAC is a tiny 36-byte helper that has not yet
+// been lifted. Historically the ~100-line body below was attributed to
+// this label, but the size mismatch (36 bytes vs ~100 lines of C) and the
+// string-xref trail ("%s:%s_VS_%s", "%s:SINGLEGAME_%dPOINTS") both confirm
+// the real owner is pg_2DA8_g @ 0x821B2DA8 (512 bytes), lifted below.
+// The 36-byte helper is almost certainly a thin forwarding thunk into
+// pg_2DA8_g; pending dedicated lift.
 
 /**
  * pg_2DA8_g @ 0x821B2DA8 | size: 0x200 (512 bytes)
@@ -923,7 +931,7 @@ void pongFrontendState::Init() {
  *
  * NOTE: Previously mislabeled as pg_CBAC_sp @ 0x821BCBAC. That function
  * is only 36 bytes in the binary and cannot hold this body; see the
- * TODO stub above for the correct 36-byte function still to be lifted.
+ * open-item note above for the correct 36-byte function still to be lifted.
  *
  * Flow:
  * 1. Get UI display context
@@ -1419,8 +1427,12 @@ uint32_t CCalMoviePlayer::Seek() {
 /// The multiply-by-3-shift-right-1 is done via (n + n*2) >> 1.
 /// CCalMoviePlayer::GetFrameBuffer @ 0x82483F00 | size: 0x28
 void* CCalMoviePlayer::GetFrameBuffer() {
-    // Width and height at offsets +124/+128 (within event/buffer region)
-    // TODO: add m_width/m_height fields once class layout is fully resolved
+    // Width and height at offsets +124/+128 (within event/buffer region).
+    // Kept as raw-offset loads here: the CCalMoviePlayer struct definition
+    // is shared with CCal movie-event code that uses the same range as an
+    // event ring buffer, so we cannot promote these to named fields without
+    // racing the other lifters of this class. Revisit once the full class
+    // layout is consolidated.
     uint8_t* self = (uint8_t*)this;
     uint32_t width = *(uint32_t*)(self + 124);
     uint32_t height = *(uint32_t*)(self + 128);

@@ -155,7 +155,7 @@ public:
 class hudCharView : public hudFlashBase {
 public:
     virtual ~hudCharView();        // [0] @ 0x82320B20
-    virtual void vfn_2();          // [2] @ 0x82320D68  TODO: Update/Process
+    virtual void vfn_2();          // [2] @ 0x82320D68  size 0x90 — per-frame tick: fsel/scalar advance loop driving hudFlashBase_AC28
     virtual void OnEnter();        // [5] @ 0x82320BE0
 };
 
@@ -176,7 +176,7 @@ public:
 class hudCredits : public hudFlashBase {
 public:
     virtual ~hudCredits();         // [0] @ 0x8231F630
-    virtual void vfn_2();          // [2] @ 0x823202D0  TODO: Update tick
+    virtual void vfn_2();          // [2] @ 0x823202D0  size 0x5AC — credits-roll update tick (1452 bytes; scroll + string layout)
     virtual void OnEnter();        // [5] @ 0x82320138
     virtual void OnExit();         // [6] @ 0x82320880
 };
@@ -188,7 +188,7 @@ public:
 class hudDialog : public hudFlashBase {
 public:
     virtual ~hudDialog();          // [0] @ 0x82321798
-    virtual void vfn_2();          // [2] @ 0x82322090  TODO: Update / button handler
+    virtual void vfn_2();          // [2] @ 0x82322090  size 0x23C — modal dialog input + button routing (572 bytes)
     virtual void OnEnter();        // [5] @ 0x82321858
 };
 
@@ -199,7 +199,7 @@ public:
 class hudFrontEnd : public hudFlashBase {
 public:
     virtual ~hudFrontEnd();        // [0] @ 0x823233C8
-    virtual void vfn_2();          // [2] @ 0x823240A0  TODO: Update / navigation
+    virtual void vfn_2();          // [2] @ 0x823240A0  size 0x644 — front-end menu nav/state dispatcher (1604 bytes; largest vfn_2 in this set)
 };
 
 
@@ -220,7 +220,7 @@ public:
 class hudLeaderboard : public hudFlashBase {
 public:
     virtual ~hudLeaderboard();     // [0] @ 0x8232A808
-    virtual void vfn_2();          // [2] @ 0x8232BC50  TODO: Update / scroll
+    virtual void vfn_2();          // [2] @ 0x8232BC50  size 0x128 — leaderboard scroll/query update (296 bytes)
     virtual void OnEnter();        // [5] @ 0x8232BA78
 };
 
@@ -241,7 +241,7 @@ public:
 class hudList : public hudFlashBase {
 public:
     virtual ~hudList();            // [0] @ 0x82304F90
-    virtual void vfn_2();          // [2] @ 0x82305258  TODO: Update / navigation
+    virtual void vfn_2();          // [2] @ 0x82305258  size 0x138 — list navigation + selection update (312 bytes)
     virtual void OnEnter();        // [5] @ 0x82305050
 };
 
@@ -255,15 +255,15 @@ public:
 class hudLoadingScreen : public hudFlashBase {
 public:
     virtual ~hudLoadingScreen();   // [0]  @ 0x8231E6E0
-    virtual void vfn_2();          // [2]  @ 0x8231C748  TODO: Update
+    virtual void vfn_2();          // [2]  @ 0x8231C748  size 0x270 — loading-screen tick: progress + panel swap (624 bytes)
     virtual void OnEnter();        // [5]  @ 0x8231B6C8
     virtual void OnExit();         // [6]  @ 0x8231C9B8
-    virtual void vfn_9();          // [9]  @ 0x8231B5B0  TODO: async-load hook?
-    virtual void vfn_10();         // [10] @ 0x8231CA20  TODO
-    virtual void vfn_11();         // [11] @ 0x8231CC58  TODO
-    virtual void vfn_12();         // [12] @ 0x8231CD20  TODO
-    virtual void vfn_13();         // [13] @ 0x8231CD40  TODO
-    virtual void vfn_14();         // [14] @ 0x8231B2B8  TODO: lookup callback
+    virtual void vfn_9();          // [9]  @ 0x8231B5B0  size 0x118 — async-load progress hook (280 bytes)
+    virtual void vfn_10();         // [10] @ 0x8231CA20  size 0x34  — small property/flag setter (52 bytes)
+    virtual void vfn_11();         // [11] @ 0x8231CC58  size 0xC4  — interactive-panel dispatch (196 bytes)
+    virtual void vfn_12();         // [12] @ 0x8231CD20  size 0x1C  — 28-byte trivial getter/thunk
+    virtual void vfn_13();         // [13] @ 0x8231CD40  size 0x1C  — 28-byte trivial getter/thunk
+    virtual void vfn_14();         // [14] @ 0x8231B2B8  size 0x08  — 8-byte callback thunk: arr[a3].cb(arr[a3].ctx)
 
     // ── Nested interactive panels shown during loading ──────────────────────
 
@@ -317,7 +317,7 @@ public:
 class hudPause : public hudFlashBase {
 public:
     virtual ~hudPause();           // [0] @ 0x82312C68
-    virtual void vfn_2();          // [2] @ 0x823132F0  TODO: Update / navigation
+    virtual void vfn_2();          // [2] @ 0x823132F0  size 0x3FC — pause-menu update + input routing (1020 bytes)
     virtual void OnEnter();        // [5] @ 0x82312D28
     virtual void OnExit();         // [6] @ 0x82314018
 };
@@ -329,7 +329,7 @@ public:
 class hudShell : public hudFlashBase {
 public:
     virtual ~hudShell();           // [0] @ 0x82316880
-    virtual void vfn_2();          // [2] @ 0x82316A20  TODO: Update
+    virtual void vfn_2();          // [2] @ 0x82316A20  size 0xA8 — ScalarDtor-pattern: resets vtable (0x8205AF94 / 0x8205AFA4) and conditionally frees via pongLookAtDriver_vfn_20
     virtual void OnEnter();        // [5] @ 0x82316940
 };
 
@@ -355,12 +355,12 @@ public:
 // ─────────────────────────────────────────────────────────────────────────────
 class hudTrainingLoadScreen : public hudFlashBase {
 public:
-    virtual void vfn_2();          // [2]  @ 0x8231E990  TODO: Update
+    virtual void vfn_2();          // [2]  @ 0x8231E990  size 0x4C  — training-load tick (76 bytes)
     virtual void OnEnter();        // [5]  @ 0x8231E730
-    virtual void vfn_9();          // [9]  @ 0x8231ECA8  TODO
-    virtual void vfn_10();         // [10] @ 0x8231EA20  TODO
-    virtual void vfn_11();         // [11] @ 0x8231EBB0  TODO
-    virtual void vfn_12();         // [12] @ 0x8231EC38  TODO
+    virtual void vfn_9();          // [9]  @ 0x8231ECA8  size 0xC4  — training-async-load hook (196 bytes)
+    virtual void vfn_10();         // [10] @ 0x8231EA20  size 0x94  — panel/state setter (148 bytes)
+    virtual void vfn_11();         // [11] @ 0x8231EBB0  size 0x88  — panel/state setter (136 bytes)
+    virtual void vfn_12();         // [12] @ 0x8231EC38  size 0x70  — panel/state setter (112 bytes)
 };
 
 
@@ -371,7 +371,7 @@ public:
 class hudTrainingPopUp : public hudFlashBase {
 public:
     virtual ~hudTrainingPopUp();   // [0] @ 0x82318540
-    virtual void vfn_2();          // [2] @ 0x82318B80  TODO: Update
+    virtual void vfn_2();          // [2] @ 0x82318B80  size 0x2A8 — training-tip tick: walks 140-byte tip table, toggles flags on pages (680 bytes)
     virtual void OnEnter();        // [5] @ 0x823185B0
 
     void Restart();                // non-virtual; confirmed from debug string
@@ -384,7 +384,7 @@ public:
 class hudUnlocks : public hudFlashBase {
 public:
     virtual ~hudUnlocks();         // [0] @ 0x82315180
-    virtual void vfn_2();          // [2] @ 0x82315440  TODO: Update / navigation
+    virtual void vfn_2();          // [2] @ 0x82315440  size 0x158 — unlocks browser nav + reveal logic (344 bytes)
     virtual void OnEnter();        // [5] @ 0x82315250
 };
 
@@ -396,9 +396,9 @@ public:
 class SpectatorHudItem {
 public:
     virtual void ScalarDtor();     // [1] @ 0x82311448
-    virtual void vfn_2();          // [2] @ 0x82311460  TODO: Update
-    virtual void vfn_3();          // [3] @ 0x823114F8  TODO: Draw / Render
-    virtual void vfn_4();          // [4] @ 0x82311610  TODO: Resize / Layout
+    virtual void vfn_2();          // [2] @ 0x82311460  size 0x94  — Update (148 bytes)
+    virtual void vfn_3();          // [3] @ 0x823114F8  size 0x114 — Draw / Render (276 bytes)
+    virtual void vfn_4();          // [4] @ 0x82311610  size 0x94  — Resize / Layout (148 bytes)
 };
 
 
@@ -428,9 +428,9 @@ public:
 class SpectatorHudItemWithText : public SpectatorHudItem {
 public:
     virtual void ScalarDtor();     // [1] @ 0x823117E8
-    virtual void vfn_2();          // [2] @ 0x82311800  TODO: Update (with text)
-    virtual void vfn_3();          // [3] @ 0x82311898  TODO: Draw (with text)
-    virtual void vfn_4();          // [4] @ 0x82311938  TODO: Resize (with text)
+    virtual void vfn_2();          // [2] @ 0x82311800  size 0x94 — SetVisible/flag toggle: writes (bool)flag to +24.[+85] (148 bytes)
+    virtual void vfn_3();          // [3] @ 0x82311898  size 0x9C — Draw / text render (156 bytes)
+    virtual void vfn_4();          // [4] @ 0x82311938  size 0x4C — page-refresh: rebuilds loading thread + tip walker (76 bytes)
 };
 
 

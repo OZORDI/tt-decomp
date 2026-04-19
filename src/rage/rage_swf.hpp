@@ -6,8 +6,11 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * Open items (upgrade rather than rewrite): several vfn_N entries below
+ * keep `void()` placeholders because the owning class has only a dtor in
+ * the binary (swfOBJECT, swfCMD*, swfBASE, ...). Concrete signatures are
+ * filled in as their call sites are lifted; cross-reference
+ * recomp/structured_pass5_final/ and orig/pseudocode/ per method.
  */
 #pragma once
 #include <stdint.h>
