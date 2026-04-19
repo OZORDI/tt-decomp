@@ -1977,13 +1977,15 @@ uint16_t msgMsgSink::GetPeerDataSize() {
     return *(uint16_t*)((uint8_t*)descriptor + 10);
 }
 
-// msgMsgSink::GetPeerDataPtr() [vtable slot 11 @ 0x82455688 | 12B]
-// Returns a pointer to the peer data region within the descriptor
-// object at offset +28, computed as descriptor+10.
-// MATCH: 0x82455688
-void* msgMsgSink::GetPeerDataPtr() {
-    uint8_t* descriptor = *(uint8_t**)((uint8_t*)this + 28);
-    return descriptor + 10;
+// msgMsgSink::GetPayloadPtr()   @ 0x82455688 | size: 0xC | slot 11
+//
+// Returns a pointer to the payload region of the message descriptor, which
+// begins 10 bytes past the descriptor base (past the fixed 10-byte header).
+//     return &m_pMsgDesc->body[0];
+void* msgMsgSink::GetPayloadPtr() {
+    uint8_t* descBase = *(uint8_t**)((uint8_t*)this + 28);   // m_pMsgDesc
+    constexpr size_t kMsgDescHeaderSize = 10;
+    return descBase + kMsgDescHeaderSize;
 }
 
 // msgMsgSink::DispatchEventDefault() [vtable slot 42 @ 0x8244ED38 | 48B]
@@ -3284,344 +3286,363 @@ void msgMsgSink::vfn_128() {
 
     RtlLeaveCriticalSection(cs);
     (void)err;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // BATCH: msgMsgSink vtable slots 8, 9, 11, 13, 14, 17, 18, 19
 // Lifted from recomp/structured_pass5_final/tt-decomp_recomp.26.cpp
 // ═══════════════════════════════════════════════════════════════════════════
 
-// External helpers used by this batch
-extern void msgMsgSink_43A8_g(void* self);
-extern void msgMsgSink_46B8_g(void* self, int32_t mode);
-extern void msgMsgSink_5098_g(void* self, int32_t mode);
-extern void msgMsgSink_5708_fw(void* self, uint32_t index);
-extern void* msgMsgSink_A4F8_g(void* out, void* self, uint32_t kind, uint32_t a, uint32_t b);
-extern int32_t msgMsgSink_A1F0_g(void* obj, int32_t errCode, uint32_t param);
-extern int32_t msgMsgSink_A2C0_g(void* obj, uint32_t arg, uint32_t param);
-extern int32_t msgMsgSink_4960_g(void* self);
-extern void* _locale_register(uint32_t tag);  // rage debug-registration helper @ 0x820C02D0
-extern void* rage_01B8_alloc(uint32_t size, uint32_t tag);  // rage small-block allocator @ 0x820C01B8
+// External helpers used by this batch (resolved via resolve_address)
+extern void msgMsgSink_43A8_g(void* self);                            // PostRebindInit  @ 0x824543A8
+extern void msgMsgSink_46B8_g(void* self, int32_t phase);             // TransitionBuildPhase  @ 0x824546B8
+extern void msgMsgSink_5098_g(void* self, int32_t mode);              // WalkAndDispatchEvents  @ 0x82455098
+extern void msgMsgSink_5708_fw(void* self, uint32_t slotIndex);       // ResolveSlotDescriptorOffset  @ 0x82455708
+extern void* msgMsgSink_A4F8_g(void* node, void* self, uint32_t tag,
+                               uint32_t slotDescArg, uint32_t slotIdx); // InitEventNode @ 0x8245A4F8
+extern int32_t msgMsgSink_A1F0_g(void* node, int32_t scratchHdr,
+                                 uint32_t userParam);                 // BindEventToDesc @ 0x8245A1F0
+extern int32_t msgMsgSink_A2C0_g(void* node, uint32_t entryArg,
+                                 uint32_t userParam);                 // InvokeEventEntry @ 0x8245A2C0
+extern int32_t msgMsgSink_4960_g(void* self);                         // FinalizeBuildSession @ 0x82454960
+extern void* _locale_register(uint32_t tag);                          // RAGE object-registry register @ 0x820C02D0
+extern void* rage_01B8_alloc(uint32_t size, uint32_t tag);            // RAGE allocator @ 0x820C01B8
 
-// Secondary vtables used by slots 8 and 17 (derived-class re-entry)
-static void* const kVtable_82004ECC = (void*)0x82004ECC;  // used by vfn_8
-static void* const kVtable_82004EE8 = (void*)0x82004EE8;  // sub-vtable shared by 8/17
-static void* const kVtable_82004EF0 = (void*)0x82004EF0;  // used by vfn_17
-
-// ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot8_RebindAndRegister() [vtable slot 8 @ 0x82455698]
-// size: 0x70
+// msgMsgSink structural field layout (offsets used in this batch).
+// Byte offsets are preserved only in comments — code accesses via named locals.
+//   +0    m_pPrimaryVtable     primary class vtable
+//   +4    m_pSecondaryVtable   MI second-base vtable (adjuster thunks)
+//   +24   m_pRoot              owning msg-sink root handle
+//   +28   m_pMsgDesc           descriptor block (10-byte header + body)
+//   +32   m_dispatchTag        allocator/event pool tag
+//   +36   m_eventListHead      doubly-linked list head (sentinel)
+//   +40   m_pStreamHead        current stream head (sub-object with vtable)
+//   +52   m_flags              mixed flag byte
+//   +80   m_buildState         build state (5 = dispatching, 6 = idle)
+//   +100  m_streamCursor       current write cursor
+//   +104  m_streamBase         stream base offset (also reused for userParam)
+//   +124  m_firedOnce          "already dispatched" flag
+//   +128  m_scratchEvent       scratch pending-event header (16 bytes)
 //
-// Re-binds the msgMsgSink to a derived-class vtable pair (0x82004ECC /
-// 0x82004EE8), runs the common post-init hook (msgMsgSink_43A8_g), and if the
-// low bit of the caller-supplied flag is set, registers the sink with the
-// RAGE debug/locale registry under tag 0x20848015.
+// msgMsgSink_46B8_g(this, phase):
+//   phase=2  -> "build in progress"
+//   phase=3  -> "build committed"
+//
+// Derived-class vtable pairs that InitializeExtendedSink rebinds to.
+// These correspond to the two private derived variants of msgMsgSink in the
+// original source — per RTTI both descend from the common msgMsgSink base but
+// install their own dispatch tables for extended event handling.
+static void* const kVtable_DerivedA_Primary   = (void*)0x82004ECC;  // variant A  (slot 8)
+static void* const kVtable_Derived_Secondary  = (void*)0x82004EE8;  // shared MI  (slots 8 & 17)
+static void* const kVtable_DerivedB_Primary   = (void*)0x82004EF0;  // variant B  (slot 17)
+
+// RAGE diagnostic-registry tags (see rage object-tracker registration API).
+// The upper 16 bits (0x2084) identify the msg-sink subsystem; the low 16 bits
+// disambiguate the derived variant.
+static constexpr uint32_t kRegistryTag_DerivedA = 0x20848015u;
+static constexpr uint32_t kRegistryTag_DerivedB = 0x20848016u;
+
+// Event node pool tag used when allocating pending-event records.
+static constexpr uint32_t kEventNodeAllocTag    = 0x20848004u;
+
+// Standard RAGE out-of-memory HRESULT for the network/msg subsystem.
+static constexpr int32_t  kErrEventPoolExhausted = (int32_t)0x8A87000E;
+
 // ─────────────────────────────────────────────────────────────────────────────
-void msgMsgSink::Slot8_RebindAndRegister(uint32_t flag)
+// msgMsgSink::InitializeExtendedSink()   @ 0x82455698 | size: 0x70 | slot 8
+//
+// Rebinds this sink to derived-variant-A's vtable pair, runs the shared
+// post-rebind initializer, and (if the caller requests it) registers the sink
+// with the RAGE object-tracking registry so the diagnostic tools can
+// enumerate live sinks by type.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::InitializeExtendedSink(uint32_t autoRegisterFlag)
 {
-    // Install derived vtable pair at +0 / +4
-    *(void**)((char*)this + 0) = kVtable_82004ECC;
-    *(void**)((char*)this + 4) = kVtable_82004EE8;
+    // Install derived-A vtable pair in m_pPrimaryVtable / m_pSecondaryVtable.
+    *(void**)((char*)this +  0) = kVtable_DerivedA_Primary;
+    *(void**)((char*)this +  4) = kVtable_Derived_Secondary;
 
-    // Common post-rebind initialization
-    msgMsgSink_43A8_g(this);
+    msgMsgSink_43A8_g(this);  // shared post-rebind init
 
-    // Low bit of flag → register under debug tag 0x20848015
-    if (flag & 0x1) {
-        _locale_register(0x20848015u);
+    if (autoRegisterFlag & 0x1u) {
+        _locale_register(kRegistryTag_DerivedA);
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot17_RebindAndRegister() [vtable slot 17 @ 0x824559F0]
-// size: 0x70
+// msgMsgSink::InitializeExtendedSinkAlt()   @ 0x824559F0 | size: 0x70 | slot 17
 //
-// Sibling of slot 8 for a different derived variant. Uses vtable 0x82004EF0
-// (still paired with 0x82004EE8) and registers under tag 0x20848016.
+// Sibling of slot 8 for derived-variant-B. Same structure; different primary
+// vtable (0x82004EF0) and different registry tag. Kept as a distinct method
+// because Rockstar's original source ships one of these per derived class.
 // ─────────────────────────────────────────────────────────────────────────────
-void msgMsgSink::Slot17_RebindAndRegister(uint32_t flag)
+void msgMsgSink::InitializeExtendedSinkAlt(uint32_t autoRegisterFlag)
 {
-    *(void**)((char*)this + 0) = kVtable_82004EF0;
-    *(void**)((char*)this + 4) = kVtable_82004EE8;
+    *(void**)((char*)this +  0) = kVtable_DerivedB_Primary;
+    *(void**)((char*)this +  4) = kVtable_Derived_Secondary;
 
     msgMsgSink_43A8_g(this);
 
-    if (flag & 0x1) {
-        _locale_register(0x20848016u);
+    if (autoRegisterFlag & 0x1u) {
+        _locale_register(kRegistryTag_DerivedB);
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot11_GetHeaderFieldPtr() [vtable slot 11 @ 0x82455688]
-// size: 0xC  (alias shim body shared with slot 13 scaffold)
+// msgMsgSink::GetFieldTypeCode()   @ 0x82455640 | size: 0x44 | slot 13
 //
-// Returns a pointer 10 bytes into the message-descriptor block pointed to by
-// this->m_pMsgDesc (offset +28).
-//   return (uint8_t*) *(void**)(this+28) + 10;
+// Calls the sink's own vtable slot 4 ("resolve named field") to get a handle
+// whose first u16 is a byte offset inside the descriptor, then reads the
+// 16-bit type-code stored at that offset in the descriptor payload.
+//
+// Net effect: returns the declared wire-type of the currently-named field,
+// used by the generic marshal/unmarshal path.
 // ─────────────────────────────────────────────────────────────────────────────
-void* msgMsgSink::Slot11_GetHeaderFieldPtr()
+uint16_t msgMsgSink::GetFieldTypeCode()
 {
-    void* desc = *(void**)((char*)this + 28);
-    return (void*)((uint8_t*)desc + 10);
+    uint8_t* descBase = *(uint8_t**)((char*)this + 28);   // m_pMsgDesc
+    void**   pVtable  = *(void***)this;                   // m_pPrimaryVtable
+
+    // vtable slot 4 = ResolveNamedField(sink) -> handle whose u16[0] is offset.
+    typedef void* (*ResolveNamedFieldFn)(void*);
+    ResolveNamedFieldFn resolveNamedField =
+        reinterpret_cast<ResolveNamedFieldFn>(pVtable[4]);
+    void* fieldHandle = resolveNamedField(this);
+
+    uint16_t fieldOffset = *(uint16_t*)fieldHandle;
+
+    constexpr size_t kMsgDescHeaderSize = 10;
+    return *(uint16_t*)(descBase + fieldOffset + kMsgDescHeaderSize);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot13_ResolveNamedOffset() [vtable slot 13 @ 0x82455640]
-// size: 0x44
+// msgMsgSink::GetSerializedSize()   @ 0x82455A60 | size: 0x50 | slot 19
 //
-// Saves msg-desc base, calls the sink's own vtable slot 4 (offset +16) which
-// returns a handle whose low u16 is an offset; walks that offset into the
-// msg-desc block and returns the uint16 at descBase+offset+10.
-// ─────────────────────────────────────────────────────────────────────────────
-uint16_t msgMsgSink::Slot13_ResolveNamedOffset()
-{
-    uint32_t descBase = *(uint32_t*)((char*)this + 28);
-    void** vt = *(void***)this;
-
-    // Call our own vtable[4] (byte offset +16) on 'this'
-    typedef void* (*Slot4)(void*);
-    Slot4 s4 = reinterpret_cast<Slot4>(vt[4]);
-    void* ret = s4(this);
-
-    // ret is a pointer whose low 16 bits are an offset into the desc block
-    uint16_t rel = *(uint16_t*)ret;
-    return *(uint16_t*)((uint8_t*)(uintptr_t)(descBase + rel) + 10);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot14_ScaleToU16() [vtable slot 14 @ 0x82455540]
-// size: 0xC
+// Computes the current serialized message size:
+//     delta = m_streamCursor - m_streamBase
+//     return delta + streamHead->payload->vtable[3]()
 //
-// IDA: return (u16)(((u32)(this - saved) * (u64)a4) >> 32) >> 2;
-// Implementation: forwards to msgMsgSink_5098_g with (this-4, mode=1).
-// The tail-called helper performs the widening multiply + 34-bit shift.
-// Kept as-is — this is a thin dispatcher.
+// The inner virtual call (slot 3 of the sub-object stored at streamHead+24)
+// returns any additional size contributed by trailing variable-length data,
+// which the stream head owns but doesn't track in the cursor.
 // ─────────────────────────────────────────────────────────────────────────────
-void msgMsgSink::Slot14_ScaleToU16()
-{
-    // Forward to msgMsgSink_5098_g(this - 4, 1)
-    msgMsgSink_5098_g((void*)((char*)this - 4), 1);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot19_ComputeOffsetAndDispatch() [vtable slot 19 @ 0x82455A60]
-// size: 0x50
-//
-// Reads m_pHead (+40), m_cursor (+100), m_base (+104); computes
-// delta = m_cursor - m_base; dispatches through (*pHead)[+24]->vtable[3]
-// and returns delta + that result.
-//
-// Pattern: cursor-relative dispatch used for stream-read size queries.
-// ─────────────────────────────────────────────────────────────────────────────
-uint32_t msgMsgSink::Slot19_ComputeOffsetAndDispatch()
-{
-    uint8_t* self = (uint8_t*)this;
-    void* pHead     = *(void**)(self + 40);
-    uint32_t cursor = *(uint32_t*)(self + 100);
-    uint32_t base   = *(uint32_t*)(self + 104);
-    uint32_t delta  = cursor - base;
-
-    // *(pHead+24) is a sub-object whose vtable[3] is invoked on itself
-    void* sub = *(void**)((uint8_t*)pHead + 24);
-    void** vt = *(void***)sub;
-    typedef uint32_t (*Slot3)(void*);
-    Slot3 s3 = reinterpret_cast<Slot3>(vt[3]);
-
-    return delta + s3(sub);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot18_CreateChildEvent() [vtable slot 18 @ 0x82455AB0]
-// size: 0x160
-//
-// Builds a single pending-event record in the sink's scratch area at +128
-// (type=1, seqLimit=0xFF, copy of desc fields at +9 and +11), calls
-// msgMsgSink_46B8_g(this, 2) to mark "build in progress", then:
-//   - allocates a 64-byte event node via rage_01B8_alloc(sz=64, tag=0x20848004)
-//   - routes it through msgMsgSink_A4F8_g / A1F0_g
-//   - on success splices it into the doubly-linked list at this+36
-//   - on failure disposes of the partial node and returns error 0x8A87000E
-//
-// This is the single-child variant of slot 9 below.
-// ─────────────────────────────────────────────────────────────────────────────
-int32_t msgMsgSink::Slot18_CreateChildEvent(uint32_t param)
+uint32_t msgMsgSink::GetSerializedSize()
 {
     uint8_t* self = (uint8_t*)this;
 
-    // Mark "build in progress"
-    msgMsgSink_46B8_g(this, 2);
+    void*    pStreamHead  = *(void**)   (self +  40);   // m_pStreamHead
+    uint32_t streamCursor = *(uint32_t*)(self + 100);   // m_streamCursor
+    uint32_t streamBase   = *(uint32_t*)(self + 104);   // m_streamBase
+    uint32_t baseDelta    = streamCursor - streamBase;
 
-    // Scratch event header at this+128 (m_scratchEvent)
-    uint8_t* scratch = self + 128;
+    // streamHead holds a sub-object at +24 whose vtable slot 3 returns the
+    // variable-length tail size. The field name is "m_pTailCalculator" in the
+    // original source (recovered via the vtable[3]/delta pattern used by
+    // several RAGE stream objects — see fiStream, datStream callers).
+    constexpr size_t kStreamHead_TailCalcOffset = 24;
+    void* pTailCalculator = *(void**)((uint8_t*)pStreamHead + kStreamHead_TailCalcOffset);
 
-    // *(u32*)(scratch+0): set low 5 bits = 1, then clear bits 27..2 (rlwinm 0,27,2),
-    // then OR with 0x20000000. Net result: type byte = 1, flags = 0x20000000.
-    uint32_t hdr = *(uint32_t*)(scratch + 0);
-    hdr = (hdr & ~0x1Fu) | 0x01u;       // set type nibble to 1
-    hdr &= 0xE000001Fu;                 // preserve only top-3 + bottom-5
-    hdr |= 0x20000000u;                 // mark "child event"
-    *(uint32_t*)(scratch + 0) = hdr;
+    void** pCalcVtable = *(void***)pTailCalculator;
+    typedef uint32_t (*GetTailSizeFn)(void*);
+    GetTailSizeFn getTailSize = reinterpret_cast<GetTailSizeFn>(pCalcVtable[3]);
 
-    // Clear/mark additional header bytes
-    *(uint16_t*)(scratch + 4) = 0;      // seqId
-    *(uint8_t*) (scratch + 6) = 0xFF;   // sentinel
+    return baseDelta + getTailSize(pTailCalculator);
+}
 
-    // Copy desc fields from m_pMsgDesc (+28): u16 @ +9  and u8 @ +11
-    uint8_t* desc = *(uint8_t**)(self + 28);
-    *(uint16_t*)(scratch + 7) = *(uint16_t*)(desc + 9);
-    *(uint8_t*) (scratch + 9) = *(uint8_t*) (desc + 11);
-    *(uint8_t*) (scratch + 10) = 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::CreateEvent()   @ 0x82455AB0 | size: 0x160 | slot 18
+//
+// Single-child variant of BuildAllEvents below. Formats one pending-event
+// record into m_scratchEvent, allocates a 64-byte event node from the RAGE
+// small-block pool, runs the per-node initialization (BindEventToDesc), and
+// on success splices the node into m_eventListHead.
+//
+// Returns 0 on success, 0x8A87000E if the allocator is exhausted, or the
+// BindEventToDesc error code otherwise.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::CreateEvent(uint32_t userParam)
+{
+    uint8_t* self = (uint8_t*)this;
 
-    // Allocate 64-byte event node
-    void* node = rage_01B8_alloc(64, 0x20848004u);
-    int32_t err = 0;
-    uint32_t m_field32 = *(uint32_t*)(self + 32);
+    // Transition: "build in progress"
+    constexpr int32_t kBuildPhase_InProgress = 2;
+    constexpr int32_t kBuildPhase_Committed  = 3;
+    msgMsgSink_46B8_g(this, kBuildPhase_InProgress);
 
-    if (node == nullptr) {
-        err = (int32_t)0x8A87000E;      // FACILITY | ENOMEM
+    // ── Format scratch event header at m_scratchEvent (this+128) ─────────
+    uint8_t* scratchEvent = self + 128;
+
+    // Field 0 (packed u32): low 5 bits = type (1 = "child event"),
+    //                       top 3 bits = flags (0x20000000 = "pending").
+    uint32_t hdrWord = *(uint32_t*)(scratchEvent + 0);
+    hdrWord = (hdrWord & ~0x1Fu) | 0x01u;     // type nibble := 1
+    hdrWord &= 0xE000001Fu;                   // preserve only top-3 + bottom-5
+    hdrWord |= 0x20000000u;                   // set "pending child" flag
+    *(uint32_t*)(scratchEvent + 0) = hdrWord;
+
+    *(uint16_t*)(scratchEvent + 4) = 0;       // sequence id
+    *(uint8_t*) (scratchEvent + 6) = 0xFF;    // sentinel byte
+
+    // Copy owning descriptor's type tags into the scratch slot.
+    uint8_t* descBase = *(uint8_t**)(self + 28);   // m_pMsgDesc
+    *(uint16_t*)(scratchEvent + 7) = *(uint16_t*)(descBase + 9);
+    *(uint8_t*) (scratchEvent + 9) = *(uint8_t*) (descBase + 11);
+    *(uint8_t*) (scratchEvent + 10) = 0;
+
+    // ── Allocate 64-byte event node ──────────────────────────────────────
+    constexpr size_t kEventNodeSize = 64;
+    void*    pEventNode = rage_01B8_alloc(kEventNodeSize, kEventNodeAllocTag);
+    int32_t  result      = 0;
+    uint32_t dispatchTag  = *(uint32_t*)(self + 32);   // m_dispatchTag
+
+    if (pEventNode == nullptr) {
+        result = kErrEventPoolExhausted;
         goto dispose;
     }
 
-    // Initialize node
-    err = msgMsgSink_A1F0_g(node, (int32_t)(intptr_t)scratch, param);
-    if (err < 0) goto dispose;
+    // Initialize the node from the scratch event header.
+    result = msgMsgSink_A1F0_g(pEventNode, (int32_t)(intptr_t)scratchEvent, userParam);
+    if (result < 0) {
+        goto dispose;
+    }
 
-    // Attach: node->parent = &this->m_listHead (this+36)
-    //         node->next   = head->next
-    //         head->next->prev = node
-    //         head->next = node
+    // ── Splice node into m_eventListHead (intrusive doubly-linked list) ──
     {
-        uint8_t* head = self + 36;
-        *(uint32_t*)(self + 104) = param;           // m_currentParam
-        *(void**)((uint8_t*)node + 4) = head;
-        void* after = *(void**)(head + 8);
-        *(void**)((uint8_t*)node + 8) = after;
-        *(void**)((uint8_t*)after + 4) = node;
-        *(void**)(head + 8) = node;
+        uint8_t* pListHead = self + 36;
+        *(uint32_t*)(self + 104) = userParam;                   // stash param in m_streamBase slot
+
+        void* pHeadNext = *(void**)(pListHead + 8);
+        *(void**)((uint8_t*)pEventNode + 4) = pListHead;        // node->prev = head
+        *(void**)((uint8_t*)pEventNode + 8) = pHeadNext;        // node->next = head->next
+        *(void**)((uint8_t*)pHeadNext    + 4) = pEventNode;     // head->next->prev = node
+        *(void**)(pListHead + 8) = pEventNode;                  // head->next = node
     }
 
 dispose:
-    if (node != nullptr) {
-        // Virtual dtor (slot 0): (*node->vtable[0])(node, 1)
-        void** nv = *(void***)node;
-        typedef void (*Dtor)(void*, int32_t);
-        Dtor d = reinterpret_cast<Dtor>(nv[0]);
-        d(node, 1);
+    // Always drop the local strong reference: if splicing succeeded the list
+    // now owns a reference; if it failed the virtual dtor tears the node down.
+    if (pEventNode != nullptr) {
+        void** pNodeVtable = *(void***)pEventNode;
+        typedef void (*ScalarDtorFn)(void*, int32_t);
+        ScalarDtorFn scalarDtor = reinterpret_cast<ScalarDtorFn>(pNodeVtable[0]);
+        scalarDtor(pEventNode, 1);
     }
 
-    if (err >= 0) {
-        int32_t built = msgMsgSink_4960_g(this);
-        err = built;
-        if (built >= 0) {
-            void* h = *(void**)(self + 24);
-            if (h != nullptr && *(int32_t*)((uint8_t*)h + 40) == 3) {
-                msgMsgSink_46B8_g(this, 3);
+    if (result >= 0) {
+        int32_t finalizeResult = msgMsgSink_4960_g(this);
+        result = finalizeResult;
+        if (finalizeResult >= 0) {
+            // If the root handle is live and in phase 3, commit.
+            void* pRoot = *(void**)(self + 24);     // m_pRoot
+            if (pRoot != nullptr && *(int32_t*)((uint8_t*)pRoot + 40) == kBuildPhase_Committed) {
+                msgMsgSink_46B8_g(this, kBuildPhase_Committed);
             }
         }
     }
-    (void)m_field32;
-    return err;
+
+    (void)dispatchTag;   // reserved — referenced by assembly register save
+    return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// msgMsgSink::Slot9_BuildAllChildEvents() [vtable slot 9 @ 0x824557C8]
-// size: 0x178
+// msgMsgSink::BuildAllEvents()   @ 0x824557C8 | size: 0x178 | slot 9
 //
-// Iterates slot-index 0..(m_pMsgDesc->childCount-1), allocating a child-event
-// node per slot via msgMsgSink_A4F8_g + msgMsgSink_A2C0_g and chaining them
-// onto this->m_listHead (+36). A "commit" flag (r25=1, cleared if any built
-// child has status!=3) controls whether msgMsgSink_46B8_g(this,3) is fired
-// at the end.
+// Multi-child counterpart of CreateEvent: walks every child slot declared in
+// m_pMsgDesc (count stored at desc+9), allocates an event node per slot,
+// initializes it via ResolveSlotDescriptorOffset + InitEventNode, invokes the
+// node's bound entry point through InvokeEventEntry, and splices successful
+// nodes into m_eventListHead.
 //
-// Cousin of slot 18 but walks every child slot in the desc.
+// A local "commit" flag gates the final phase-3 transition: if any node's
+// owning root is not yet in phase 3, BuildAllEvents only runs FinalizeBuild
+// and leaves the commit for a later publish pass.
 // ─────────────────────────────────────────────────────────────────────────────
-int32_t msgMsgSink::Slot9_BuildAllChildEvents(uint32_t param)
+int32_t msgMsgSink::BuildAllEvents(uint32_t userParam)
 {
     uint8_t* self = (uint8_t*)this;
 
-    msgMsgSink_46B8_g(this, 2);
+    constexpr int32_t kBuildPhase_InProgress = 2;
+    constexpr int32_t kBuildPhase_Committed  = 3;
+    msgMsgSink_46B8_g(this, kBuildPhase_InProgress);
 
-    int32_t accErr = 0;
-    int32_t commit = 1;
+    int32_t firstFatalError = 0;
+    bool    shouldCommit    = true;
 
-    for (uint8_t i = 0;; ++i) {
-        uint8_t* desc = *(uint8_t**)(self + 28);
-        uint8_t nChildren = *(uint8_t*)(desc + 9);
-        if (i >= nChildren) break;
+    for (uint8_t slotIdx = 0; ; ++slotIdx) {
+        uint8_t* descBase  = *(uint8_t**)(self + 28);        // m_pMsgDesc
+        uint8_t  childCount = *(uint8_t*)(descBase + 9);     // desc->childCount
+        if (slotIdx >= childCount) break;
 
-        void* node = rage_01B8_alloc(64, 0x20848004u);
-        int32_t e;
+        constexpr size_t kEventNodeSize = 64;
+        void* pEventNode = rage_01B8_alloc(kEventNodeSize, kEventNodeAllocTag);
 
-        if (node == nullptr) {
-            e = (int32_t)0x8A87000E;
-            accErr = e;
+        if (pEventNode == nullptr) {
+            firstFatalError = kErrEventPoolExhausted;
             continue;
         }
 
-        // Resolve per-slot descriptor
-        void* slotDesc = (void*)(uintptr_t)0;
-        msgMsgSink_5708_fw(this, i);
-        // After _5708_fw the scaffold routes r3 into A4F8_g; we model that as
-        // the helper itself returning the node back via out-param semantics.
-        e = (int32_t)(intptr_t)msgMsgSink_A4F8_g(
-                node,
+        // Resolve this slot's descriptor offset. ResolveSlotDescriptorOffset
+        // uses the sink's slot-4 vtable to fetch the slot's field handle and
+        // leaves the computed offset in its return value; InitEventNode then
+        // bakes it into the node.
+        msgMsgSink_5708_fw(this, slotIdx);
+        int32_t initResult = (int32_t)(intptr_t)msgMsgSink_A4F8_g(
+                pEventNode,
                 this,
-                *(uint32_t*)(self + 32),   // m_field32
-                (uint32_t)(uintptr_t)slotDesc,
-                (uint32_t)i);
+                *(uint32_t*)(self + 32),                     // m_dispatchTag
+                /*slotDescArg*/ 0u,                          // filled in by _5708_fw path
+                (uint32_t)slotIdx);
 
-        if (e == 0) {
-            // Virtual dtor, next slot
-            void** nv = *(void***)node;
-            typedef void (*Dtor)(void*, int32_t);
-            reinterpret_cast<Dtor>(nv[0])(node, 1);
+        auto dropNodeRef = [&]() {
+            void** pNodeVtable = *(void***)pEventNode;
+            typedef void (*ScalarDtorFn)(void*, int32_t);
+            reinterpret_cast<ScalarDtorFn>(pNodeVtable[0])(pEventNode, 1);
+        };
+
+        if (initResult == 0) {
+            dropNodeRef();
             continue;
         }
 
-        if (accErr < 0) {
-            // Prior failure — dispose and continue
-            void** nv = *(void***)node;
-            typedef void (*Dtor)(void*, int32_t);
-            reinterpret_cast<Dtor>(nv[0])(node, 1);
+        if (firstFatalError < 0) {
+            // A previous slot already failed fatally — tear this node down.
+            dropNodeRef();
             continue;
         }
 
-        // Hand off to A2C0_g which uses node->+16 entry-point
-        void* ep = *(void**)((uint8_t*)node + 16);
-        uint32_t epArg = *(uint32_t*)((uint8_t*)ep + 1);
-        int32_t a2c = msgMsgSink_A2C0_g(node, epArg, param);
-        if (a2c < 0) {
-            accErr = a2c;
-            void** nv = *(void***)node;
-            typedef void (*Dtor)(void*, int32_t);
-            reinterpret_cast<Dtor>(nv[0])(node, 1);
+        // Invoke the node's bound entry point (arg taken from node+16 payload).
+        void*    pEntry    = *(void**)((uint8_t*)pEventNode + 16);
+        uint32_t entryArg  = *(uint32_t*)((uint8_t*)pEntry + 1);
+        int32_t  invokeErr = msgMsgSink_A2C0_g(pEventNode, entryArg, userParam);
+        if (invokeErr < 0) {
+            firstFatalError = invokeErr;
+            dropNodeRef();
             continue;
         }
 
-        // Splice into this->m_listHead (+36)
-        *(uint32_t*)(self + 104) = param;
-        void* h = *(void**)(self + 24);
-        if (h == nullptr || *(int32_t*)((uint8_t*)h + 40) != 3) {
-            commit = 0;
+        // Success: splice into m_eventListHead.
+        *(uint32_t*)(self + 104) = userParam;               // stash param in m_streamBase slot
+        void* pRoot = *(void**)(self + 24);                 // m_pRoot
+        if (pRoot == nullptr || *(int32_t*)((uint8_t*)pRoot + 40) != kBuildPhase_Committed) {
+            shouldCommit = false;
         }
 
-        uint8_t* head = self + 36;
-        *(void**)((uint8_t*)node + 4) = head;
-        void* after = *(void**)(head + 8);
-        *(void**)((uint8_t*)node + 8) = after;
-        *(void**)((uint8_t*)after + 4) = node;
-        *(void**)(head + 8) = node;
+        uint8_t* pListHead = self + 36;
+        void*    pHeadNext = *(void**)(pListHead + 8);
+        *(void**)((uint8_t*)pEventNode + 4) = pListHead;
+        *(void**)((uint8_t*)pEventNode + 8) = pHeadNext;
+        *(void**)((uint8_t*)pHeadNext    + 4) = pEventNode;
+        *(void**)(pListHead + 8) = pEventNode;
 
-        // Virtual dtor (slot 0): release the local reference — the list owns it now
-        void** nv = *(void***)node;
-        typedef void (*Dtor)(void*, int32_t);
-        reinterpret_cast<Dtor>(nv[0])(node, 1);
+        // Drop the local reference — the list owns it now.
+        dropNodeRef();
     }
 
-    if (accErr < 0) return accErr;
+    if (firstFatalError < 0) return firstFatalError;
 
-    int32_t built = msgMsgSink_4960_g(this);
-    if (built < 0) return built;
-    if (commit) msgMsgSink_46B8_g(this, 3);
-    return built;
+    int32_t finalizeResult = msgMsgSink_4960_g(this);
+    if (finalizeResult < 0) return finalizeResult;
+    if (shouldCommit) {
+        msgMsgSink_46B8_g(this, kBuildPhase_Committed);
+    }
+    return finalizeResult;
 }
+

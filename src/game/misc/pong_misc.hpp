@@ -329,15 +329,15 @@ struct msgMsgSink {
     virtual ~msgMsgSink();                  // [0] @ 0x822808a0
     virtual void ScalarDtor(int flags); // [1] @ 0x82430180
     virtual int32_t vfn_3();  // [3] @ 0x82454b78
-    virtual void vfn_8(uint32_t flags = 0);  // [8] @ 0x82455698
-    virtual int32_t vfn_9(void* messageBuffer);  // [9] @ 0x824557c8
-    virtual void OnEnter();  // [11] @ 0x82455688
-    virtual uint16_t GetPeerDataSize();  // [12] @ 0x82455630
-    virtual uint16_t GetName();  // [13] @ 0x82455640
-    virtual void NotifySessionEvent();  // [14] @ 0x82455540
-    virtual void vfn_17(uint32_t flags = 0);  // [17] @ 0x824559f0
-    virtual int32_t vfn_18(uint32_t flag);  // [18] @ 0x82455ab0
-    virtual int32_t vfn_19();  // [19] @ 0x82455a60
+    virtual void InitializeExtendedSink(uint32_t autoRegisterFlag = 0);      // [8]  @ 0x82455698
+    virtual int32_t BuildAllEvents(uint32_t userParam);                       // [9]  @ 0x824557c8
+    virtual void* GetPayloadPtr();                                            // [11] @ 0x82455688
+    virtual uint16_t GetPeerDataSize();                                       // [12] @ 0x82455630
+    virtual uint16_t GetFieldTypeCode();                                      // [13] @ 0x82455640  (was: GetName)
+    virtual void NotifySessionEvent();                                        // [14] @ 0x82455540
+    virtual void InitializeExtendedSinkAlt(uint32_t autoRegisterFlag = 0);    // [17] @ 0x824559f0
+    virtual int32_t CreateEvent(uint32_t userParam);                          // [18] @ 0x82455ab0
+    virtual uint32_t GetSerializedSize();                                     // [19] @ 0x82455a60
     virtual void PostLoadProperties();  // [20] @ 0x8244ee88
     virtual void Validate();  // [21] @ 0x8244ee90
     virtual uint32_t CheckAndProcess();  // [22] @ 0x8244dd50
@@ -433,7 +433,7 @@ struct msgMsgSink {
     void ForwardToEmbeddedObject();
     void* GetSessionLock();
     void* GetMessageBufferPtr();
-    void* GetPeerDataPtr();
+    // GetPeerDataPtr() removed — unified with virtual slot 11 GetPayloadPtr().
     void ReplaceMessageObject(void* newObj);
 };
 
