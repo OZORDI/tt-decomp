@@ -430,7 +430,7 @@ uint8_t atSingleton_vfn_6(void* obj, int32_t index) {
 }
 
 /**
- * atSingleton_E3F0_p44 @ 0x82255E3F0 | size: 0x18
+ * atSingleton_E3F0_p44 @ 0x8225E3F0 | size: 0x18
  * 
  * Clears a 16-byte region starting at offset 128.
  * Initializes four consecutive 32-bit fields to zero.
@@ -446,7 +446,7 @@ void atSingleton_E3F0_p44(void* obj) {
 }
 
 /**
- * atSingleton_EB38_p @ 0x82256EB38 | size: 0x18
+ * atSingleton_EB38_p @ 0x8225EB38 | size: 0x18
  * 
  * Indirect function call wrapper.
  * Loads function pointer from object and calls it with adjusted parameters.

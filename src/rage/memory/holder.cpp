@@ -26,8 +26,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // TLS memory allocator initialization — ensures the per-thread allocator
-// table is set up before allocation.
-// @ 0x820C0XXX (sysMemAllocator)
+// table is set up before allocation.  Resolved to xe_main_thread_init_0038
+// (src/crt/entry.c) at 0x820C0038; the original binary has no symbol named
+// sysMemAllocator_InitMainThread — this extern is a forwarder alias.
+// @ 0x820C0038 (xe_main_thread_init_0038)
 extern "C" void sysMemAllocator_InitMainThread();
 
 // ─────────────────────────────────────────────────────────────────────────────
