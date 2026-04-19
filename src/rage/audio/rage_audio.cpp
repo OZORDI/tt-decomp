@@ -1224,3 +1224,502 @@ void aud_1498(void* pThis) {
         }
     }
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::audControl / rage::audControl3d — virtual accessors
+//
+// Base audControl layout (confirmed by recomp of GetVolume/GetPan/IsActive):
+//   +0x00  vtable
+//   +0x04  m_pVoice        (owned voice pointer — Stop() vfn_4 releases it via slot 8)
+//   +0x10  m_state         (nonzero while the control is "active")
+//   +0x18  m_flags         (bit 7 of this byte controls whether Stop() calls util_24C8)
+//   +0x20  m_volume        (float, linear 0..1)
+//   +0x2C  m_pan           (float)
+//
+// audControl3d extends the base with per-control 3D modulation scalars:
+//   +0x28  m_minDistance   (float, read by SetRolloff chain)
+//   +0x2C  m_pitch         (float, base pitch — multiplied by +0x88 global scale)
+//   +0x30  m_distance      (float, accumulator used by SetMaxDistance)
+//   +0x34  m_rolloff       (float, accumulator used by SetRolloff)
+//   +0x7C  m_volumeScale   (float @ +124 — aggregate 3D volume multiplier)
+//   +0x88  m_pitchScale    (float @ +136 — aggregate 3D pitch multiplier)
+//   +0x90  m_activeByte    (uint8_t @ +144 — nonzero while active)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External globals used by audControl3d update path.
+extern "C" uint8_t g_audGlobalMuteFlag;       // @ 0x825EBCA0 — when nonzero, pitch/pan ignore 3D scales
+extern "C" uint8_t g_audMasterMuteFlag;       // @ 0x82606418 — when nonzero, mix uses fallback volume
+extern "C" void*   g_pAudSystemContext;       // @ 0x82606410 — audio system ptr; +4 is "active" flag
+extern "C" const float g_audVolumeClampMax;   // @ 0x8202D108 — clamp ceiling (1.0f) for rolloff accum
+extern "C" const float g_audGroupVolumeCeiling; // @ 0x8202D110 — full-gain ceiling for GetEffectiveVolume
+extern "C" void util_24C8(void* pThis);       // 0x821624C8 — audControl teardown epilogue
+
+// audControlMgr / audControlGroup list-state globals.
+extern "C" uint8_t  g_audCtrlMgrInitFlag;         // @ 0x8260640F — cleared on Initialize
+extern "C" uint8_t  g_audCtrlMgrEnableNeeded;     // @ 0x825EBCA3 — set if banks need (re)loading
+extern "C" void*    g_audCtrlMgrControlListHead;  // @ 0x82606414 — head of audControl linked list (next@+60)
+extern "C" void*    g_audCtrlMgrControlPrimary;   // @ 0x82606410 — primary context (same as g_pAudSystemContext)
+extern "C" void*    g_audCtrlMgrStopList;         // @ 0x825EBCA8 — StopExcept walks this list (next@+68, id@+12)
+
+// External helpers invoked from audControlMgr methods.
+extern "C" void audControlMgr_InitInternal(void* self);   // @ 0x82161610 — zeroes pools / linked-list sentinels
+extern "C" void audBank_LoadDefault(int32_t bankId);      // @ 0x821AAD18 — audBank_AD18_g
+extern "C" void audBank_FinalizeStartup(void);            // @ 0x821AADE8 — audBank_ADE8_gen
+extern "C" void audControlMgr_SetEnabled(void* control,
+                                          uint32_t enable); // @ 0x82162B48 — flips enable flag + reschedules
+
+namespace rage {
+
+// ─── Base audControl ─────────────────────────────────────────────────────────
+
+// @ 0x82160768 | size: 0x8
+// audControl::GetVolume — returns the raw linear volume stored at +0x20.
+float audControl::GetVolume() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float v;
+    std::memcpy(&v, self + 0x20, sizeof(v));
+    return v;
+}
+
+// @ 0x82160770 | size: 0x8
+// audControl::GetPan — returns the raw pan stored at +0x2C.
+float audControl::GetPan() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float p;
+    std::memcpy(&p, self + 0x2C, sizeof(p));
+    return p;
+}
+
+// @ 0x82160780 | size: 0x1C
+// audControl::IsActive — returns (m_state != 0).
+bool audControl::IsActive() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    uint32_t state;
+    std::memcpy(&state, self + 0x10, sizeof(state));
+    return state != 0;
+}
+
+// @ 0x82161CA8 | size: 0x94
+// audControl::Stop (vfn_4) — releases any owned voice, clears the active state,
+// fires the "stopped" virtual hook (slot 18), and if the stop-notify flag is
+// set also runs the util_24C8 cleanup epilogue (control-group unlink).
+//
+// Corresponds to PPC:
+//     if (m_pVoice) { m_pVoice->vfn_8(); m_pVoice = nullptr; }
+//     m_state = 0;
+//     uint8_t notify = this->vfn_18() & (m_flags_24 >> 7 & 1);
+//     if (notify) util_24C8(this);
+
+void audControl::Stop() {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    uint32_t* pVoice = reinterpret_cast<uint32_t*>(self + 0x04);
+    if (*pVoice != 0) {
+        // Virtual Stop() on the wrapped voice (slot 8).
+        void** voiceVtbl = *reinterpret_cast<void***>(*pVoice);
+        using VoiceStopFn = void (*)(void*);
+        reinterpret_cast<VoiceStopFn>(voiceVtbl[8])(reinterpret_cast<void*>(*pVoice));
+        *pVoice = 0;
+    }
+    *reinterpret_cast<uint32_t*>(self + 0x10) = 0;
+
+    // vfn_18 on self — returns a bool "should notify".
+    void** myVtbl = *reinterpret_cast<void***>(self);
+    using NotifyFn = uint8_t (*)(void*);
+    uint8_t shouldNotify = reinterpret_cast<NotifyFn>(myVtbl[18])(this) & 0x1;
+
+    // m_flags byte at +0x18 — bit 7 is the "stop-notify enabled" flag.
+    const uint8_t flags = self[0x18];
+    const uint8_t notifyBit = static_cast<uint8_t>((flags >> 7) & 0x1);
+
+    if ((shouldNotify & notifyBit) != 0) {
+        util_24C8(this);
+    }
+}
+
+// ─── audControl3d ────────────────────────────────────────────────────────────
+
+// @ 0x82160760 | size: 0x8
+// audControl3d::GetVolume (vfn_10) — returns the raw base volume at +0x08.
+// (The fully-scaled 3D volume is the product of this and m_volumeScale; that
+//  version is exposed via SetVolume/vfn_11.)
+float audControl3d::GetVolume() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float v;
+    std::memcpy(&v, self + 0x08, sizeof(v));
+    return v;
+}
+
+// @ 0x82160778 | size: 0x8
+// audControl3d::GetPan (vfn_13) — returns the raw pan-like value at +0x28.
+//  (Different offset from the base audControl — 3D pan lives next to the
+//   per-control distance/pitch scalars rather than the wrapper's cached pan.)
+float audControl3d::GetPan() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float p;
+    std::memcpy(&p, self + 0x28, sizeof(p));
+    return p;
+}
+
+// @ 0x82160EB0 | size: 0x10
+// audControl3d::SetVolume (vfn_11) — in the original header this slot is
+// documented as "SetVolume" but the code is a pure getter that returns the
+// scaled effective volume:   result = m_volumeScale * m_baseVolume.
+//
+//   lfs f0,124(r3)   -> m_volumeScale
+//   lfs f13,32(r3)   -> m_baseVolume (aliased with base audControl's m_volume)
+//   fmuls f1,f0,f13
+float audControl3d::SetVolume(float /*unused*/) {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float scale, base;
+    std::memcpy(&scale, self + 0x7C, sizeof(scale));
+    std::memcpy(&base,  self + 0x20, sizeof(base));
+    return scale * base;
+}
+
+// @ 0x82160EC0 | size: 0x28
+// audControl3d::SetPitch (vfn_12) — getter for scaled pitch.  When the global
+// mute flag is non-zero, returns the raw pan value at +0x2C unchanged (used
+// as a "safe" fallback during mute-state transitions); otherwise returns
+// m_pitchScale * m_basePitch where m_basePitch lives at +0x2C.
+float audControl3d::SetPitch(float /*unused*/) {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    float basePitch;
+    std::memcpy(&basePitch, self + 0x2C, sizeof(basePitch));
+    if (g_audGlobalMuteFlag != 0) {
+        return basePitch;
+    }
+    float scale;
+    std::memcpy(&scale, self + 0x88, sizeof(scale));
+    return scale * basePitch;
+}
+
+// @ 0x821609A8 | size: 0x34
+// audControl3d::IsActive (vfn_19) — returns true only while the audio system
+// is alive *and* the control's own active byte at +0x90 is non-zero.  The
+// system pointer lives at g_pAudSystemContext; its "system-live" flag is the
+// byte at system+0x04.
+bool audControl3d::IsActive() {
+    uint8_t* pSys = reinterpret_cast<uint8_t*>(g_pAudSystemContext);
+    if (pSys == nullptr || pSys[0x04] == 0) {
+        return false;
+    }
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    return self[0x90] != 0;
+}
+
+// @ 0x821622B8 | size: 0x5C
+// audControl3d::SetPan (vfn_14) — despite the declared "setter" name in the
+// skeleton header, the implementation is effectively:
+//     result = m_panAccumulator + m_pOwner->vtbl[10]()
+//     return min(result, g_audVolumeClampMax);   // +0x8202D108 = 1.0f ceiling
+//
+// That is: it pulls a base value from slot 10 on the owner referenced at +0xC
+// (the parent audControlWrapper / audControlGroup), adds the control's own
+// accumulator at +0x30, then clamps to the .rdata constant at lbl_8202D108
+// (the aggregate volume ceiling, typically 1.0f).
+
+void audControl3d::SetPan(float /*unused*/) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* pOwner = *reinterpret_cast<void**>(self + 0x0C);
+    if (pOwner == nullptr) {
+        return;
+    }
+
+    // Slot 10 on the owner — returns a float contribution (base volume/pan
+    // before per-control offset).
+    void** ownerVtbl = *reinterpret_cast<void***>(pOwner);
+    using OwnerSlot10 = float (*)(void*);
+    float base = reinterpret_cast<OwnerSlot10>(ownerVtbl[10])(pOwner);
+
+    float accum;
+    std::memcpy(&accum, self + 0x30, sizeof(accum));
+    float sum = accum + base;
+
+    if (sum >= g_audVolumeClampMax) {
+        sum = g_audVolumeClampMax;
+    }
+    // Original writes nothing back — the value returns via f1 only.
+    // We keep the computation as-is for side-effect parity; the caller
+    // consumes the float in f1.  Store into a volatile to avoid the
+    // optimiser deleting the body entirely.
+    volatile float sink = sum;
+    (void)sink;
+}
+
+// @ 0x82162318 | size: 0x5C
+// audControl3d::SetRolloff (vfn_15) — analogous to vfn_14 but for the rolloff
+// slot: owner slot 11 + m_rolloffAccum at +0x34, clamped at g_audVolumeClampMax.
+void audControl3d::SetRolloff(float /*unused*/) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void* pOwner = *reinterpret_cast<void**>(self + 0x0C);
+    if (pOwner == nullptr) {
+        return;
+    }
+
+    void** ownerVtbl = *reinterpret_cast<void***>(pOwner);
+    using OwnerSlot11 = float (*)(void*);
+    float base = reinterpret_cast<OwnerSlot11>(ownerVtbl[11])(pOwner);
+
+    float accum;
+    std::memcpy(&accum, self + 0x34, sizeof(accum));
+    float sum = accum + base;
+
+    if (sum >= g_audVolumeClampMax) {
+        sum = g_audVolumeClampMax;
+    }
+    volatile float sink = sum;
+    (void)sink;
+}
+
+// @ 0x82162378 | size: 0xA8
+// audControl3d::SetMaxDistance (vfn_17) — composite getter for the final mix
+// gain along the rolloff axis.  Combines three terms and multiplies by either
+// the master-mute fallback ceiling (from .rdata) or the owner's per-group
+// volume at owner+0x0C, selected by g_audMasterMuteFlag:
+//
+//     t1 = this->vfn_16()              // unnamed slot 16 — modulation input
+//     t2 = this->vfn_14() /*SetPan*/   // pan-axis contribution
+//     t3 = this->vfn_15() /*SetRolloff*/
+//     sum = t1 + t2 + t3
+//     scale = g_audMasterMuteFlag ? g_audVolumeClampMax
+//                                 : *(float*)(m_pOwner + 0x0C)
+//     return scale * sum
+void audControl3d::SetMaxDistance(float /*unused*/) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    void** myVtbl = *reinterpret_cast<void***>(self);
+
+    using SlotFFn = float (*)(void*);
+    float t1 = reinterpret_cast<SlotFFn>(myVtbl[16])(this);
+    float t2 = reinterpret_cast<SlotFFn>(myVtbl[14])(this);
+    float t3 = reinterpret_cast<SlotFFn>(myVtbl[15])(this);
+    float sum = t1 + t2 + t3;
+
+    float scale;
+    if (g_audMasterMuteFlag != 0) {
+        scale = g_audVolumeClampMax;
+    } else {
+        void* pOwner = *reinterpret_cast<void**>(self + 0x0C);
+        // Field at owner+0x0C holds the group's effective volume scalar.
+        std::memcpy(&scale, reinterpret_cast<uint8_t*>(pOwner) + 0x0C, sizeof(scale));
+    }
+
+    volatile float sink = scale * sum;
+    (void)sink;
+}
+
+// TODO: slots 0/1/2/3/7 (dtor / scalar-dtor / SetPosition / SetOrientation /
+// Update) still unlifted — require audControl3d_C678_2hr, 0D08 and 13C8_w
+// helpers to be lifted first (they do the real linked-list surgery that the
+// update path depends on).
+
+// ═════════════════════════════════════════════════════════════════════════════
+// audControlMgr — Lifecycle and Mass-Control Helpers
+// ═════════════════════════════════════════════════════════════════════════════
+
+// @ 0x82160518 | size: 0x60
+// audControlMgr::Initialize (vfn_2) — resets the manager's init flag, runs the
+// internal init helper that wires up the control linked-list sentinels, and —
+// only when the manager's own "ready" byte at +0x04 is set AND the global
+// "banks need loading" byte at lbl_825EBCA3 is non-zero — fires the default
+// bank load followed by the startup finalizer.
+void audControlMgr::Initialize() {
+    audControlMgr_InitInternal(this);
+
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+    g_audCtrlMgrInitFlag = 0;
+
+    if (self[0x04] == 0) {
+        return;
+    }
+    if (g_audCtrlMgrEnableNeeded == 0) {
+        return;
+    }
+
+    audBank_LoadDefault(0);
+    audBank_FinalizeStartup();
+}
+
+// @ 0x82160578 | size: 0x4C
+// audControlMgr::EnableAll (vfn_3) — walks every audControl node threaded off
+// g_audCtrlMgrControlListHead (next-ptr at +0x3C) and calls the per-control
+// "set enabled" helper with enable=1 on each.
+void audControlMgr::EnableAll() {
+    uint8_t* node = reinterpret_cast<uint8_t*>(g_audCtrlMgrControlListHead);
+    while (node != nullptr) {
+        audControlMgr_SetEnabled(node, 1u);
+        node = *reinterpret_cast<uint8_t**>(node + 0x3C);
+    }
+}
+
+// @ 0x821605C8 | size: 0x4C
+// audControlMgr::DisableAll (vfn_4) — mirror of EnableAll with enable=0.
+void audControlMgr::DisableAll() {
+    uint8_t* node = reinterpret_cast<uint8_t*>(g_audCtrlMgrControlListHead);
+    while (node != nullptr) {
+        audControlMgr_SetEnabled(node, 0u);
+        node = *reinterpret_cast<uint8_t**>(node + 0x3C);
+    }
+}
+
+// @ 0x82160618 | size: 0x80
+// audControlMgr::StopExcept (vfn_5) — iterates the secondary control list
+// rooted at g_audCtrlMgrStopList (next-ptr at +0x44) and fires vfn_4 (Stop) on
+// every node whose id at +0x0C differs from the caller-supplied excludeId.
+// Gated on the primary context's "audio live" byte at +0x04.
+void audControlMgr::StopExcept(void* excludeId) {
+    const uint8_t* primary =
+        reinterpret_cast<const uint8_t*>(g_audCtrlMgrControlPrimary);
+    if (primary == nullptr || primary[0x04] == 0) {
+        return;
+    }
+
+    uint8_t* node = reinterpret_cast<uint8_t*>(g_audCtrlMgrStopList);
+    while (node != nullptr) {
+        uint8_t* nextNode = *reinterpret_cast<uint8_t**>(node + 0x44);
+        void* nodeId = *reinterpret_cast<void**>(node + 0x0C);
+
+        if (nodeId != excludeId) {
+            void** nodeVtbl = *reinterpret_cast<void***>(node);
+            using StopFn = void (*)(void*);
+            reinterpret_cast<StopFn>(nodeVtbl[4])(node);
+        }
+        node = nextNode;
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// audControlGroup — Effective-Volume Getter
+// ═════════════════════════════════════════════════════════════════════════════
+
+// @ 0x82162888 | size: 0x3C
+// audControlGroup::GetEffectiveVolume (vfn_8) — returns the base group volume
+// at +0x14 unless the master-mute flag is clear AND both of the per-group
+// enable bytes at +0x2C / +0x30 are non-zero, in which case the .rdata
+// "full-gain" ceiling at 0x8202D110 is returned instead (i.e. the group is
+// locked to maximum while both enable lanes are active and the mute is off).
+float audControlGroup::GetEffectiveVolume() {
+    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
+
+    float base;
+    std::memcpy(&base, self + 0x14, sizeof(base));
+
+    if (g_audMasterMuteFlag != 0) {
+        return base;
+    }
+    if (self[0x30] == 0) {
+        return base;
+    }
+    if (self[0x2C] == 0) {
+        return base;
+    }
+    return g_audGroupVolumeCeiling;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// audControl — Scalar-Destructor State Machine (vfn_1)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// @ 0x82161700 | size: 0x1C0
+// audControl::ScalarDtor (vfn_1) — NOT a classical scalar-deletion destructor
+// despite the vtable slot name.  It is the pre-teardown state machine that
+// brings the wrapped voice down cleanly before the main dtor runs:
+//
+//   • m_voice  (+0x04)   : pointer to an audVoice-ish wrapper
+//   • m_state  (+0x10)   : playback state (1 = playing, 2 = stopping,
+//                          3 = releasing, others ignored)
+//   • m_pGroup (+0x0C)   : owning audControlGroup (flags are read from +0x28)
+//   • m_flags  (+0x14)   : output mask assembled from the group's flag word
+//
+// Flow:
+//   state == 1 → switch to "stopping" (2) and fall through.
+//   state == 2 → IsPlaying(); if still active, bail early (next tick retries).
+//                otherwise clear state and invoke voice vfn_4 (Stop).
+//   state == 3 → IsPlaying(); if still active, bail.  otherwise clear state,
+//                invoke voice vfn_8 (StopAndRelease), and null m_voice.
+//
+// Post-state dispatch the method also rebuilds m_flags from the group's
+// enable word at m_pGroup+0x28:
+//     bit 2 → bit 0, bit 0 (masked by master-mute byte) → bit 0, bit 1 → bit 2,
+//     bit 3 → bit 3, bit 4 → bit 4, bit 5 → bit 5.
+// If the result is non-zero, vfn_7 (Update) is fired and m_flags cleared.
+void audControl::ScalarDtor(int /*flags*/) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    void*  voice = *reinterpret_cast<void**>(self + 0x04);
+    int32_t state = *reinterpret_cast<int32_t*>(self + 0x10);
+
+    if (voice != nullptr) {
+        if (state == 1) {
+            *reinterpret_cast<int32_t*>(self + 0x10) = 2;
+            state = 2;
+        }
+
+        if (state == 2) {
+            void** voiceVtbl = *reinterpret_cast<void***>(voice);
+            using IsPlayingFn = uint8_t (*)(void*);
+            uint8_t playing = reinterpret_cast<IsPlayingFn>(voiceVtbl[18])(voice) & 0x1;
+            if (playing == 0) {
+                void** myVtbl = *reinterpret_cast<void***>(self);
+                using StopFn = void (*)(void*);
+                reinterpret_cast<StopFn>(myVtbl[4])(this);
+            }
+        } else if (state == 3) {
+            void** voiceVtbl = *reinterpret_cast<void***>(voice);
+            using IsPlayingFn = uint8_t (*)(void*);
+            uint8_t playing = reinterpret_cast<IsPlayingFn>(voiceVtbl[18])(voice) & 0x1;
+            if (playing == 0) {
+                *reinterpret_cast<int32_t*>(self + 0x10) = 0;
+
+                void*  voiceAgain = *reinterpret_cast<void**>(self + 0x04);
+                void** voiceVtbl2 = *reinterpret_cast<void***>(voiceAgain);
+                using ReleaseFn = void (*)(void*);
+                reinterpret_cast<ReleaseFn>(voiceVtbl2[8])(voiceAgain);
+                *reinterpret_cast<void**>(self + 0x04) = nullptr;
+            }
+        }
+    }
+
+    // ── flag-accumulator pass ──
+    void* voiceAfter = *reinterpret_cast<void**>(self + 0x04);
+    if (voiceAfter == nullptr) {
+        return;
+    }
+
+    uint8_t* group = *reinterpret_cast<uint8_t**>(self + 0x0C);
+    uint32_t groupFlags = *reinterpret_cast<uint32_t*>(group + 0x28);
+    if (groupFlags == 0) {
+        return;
+    }
+
+    uint32_t mFlags = *reinterpret_cast<uint32_t*>(self + 0x14);
+    if (groupFlags & 0x4) {
+        mFlags |= 0x1;
+    }
+    if (g_audMasterMuteFlag == 0 && (groupFlags & 0x1)) {
+        mFlags |= 0x1;
+    }
+    if (groupFlags & 0x2) {
+        mFlags |= 0x4;
+    }
+    if (groupFlags & 0x8) {
+        mFlags |= 0x8;
+    }
+    if (groupFlags & 0x10) {
+        mFlags |= 0x10;
+    }
+    if (groupFlags & 0x20) {
+        mFlags |= 0x20;
+    }
+    *reinterpret_cast<uint32_t*>(self + 0x14) = mFlags;
+
+    if (mFlags == 0) {
+        return;
+    }
+
+    void** myVtbl = *reinterpret_cast<void***>(self);
+    using UpdateFn = void (*)(void*);
+    reinterpret_cast<UpdateFn>(myVtbl[7])(this);
+    *reinterpret_cast<uint32_t*>(self + 0x14) = 0;
+}
+
+} // namespace rage

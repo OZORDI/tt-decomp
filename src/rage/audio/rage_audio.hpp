@@ -80,14 +80,17 @@ struct audControl3d {
     virtual void SetOrientation();     // [3] @ 0x821609e0
     virtual void Stop();               // [4] @ 0x82160ad8
     virtual void Update(uint32_t flags); // [7] @ 0x82160b28
-    virtual float GetVolume();         // [10] @ 0x82160760
-    virtual void SetVolume(float vol); // [11] @ 0x82160eb0
-    virtual void SetPitch(float pitch); // [12] @ 0x82160ec0
-    virtual float GetPan();            // [13] @ 0x82160778
-    virtual void SetPan(float pan);    // [14] @ 0x821622b8
-    virtual void SetRolloff(float rolloff); // [15] @ 0x82162318
-    virtual void SetMaxDistance(float dist); // [17] @ 0x82162378
-    virtual bool IsActive();           // [19] @ 0x821609a8
+    virtual float GetVolume();         // [10] @ 0x82160760 — raw volume at +0x08
+    // NOTE: slot 11 is misnamed in the original RTTI-derived skeleton; the
+    // body is a pure getter (volumeScale*baseVolume), not a setter.  Kept
+    // as SetVolume for binary-ABI parity with the vtable layout.
+    virtual float SetVolume(float vol);  // [11] @ 0x82160eb0 — scaled volume getter
+    virtual float SetPitch(float pitch); // [12] @ 0x82160ec0 — scaled pitch getter (mute-gated)
+    virtual float GetPan();              // [13] @ 0x82160778 — raw pan at +0x28
+    virtual void  SetPan(float pan);     // [14] @ 0x821622b8 — accum + owner.slot10, clamped
+    virtual void  SetRolloff(float rolloff);  // [15] @ 0x82162318 — accum + owner.slot11, clamped
+    virtual void  SetMaxDistance(float dist); // [17] @ 0x82162378 — composite rolloff mix gain
+    virtual bool  IsActive();            // [19] @ 0x821609a8 — system-alive && active byte != 0
 };
 
 // audControl3dWrapper — defined after audControlWrapper below
