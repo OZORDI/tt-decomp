@@ -104,6 +104,32 @@ extern const uint32_t g_vectorComparisonMask[4];
 // @ SDA+25804 (0x826064CC)
 extern uint8_t g_uiInputFlag;
 
+// ────────────────────────────────────────────────────────────────────────────
+// Physics Frame Counters
+// ────────────────────────────────────────────────────────────────────────────
+// Physics frame-index / rollback-slot accounting. The 2006 physics tick
+// maintains two 32-bit counters in SDA:
+//
+//  • g_phFrameCounter (0x825C4898, SDA −31608) — monotonically increments on
+//    every physics tick; used as a 50-slot circular-buffer index via
+//    `(counter + 50) * 4` when sampling per-player rollback descriptor arrays
+//    stored inside pongCreature, pongBall and kindred classes.
+//
+//  • g_phFrameIndex   (0x826065DC, SDA +26076)  — the small-data-area
+//    "current active frame" value read by pongCreature::RestorePoseFromRollback
+//    (vtable slot 1) during physics rewind; it serves the same base-offset
+//    purpose as g_phFrameCounter for a separate frame-index ring.
+//
+// Both are plain uint32_t globals; semantically they are ring-buffer cursors,
+// not pointers.
+extern uint32_t g_phFrameCounter;  // @ 0x825C4898 (.data, 16 bytes; first word is the index)
+extern uint32_t g_phFrameIndex;    // @ 0x826065DC (SDA +26076)
+
+// Renderer-side shadow-atlas / light descriptor slot used by
+// pongCreature::RegisterShadowCasters and the shadow-map bind path.
+// @ 0x82606350 (SDA +25424)
+extern void* g_phShadowAtlasSlot;
+
 #ifdef __cplusplus
 }
 #endif

@@ -812,13 +812,26 @@ struct pongCreature {
     uint32_t     field_0x0970;  // +0x0970  R:5 W:1
 
     // ── virtual methods ──
-    virtual ~pongCreature();                  // [0] @ 0x820c6358
-    virtual void ScalarDtor(int flags); // [1] @ 0x820c67c0
-    virtual void vfn_2();  // [2] @ 0x820c8618
-    virtual void vfn_3();  // [3] @ 0x820c6840
-    virtual void vfn_5();  // [5] @ 0x820c60c8
-    virtual void vfn_6();  // [6] @ 0x820c6378
-    virtual void vfn_7();  // [7] @ 0x820c5d18
+    //
+    // Canonical vtable layout (0x82027884, 8 entries):
+    //   [0] RestorePoseFromRollback          @ 0x820C67C0 — physics rewind
+    //   [1] DestroyThunk                     @ 0x820C8618 — MI-adjust + scalar delete
+    //   [2] Reset(...)                       @ 0x820C6840 — per-frame physics reset
+    //   [3] AddToRenderBucket (inherited)    @ 0x8227D768 — from phUpdateObject
+    //   [4] RegisterShadowCasters(bool)      @ 0x820C60C8 — shadow-map binding
+    //   [5] UpdateShadowAndAnimState         @ 0x820C6378 — larger shadow/anim update
+    //   [6] StepLocomotion                   @ 0x820C5D18 — locomotion step
+    //   [7] nullsub                                         — unused
+    //
+    // 0x820C6358 is NOT a vtable entry; it is a free-standing "call vt[6]"
+    // stub lifted as ~pongCreature() because several callers bind to it.
+    virtual ~pongCreature();                                       // dispatcher stub @ 0x820C6358
+    virtual void RestorePoseFromRollback();                        // [0] @ 0x820C67C0
+    virtual void DestroyThunk();                                   // [1] @ 0x820C8618
+    virtual void Reset(void* world, void* scene);                  // [2] @ 0x820C6840
+    virtual void RegisterShadowCasters(bool useSecondaryEmitter);  // [4] @ 0x820C60C8
+    virtual void UpdateShadowAndAnimState(int updateMode);         // [5] @ 0x820C6378  (TODO-body)
+    virtual void StepLocomotion();                                 // [6] @ 0x820C5D18  (TODO-body)
 
     // ── non-virtual methods (from debug strings) ──
     void Teleport();

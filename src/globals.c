@@ -237,9 +237,14 @@ void* g_singles_network_client = NULL;
 // ============================================================================
 
 void* g_pPhysicsWorld = NULL;
-uint32_t g_phFrameCounter = 0;
-uint32_t g_phFrameIndex = 0;
+uint32_t g_phFrameCounter = 0;      /* @ 0x825C4898 — per-tick ring cursor */
+uint32_t g_phFrameIndex = 0;        /* @ 0x826065DC — rollback frame cursor */
 void* g_matMgrGuard = NULL;
+
+/* Renderer-side shadow-atlas / light descriptor slot.
+ * SDA offset 25424 (0x82606350). Read by pongCreature::RegisterShadowCasters
+ * and handed to pongShadowMap_EC70_g as the per-frame atlas pointer. */
+void* g_phShadowAtlasSlot = NULL;   /* @ 0x82606350 */
 
 // ============================================================================
 // Template Registry System
