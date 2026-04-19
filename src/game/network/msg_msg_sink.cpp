@@ -3285,3 +3285,343 @@ void msgMsgSink::vfn_128() {
     RtlLeaveCriticalSection(cs);
     (void)err;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH: msgMsgSink vtable slots 8, 9, 11, 13, 14, 17, 18, 19
+// Lifted from recomp/structured_pass5_final/tt-decomp_recomp.26.cpp
+// ═══════════════════════════════════════════════════════════════════════════
+
+// External helpers used by this batch
+extern void msgMsgSink_43A8_g(void* self);
+extern void msgMsgSink_46B8_g(void* self, int32_t mode);
+extern void msgMsgSink_5098_g(void* self, int32_t mode);
+extern void msgMsgSink_5708_fw(void* self, uint32_t index);
+extern void* msgMsgSink_A4F8_g(void* out, void* self, uint32_t kind, uint32_t a, uint32_t b);
+extern int32_t msgMsgSink_A1F0_g(void* obj, int32_t errCode, uint32_t param);
+extern int32_t msgMsgSink_A2C0_g(void* obj, uint32_t arg, uint32_t param);
+extern int32_t msgMsgSink_4960_g(void* self);
+extern void* _locale_register(uint32_t tag);  // rage debug-registration helper @ 0x820C02D0
+extern void* rage_01B8_alloc(uint32_t size, uint32_t tag);  // rage small-block allocator @ 0x820C01B8
+
+// Secondary vtables used by slots 8 and 17 (derived-class re-entry)
+static void* const kVtable_82004ECC = (void*)0x82004ECC;  // used by vfn_8
+static void* const kVtable_82004EE8 = (void*)0x82004EE8;  // sub-vtable shared by 8/17
+static void* const kVtable_82004EF0 = (void*)0x82004EF0;  // used by vfn_17
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot8_RebindAndRegister() [vtable slot 8 @ 0x82455698]
+// size: 0x70
+//
+// Re-binds the msgMsgSink to a derived-class vtable pair (0x82004ECC /
+// 0x82004EE8), runs the common post-init hook (msgMsgSink_43A8_g), and if the
+// low bit of the caller-supplied flag is set, registers the sink with the
+// RAGE debug/locale registry under tag 0x20848015.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::Slot8_RebindAndRegister(uint32_t flag)
+{
+    // Install derived vtable pair at +0 / +4
+    *(void**)((char*)this + 0) = kVtable_82004ECC;
+    *(void**)((char*)this + 4) = kVtable_82004EE8;
+
+    // Common post-rebind initialization
+    msgMsgSink_43A8_g(this);
+
+    // Low bit of flag → register under debug tag 0x20848015
+    if (flag & 0x1) {
+        _locale_register(0x20848015u);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot17_RebindAndRegister() [vtable slot 17 @ 0x824559F0]
+// size: 0x70
+//
+// Sibling of slot 8 for a different derived variant. Uses vtable 0x82004EF0
+// (still paired with 0x82004EE8) and registers under tag 0x20848016.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::Slot17_RebindAndRegister(uint32_t flag)
+{
+    *(void**)((char*)this + 0) = kVtable_82004EF0;
+    *(void**)((char*)this + 4) = kVtable_82004EE8;
+
+    msgMsgSink_43A8_g(this);
+
+    if (flag & 0x1) {
+        _locale_register(0x20848016u);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot11_GetHeaderFieldPtr() [vtable slot 11 @ 0x82455688]
+// size: 0xC  (alias shim body shared with slot 13 scaffold)
+//
+// Returns a pointer 10 bytes into the message-descriptor block pointed to by
+// this->m_pMsgDesc (offset +28).
+//   return (uint8_t*) *(void**)(this+28) + 10;
+// ─────────────────────────────────────────────────────────────────────────────
+void* msgMsgSink::Slot11_GetHeaderFieldPtr()
+{
+    void* desc = *(void**)((char*)this + 28);
+    return (void*)((uint8_t*)desc + 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot13_ResolveNamedOffset() [vtable slot 13 @ 0x82455640]
+// size: 0x44
+//
+// Saves msg-desc base, calls the sink's own vtable slot 4 (offset +16) which
+// returns a handle whose low u16 is an offset; walks that offset into the
+// msg-desc block and returns the uint16 at descBase+offset+10.
+// ─────────────────────────────────────────────────────────────────────────────
+uint16_t msgMsgSink::Slot13_ResolveNamedOffset()
+{
+    uint32_t descBase = *(uint32_t*)((char*)this + 28);
+    void** vt = *(void***)this;
+
+    // Call our own vtable[4] (byte offset +16) on 'this'
+    typedef void* (*Slot4)(void*);
+    Slot4 s4 = reinterpret_cast<Slot4>(vt[4]);
+    void* ret = s4(this);
+
+    // ret is a pointer whose low 16 bits are an offset into the desc block
+    uint16_t rel = *(uint16_t*)ret;
+    return *(uint16_t*)((uint8_t*)(uintptr_t)(descBase + rel) + 10);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot14_ScaleToU16() [vtable slot 14 @ 0x82455540]
+// size: 0xC
+//
+// IDA: return (u16)(((u32)(this - saved) * (u64)a4) >> 32) >> 2;
+// Implementation: forwards to msgMsgSink_5098_g with (this-4, mode=1).
+// The tail-called helper performs the widening multiply + 34-bit shift.
+// Kept as-is — this is a thin dispatcher.
+// ─────────────────────────────────────────────────────────────────────────────
+void msgMsgSink::Slot14_ScaleToU16()
+{
+    // Forward to msgMsgSink_5098_g(this - 4, 1)
+    msgMsgSink_5098_g((void*)((char*)this - 4), 1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot19_ComputeOffsetAndDispatch() [vtable slot 19 @ 0x82455A60]
+// size: 0x50
+//
+// Reads m_pHead (+40), m_cursor (+100), m_base (+104); computes
+// delta = m_cursor - m_base; dispatches through (*pHead)[+24]->vtable[3]
+// and returns delta + that result.
+//
+// Pattern: cursor-relative dispatch used for stream-read size queries.
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t msgMsgSink::Slot19_ComputeOffsetAndDispatch()
+{
+    uint8_t* self = (uint8_t*)this;
+    void* pHead     = *(void**)(self + 40);
+    uint32_t cursor = *(uint32_t*)(self + 100);
+    uint32_t base   = *(uint32_t*)(self + 104);
+    uint32_t delta  = cursor - base;
+
+    // *(pHead+24) is a sub-object whose vtable[3] is invoked on itself
+    void* sub = *(void**)((uint8_t*)pHead + 24);
+    void** vt = *(void***)sub;
+    typedef uint32_t (*Slot3)(void*);
+    Slot3 s3 = reinterpret_cast<Slot3>(vt[3]);
+
+    return delta + s3(sub);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot18_CreateChildEvent() [vtable slot 18 @ 0x82455AB0]
+// size: 0x160
+//
+// Builds a single pending-event record in the sink's scratch area at +128
+// (type=1, seqLimit=0xFF, copy of desc fields at +9 and +11), calls
+// msgMsgSink_46B8_g(this, 2) to mark "build in progress", then:
+//   - allocates a 64-byte event node via rage_01B8_alloc(sz=64, tag=0x20848004)
+//   - routes it through msgMsgSink_A4F8_g / A1F0_g
+//   - on success splices it into the doubly-linked list at this+36
+//   - on failure disposes of the partial node and returns error 0x8A87000E
+//
+// This is the single-child variant of slot 9 below.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::Slot18_CreateChildEvent(uint32_t param)
+{
+    uint8_t* self = (uint8_t*)this;
+
+    // Mark "build in progress"
+    msgMsgSink_46B8_g(this, 2);
+
+    // Scratch event header at this+128 (m_scratchEvent)
+    uint8_t* scratch = self + 128;
+
+    // *(u32*)(scratch+0): set low 5 bits = 1, then clear bits 27..2 (rlwinm 0,27,2),
+    // then OR with 0x20000000. Net result: type byte = 1, flags = 0x20000000.
+    uint32_t hdr = *(uint32_t*)(scratch + 0);
+    hdr = (hdr & ~0x1Fu) | 0x01u;       // set type nibble to 1
+    hdr &= 0xE000001Fu;                 // preserve only top-3 + bottom-5
+    hdr |= 0x20000000u;                 // mark "child event"
+    *(uint32_t*)(scratch + 0) = hdr;
+
+    // Clear/mark additional header bytes
+    *(uint16_t*)(scratch + 4) = 0;      // seqId
+    *(uint8_t*) (scratch + 6) = 0xFF;   // sentinel
+
+    // Copy desc fields from m_pMsgDesc (+28): u16 @ +9  and u8 @ +11
+    uint8_t* desc = *(uint8_t**)(self + 28);
+    *(uint16_t*)(scratch + 7) = *(uint16_t*)(desc + 9);
+    *(uint8_t*) (scratch + 9) = *(uint8_t*) (desc + 11);
+    *(uint8_t*) (scratch + 10) = 0;
+
+    // Allocate 64-byte event node
+    void* node = rage_01B8_alloc(64, 0x20848004u);
+    int32_t err = 0;
+    uint32_t m_field32 = *(uint32_t*)(self + 32);
+
+    if (node == nullptr) {
+        err = (int32_t)0x8A87000E;      // FACILITY | ENOMEM
+        goto dispose;
+    }
+
+    // Initialize node
+    err = msgMsgSink_A1F0_g(node, (int32_t)(intptr_t)scratch, param);
+    if (err < 0) goto dispose;
+
+    // Attach: node->parent = &this->m_listHead (this+36)
+    //         node->next   = head->next
+    //         head->next->prev = node
+    //         head->next = node
+    {
+        uint8_t* head = self + 36;
+        *(uint32_t*)(self + 104) = param;           // m_currentParam
+        *(void**)((uint8_t*)node + 4) = head;
+        void* after = *(void**)(head + 8);
+        *(void**)((uint8_t*)node + 8) = after;
+        *(void**)((uint8_t*)after + 4) = node;
+        *(void**)(head + 8) = node;
+    }
+
+dispose:
+    if (node != nullptr) {
+        // Virtual dtor (slot 0): (*node->vtable[0])(node, 1)
+        void** nv = *(void***)node;
+        typedef void (*Dtor)(void*, int32_t);
+        Dtor d = reinterpret_cast<Dtor>(nv[0]);
+        d(node, 1);
+    }
+
+    if (err >= 0) {
+        int32_t built = msgMsgSink_4960_g(this);
+        err = built;
+        if (built >= 0) {
+            void* h = *(void**)(self + 24);
+            if (h != nullptr && *(int32_t*)((uint8_t*)h + 40) == 3) {
+                msgMsgSink_46B8_g(this, 3);
+            }
+        }
+    }
+    (void)m_field32;
+    return err;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// msgMsgSink::Slot9_BuildAllChildEvents() [vtable slot 9 @ 0x824557C8]
+// size: 0x178
+//
+// Iterates slot-index 0..(m_pMsgDesc->childCount-1), allocating a child-event
+// node per slot via msgMsgSink_A4F8_g + msgMsgSink_A2C0_g and chaining them
+// onto this->m_listHead (+36). A "commit" flag (r25=1, cleared if any built
+// child has status!=3) controls whether msgMsgSink_46B8_g(this,3) is fired
+// at the end.
+//
+// Cousin of slot 18 but walks every child slot in the desc.
+// ─────────────────────────────────────────────────────────────────────────────
+int32_t msgMsgSink::Slot9_BuildAllChildEvents(uint32_t param)
+{
+    uint8_t* self = (uint8_t*)this;
+
+    msgMsgSink_46B8_g(this, 2);
+
+    int32_t accErr = 0;
+    int32_t commit = 1;
+
+    for (uint8_t i = 0;; ++i) {
+        uint8_t* desc = *(uint8_t**)(self + 28);
+        uint8_t nChildren = *(uint8_t*)(desc + 9);
+        if (i >= nChildren) break;
+
+        void* node = rage_01B8_alloc(64, 0x20848004u);
+        int32_t e;
+
+        if (node == nullptr) {
+            e = (int32_t)0x8A87000E;
+            accErr = e;
+            continue;
+        }
+
+        // Resolve per-slot descriptor
+        void* slotDesc = (void*)(uintptr_t)0;
+        msgMsgSink_5708_fw(this, i);
+        // After _5708_fw the scaffold routes r3 into A4F8_g; we model that as
+        // the helper itself returning the node back via out-param semantics.
+        e = (int32_t)(intptr_t)msgMsgSink_A4F8_g(
+                node,
+                this,
+                *(uint32_t*)(self + 32),   // m_field32
+                (uint32_t)(uintptr_t)slotDesc,
+                (uint32_t)i);
+
+        if (e == 0) {
+            // Virtual dtor, next slot
+            void** nv = *(void***)node;
+            typedef void (*Dtor)(void*, int32_t);
+            reinterpret_cast<Dtor>(nv[0])(node, 1);
+            continue;
+        }
+
+        if (accErr < 0) {
+            // Prior failure — dispose and continue
+            void** nv = *(void***)node;
+            typedef void (*Dtor)(void*, int32_t);
+            reinterpret_cast<Dtor>(nv[0])(node, 1);
+            continue;
+        }
+
+        // Hand off to A2C0_g which uses node->+16 entry-point
+        void* ep = *(void**)((uint8_t*)node + 16);
+        uint32_t epArg = *(uint32_t*)((uint8_t*)ep + 1);
+        int32_t a2c = msgMsgSink_A2C0_g(node, epArg, param);
+        if (a2c < 0) {
+            accErr = a2c;
+            void** nv = *(void***)node;
+            typedef void (*Dtor)(void*, int32_t);
+            reinterpret_cast<Dtor>(nv[0])(node, 1);
+            continue;
+        }
+
+        // Splice into this->m_listHead (+36)
+        *(uint32_t*)(self + 104) = param;
+        void* h = *(void**)(self + 24);
+        if (h == nullptr || *(int32_t*)((uint8_t*)h + 40) != 3) {
+            commit = 0;
+        }
+
+        uint8_t* head = self + 36;
+        *(void**)((uint8_t*)node + 4) = head;
+        void* after = *(void**)(head + 8);
+        *(void**)((uint8_t*)node + 8) = after;
+        *(void**)((uint8_t*)after + 4) = node;
+        *(void**)(head + 8) = node;
+
+        // Virtual dtor (slot 0): release the local reference — the list owns it now
+        void** nv = *(void***)node;
+        typedef void (*Dtor)(void*, int32_t);
+        reinterpret_cast<Dtor>(nv[0])(node, 1);
+    }
+
+    if (accErr < 0) return accErr;
+
+    int32_t built = msgMsgSink_4960_g(this);
+    if (built < 0) return built;
+    if (commit) msgMsgSink_46B8_g(this, 3);
+    return built;
+}
