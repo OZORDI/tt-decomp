@@ -1332,3 +1332,178 @@ extern "C" {
 // src/game/pong_lerp_queue.cpp (not yet in CMakeLists). Stub here.
 // ─────────────────────────────────────────────────────────────────────────────
 void pongLerpQueue_Update(void* queue) { (void)queue; }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ball-pair matrix snapshot helpers — lifted from pass5_final recomp.
+//
+// These build the global ball-state block at 0x825CBCF0 (g_ballStateData,
+// 17152 B). The block holds two "slots" at byte offsets 16912..17076 — slot 0
+// (player / primary) and slot 1 (opponent / secondary). Each slot stores:
+//   +16912/+16916 : data-area pointer  (ball +16 + 16)
+//   +17056/+17060 : sub-object pointer chained via (ball+16)->+4->+12
+//   +17064/+17068 : flag slot (also cleared / overwritten to 0)
+//   +17072/+17076 : back-reference to the ball instance
+//   +16928..+16976 / +16992..+17040 : 4×16 B matrix rows copied from ball+32
+//
+// Helpers used:
+//   util_4330(&g_ballStateData, arg)  @ 0x82294330 — zeroes/init slot block
+//   pongBallInstance::SnapshotMatrixToGlobalSlot0  @ 0x822CD5F0
+//   pongBallInstance::SnapshotMatrixToGlobalSlot1  @ 0x822CD690
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern "C" void util_4330(void* stateBlock, void* arg);  // @ 0x82294330
+
+namespace {
+
+// Read the ordering/priority byte used to decide which ball wins "slot 0".
+// The chain is (ball+16)->+4->+12, reading byte at +4 of the final pointer.
+// Lower 3 bits only participate in the compare.
+inline uint8_t ReadBallPriorityByte(pongBallInstance* ball) {
+    auto* ballBytes    = reinterpret_cast<uint8_t*>(ball);
+    auto* dataPtr      = *reinterpret_cast<uint8_t**>(ballBytes + 16);
+    auto* subLevel1    = *reinterpret_cast<uint8_t**>(dataPtr + 4);
+    auto* subLevel2    = *reinterpret_cast<uint8_t**>(subLevel1 + 12);
+    return *(subLevel2 + 4);
+}
+
+// Fill slot 0 of g_ballStateData with (ball, matrix-rows, metadata).
+inline void WriteBallToSlot0(uint8_t* state, pongBallInstance* ball) {
+    auto* ballBytes    = reinterpret_cast<uint8_t*>(ball);
+    auto* dataPtr      = *reinterpret_cast<uint8_t**>(ballBytes + 16);
+    auto* subLevel1    = *reinterpret_cast<uint8_t**>(dataPtr + 4);
+    auto* subLevel2    = *reinterpret_cast<uint8_t**>(subLevel1 + 12);
+
+    *reinterpret_cast<uint32_t*>(state + 17064) = 0u;
+    *reinterpret_cast<uint32_t*>(state + 17072) = reinterpret_cast<uintptr_t>(ball);
+    *reinterpret_cast<uint32_t*>(state + 17056) = reinterpret_cast<uintptr_t>(subLevel2);
+    *reinterpret_cast<uint32_t*>(state + 16912) = reinterpret_cast<uintptr_t>(dataPtr + 16);
+
+    const uint8_t* mat = ballBytes + 32;
+    memcpy(state + 16928, mat +  0, 16);
+    memcpy(state + 16944, mat + 16, 16);
+    memcpy(state + 16960, mat + 32, 16);
+    memcpy(state + 16976, mat + 48, 16);
+}
+
+// Fill slot 1 of g_ballStateData.
+inline void WriteBallToSlot1(uint8_t* state, pongBallInstance* ball) {
+    auto* ballBytes    = reinterpret_cast<uint8_t*>(ball);
+    auto* dataPtr      = *reinterpret_cast<uint8_t**>(ballBytes + 16);
+    auto* subLevel1    = *reinterpret_cast<uint8_t**>(dataPtr + 4);
+    auto* subLevel2    = *reinterpret_cast<uint8_t**>(subLevel1 + 12);
+
+    *reinterpret_cast<uint32_t*>(state + 17068) = 0u;
+    *reinterpret_cast<uint32_t*>(state + 17076) = reinterpret_cast<uintptr_t>(ball);
+    *reinterpret_cast<uint32_t*>(state + 17060) = reinterpret_cast<uintptr_t>(subLevel2);
+    *reinterpret_cast<uint32_t*>(state + 16916) = reinterpret_cast<uintptr_t>(dataPtr + 16);
+
+    const uint8_t* mat = ballBytes + 32;
+    memcpy(state + 16992, mat +  0, 16);
+    memcpy(state + 17008, mat + 16, 16);
+    memcpy(state + 17024, mat + 32, 16);
+    memcpy(state + 17040, mat + 48, 16);
+}
+
+} // namespace
+
+/**
+ * pongBallInstance::BuildPairedSnapshot @ 0x822CD228 | size: 0x194
+ *
+ * Pairwise snapshot: writes both slot 0 and slot 1 of the global ball-state
+ * block from (ballA, ballB), ordered by priority byte. The ball with the
+ * *smaller* priority tag (lower 3 bits of the chained byte) wins slot 0 —
+ * this matches the `blt` branch where a smaller-ranked tag takes the "first"
+ * path. Ties fall through to the else branch.
+ *
+ * Passed via r4/r5; 'this' (r3) is unused on entry — the function uses the
+ * absolute global `g_ballStateData` exclusively.
+ */
+void pongBallInstance_BuildPairedSnapshot(pongBallInstance* ballA,
+                                          pongBallInstance* ballB) {
+    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+
+    util_4330(g_ballStateData, ballB);
+
+    const uint8_t tagA = ReadBallPriorityByte(ballA);
+    const uint8_t tagB = ReadBallPriorityByte(ballB);
+
+    pongBallInstance* slot0Ball;
+    pongBallInstance* slot1Ball;
+    if (tagB < tagA) {
+        // Less-than branch: ballA keeps slot 0, ballB goes to slot 1.
+        slot0Ball = ballA;
+        slot1Ball = ballB;
+    } else {
+        slot0Ball = ballB;
+        slot1Ball = ballA;
+    }
+
+    WriteBallToSlot0(g_ballStateData, slot0Ball);
+    WriteBallToSlot1(g_ballStateData, slot1Ball);
+}
+
+/**
+ * pongBallInstance::BuildSingleSnapshot @ 0x822CD3C0 | size: 0x13C
+ *
+ * Single-ball snapshot variant used when only one ball participates in the
+ * current resolution step. The second argument is a payload object whose
+ * priority byte (chain: +16 → +4 → +12 → +4) determines which slot the given
+ * ball occupies; the companion slot is populated via the matching slot helper
+ * (D5F0/D690) from the caller's active ball.
+ *
+ *   if (ball's tag <= other's tag):  ball → slot 0, call ..._D690 for slot 1
+ *   else:                            ball → slot 1, call ..._D5F0 for slot 0
+ */
+void pongBallInstance_BuildSingleSnapshot(pongBallInstance* ball,
+                                          pongBallInstance* other) {
+    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+
+    util_4330(g_ballStateData, other);
+
+    // Priority byte for 'other' lives one chain deeper — (other+4)->+12+4.
+    // See pongBallInstance_1FA0 call-site for the parallel structure.
+    auto* otherBytes  = reinterpret_cast<uint8_t*>(other);
+    auto* otherSub1   = *reinterpret_cast<uint8_t**>(otherBytes + 4);
+    auto* otherSub2   = *reinterpret_cast<uint8_t**>(otherSub1 + 12);
+    const uint8_t tagOther = *(otherSub2 + 4);
+    const uint8_t tagBall  = ReadBallPriorityByte(ball);
+
+    if (tagOther <= tagBall) {
+        WriteBallToSlot0(g_ballStateData, ball);
+        pongBallInstance::SnapshotMatrixToGlobalSlot1(ball);
+    } else {
+        pongBallInstance::SnapshotMatrixToGlobalSlot0(ball);
+        WriteBallToSlot1(g_ballStateData, ball);
+    }
+}
+
+/**
+ * pongBallInstance secondary-vtable scalar-deleting thunk
+ * @ 0x82280890 | size: 0x8
+ *
+ * Already lifted above as `pongBallInstance_SecondaryDtorThunk`. The adjusted
+ * `this` offset of -80 bytes matches the location of the secondary vtable
+ * pointer (+80) inside the pongBallInstance layout.
+ */
+
+/**
+ * pongBallAudio::~pongBallAudio(int flags) — full body   @ 0x8228ABE0 | 0x50
+ *
+ * The earlier single-arg stub in this file only invoked the base destructor.
+ * The real binary is a scalar-deleting destructor: after running the base
+ * audControl3d destructor, it frees the instance iff the low bit of `flags`
+ * (r4 on entry) is set. This is the standard MSVC delete-flag convention.
+ *
+ * Exposed as a free function to avoid clashing with the existing single-arg
+ * definition; recomp callers dispatch through vtable slot 0 with r4 = flags.
+ */
+void pongBallAudio_ScalarDtor(pongBallAudio* self, int flags) {
+    extern void audControl3d_Destructor(pongBallAudio* obj);  // @ 0x8228AC30
+    extern void rage_free(void* ptr);                         // @ 0x820C00C0
+
+    audControl3d_Destructor(self);
+    if (flags & 1) {
+        rage_free(self);
+    }
+}
