@@ -54,7 +54,7 @@ extern "C" {
     void  atSingleton_5A68_h(void* a, void* b);                   // @ 0x821B5A68
     void  atSingleton_A600_h(void* arg, float f);                 // @ 0x8240A600
     void  pongGameContext_A070(void* guardRec);                   // @ 0x823DA070
-    bool  pongGameContext_6970_h(void* ctx);                      // @ 0x823D6970
+    // pongGameContext_6970_h defined in this file below (uses pongGameContext fields).
     bool  pongGameContext_CEE8_wrh(void* data);                   // @ 0x821CCEE8
     void  pongLerpQueue_C838_g(void* list);                       // @ 0x821CC838
     void  util_D0F8(void* state, void* slot, void* minVec, void* maxVec, void* gridVec);  // @ 0x821CD0F8
@@ -119,30 +119,30 @@ extern "C" const char* pongGameState_GetName() {
 // ────────────────────────────────────────────────────────────────────────────
 // pongGameContext — Game context and message processor
 // @ vtable 0x82071AEC (primary), 0x82071B50 (secondary - multiple inheritance)
+//
+// The struct itself is declared in pong_game.hpp (included above); only
+// method bodies + file-local view types belong here.
 // ────────────────────────────────────────────────────────────────────────────
 
-struct pongGameContext {
-    void**  vtable;           // +0x00
-    void*   m_pGameState;     // +0x04 - Current game state
-    // ... more fields discovered from Process() analysis
-    
-    // Virtual methods (context interface)
-    virtual ~pongGameContext();
-    virtual void OnExit() {}                         // [12]
-    virtual void ProcessInput() {}                   // [14]
-    virtual void OnUpdate() {}                       // [16]
-    virtual void OnRender() {}                       // [17]
-    virtual void OnShutdown() {}                     // [18]
-    virtual void PostLoadChildren() {}               // [22]
-    
-    // Non-virtual methods
-    // Process: r3=this, r4=event (msgId u16 at +0, payload at +4).
-    // Returns 0 (success); signature matches captured-reg layout for the cascade.
-    int Process(void* eventState, void* event);
+// ── pongGameStateData ─ file-local view onto m_pGameState used by the
+// Process-cascade handlers (0x80C/0x85C/0x85D/0x80D/0x86D/0x2027/0x3831/etc).
+// The shipping pongGameState class (decl in pong_game.hpp) only exposes the
+// HSM vtable; the handlers reach into byte-offset members that aren't part
+// of the public interface. Matching the raw PPC offsets observed in the
+// recomp: +0x04 HSM context, +0x0C clamp float, +0x10 hash stash, +0x15/16/17
+// the three menu flags. Layout purposely unions with the vtable pointer at
+// +0x00 so casts from m_pGameState stay in bounds.
+struct pongGameStateData {
+    uint32_t vtable;                 // +0x00
+    void*    m_pHsmContext;          // +0x04 — owning HSM context (vfn slot +0x10)
+    uint32_t _pad08;                 // +0x08
+    float    m_fCharVarClampMax;     // +0x0C — char-variation clamp (msgId 0x80D)
+    uint32_t m_uHashStash;           // +0x10 — atStringHash "i" stash (msgId 0x86D)
+    uint8_t  _pad14;                 // +0x14
+    uint8_t  m_bMenuAccept;          // +0x15 — accept flag (0x2027/0x3831/etc)
+    uint8_t  m_bMenuBack;            // +0x16 — back   flag (0x85C/0x85D/0x2027)
+    uint8_t  m_bMenuCancel;          // +0x17 — quit-confirm flag (0x85D)
 };
-// Offsets are PPC-32 (4-byte pointers). Static-asserts omitted: void* is 8
-// bytes on the 64-bit host compiler so offsetof would mismatch. See the
-// PPC sizes in the comments above each field.
 
 // ────────────────────────────────────────────────────────────────────────────
 // Character-select view data at g_pongCharViewData (0x8271A330).
@@ -421,6 +421,42 @@ void pongGameContext::OnRender() {
 
     pongLerpQueue_C838_g(lbl_8271A2F0);
 }
+
+/**
+ * pongGameContext_6970_h  @ 0x823D6970 | size: 0x6C
+ *
+ * "Should-tick" predicate used by OnShutdown to gate the netclient teardown
+ * path. Returns true iff the context isn't suspended (+51/+52 both zero)
+ * AND the current pongGameState's two gameplay-active bytes (+137/+138)
+ * are both non-zero. Mirrors the same guard used inline by OnUpdate and
+ * OnRender, but collapsed into a shared helper because OnShutdown needs
+ * it twice per call.
+ *
+ * Original returns u8 (0 or 1); we promote to bool at the host-C++ layer.
+ */
+bool pongGameContext_6970_h(pongGameContext* ctx) {
+    // +52 (0x34) = m_bOverlayFlag, +51 (0x33) = m_bSuspended.
+    // Any non-zero suspend bit forces a false return.
+    if (ctx->m_bOverlayFlag) {
+        return false;
+    }
+    if (ctx->m_bSuspended) {
+        return false;
+    }
+
+    // Chase m_pGameState and inspect the two gameplay-tick flag bytes
+    // at +137/+138. Both must be non-zero for the predicate to fire.
+    pongGameState_view* state = reinterpret_cast<pongGameState_view*>(
+        static_cast<uintptr_t>(ctx->m_pGameState));
+    if (state->m_bFlagA == 0) {
+        return false;
+    }
+    return state->m_bFlagB != 0;
+}
+
+// OnShutdown's internal call accepts a void* for historical reasons; the
+// hpp-level declaration already uses `pongGameContext*` via `this`. The
+// inline callsites compile via implicit upcast.
 
 /**
  * pongGameContext::OnShutdown  [18]  @ 0x823D58F0 | size: 0x140
@@ -1119,4 +1155,256 @@ void game_CheckNetworkAndTransitionToState6(void* stateObj) {
             SinglesNetworkClient_1410_g(networkClient2, -1);
         }
     }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Scene-graph iterator helpers — used by OnUpdate/OnRender as a 2-word
+// "GuardRec" walker (fields +0=root, +4=current). The triple forms a
+// pre-order traversal over sgNode children rooted at the match-logic
+// singleton's child list. Each visit VCALLs slot 20 (type-gate, returns
+// nonzero to bail) and slot 19 (getter emitted into sgIter debug log).
+//
+// Node layout (from recomp offsets):
+//   +0x00 : parent/root back-pointer
+//   +0x04 : left child  (first descendant)
+//   +0x08 : right sibling
+//   +0x0C : first-child link (primary descent)
+//
+// All three are free functions — they operate on an iterator record
+// passed by pointer, NOT on a pongGameContext. The names are kept in
+// pongGameContext_* form because the debug symbols live under that
+// prefix in the binary. Extern-"C" wrappers match the 4 existing call
+// sites in OnUpdate/OnRender above.
+// ────────────────────────────────────────────────────────────────────────────
+
+namespace {
+
+// sgIter record — what GuardRec in OnUpdate/OnRender actually is.
+// First word is the list root; second word is the "current" cursor the
+// iterator re-writes as it descends.
+struct sgIterRec {
+    uint32_t m_pRoot;     // +0x00
+    uint32_t m_pCurrent;  // +0x04
+};
+
+// sgNode — opaque 16-byte-ish tree node. Only the four link offsets
+// used by the iterator are typed.
+struct sgNode {
+    uint32_t m_pParent;      // +0x00
+    uint32_t m_pLeft;        // +0x04
+    uint32_t m_pRight;       // +0x08
+    uint32_t m_pFirstChild;  // +0x0C
+};
+
+// Shared debug-log format string referenced by pongGameContext_A070.
+static constexpr uint32_t kSgIterSkipFormat = 0x82071DC8u;  // "sgIter - Skipping non-sgNode '%s'"
+
+} // namespace
+
+extern "C" {
+
+/**
+ * pongGameContext_A0F8_h  @ 0x823DA0F8 | size: 0x40
+ *
+ * "Find leftmost descendant with a first-child link, stopping at the
+ * root sentinel." Walks the +4/+8 chain of `iter->m_pCurrent`. Returns
+ * the +8 (right-sibling) of the first node whose own first-child (+8)
+ * slot is non-null; returns 0 if the chain hits the root or dead-ends.
+ *
+ * Called from pongGameContext_9FD0_w when a direct descent failed.
+ */
+void* pongGameContext_A0F8_h(void* iterPtr, void* nodePtr) {
+    sgIterRec* iter = reinterpret_cast<sgIterRec*>(iterPtr);
+    sgNode*    node = reinterpret_cast<sgNode*>(nodePtr);
+
+    uint32_t cur = node->m_pLeft;  // r4+4
+    if (cur == 0) {
+        return nullptr;
+    }
+    uint32_t root = iter->m_pRoot;  // r3+0
+    while (true) {
+        if (cur == root) {
+            return nullptr;
+        }
+        sgNode* curNode = reinterpret_cast<sgNode*>(static_cast<uintptr_t>(cur));
+        uint32_t firstChild = curNode->m_pRight;  // +8
+        if (firstChild != 0) {
+            return reinterpret_cast<void*>(static_cast<uintptr_t>(firstChild));
+        }
+        cur = curNode->m_pLeft;  // +4
+        if (cur == 0) {
+            return nullptr;
+        }
+    }
+}
+
+/**
+ * pongGameContext_9FD0_w  @ 0x823D9FD0 | size: 0x9C
+ *
+ * Iterator advance: given `iter` (sgIterRec), consult `iter->m_pCurrent`
+ * and compute the next-in-pre-order node. Priority:
+ *   1. descend into +12 (first-child) if present;
+ *   2. if sibling chain is empty (current is root), park at null;
+ *   3. if current has a right-sibling +8, take it;
+ *   4. else fall back to pongGameContext_A0F8_h to bubble up and find
+ *      the next-right across ancestors.
+ * After choosing the new node, store it into iter+4 and call
+ * pongGameContext_A070 to visit / recurse.
+ */
+void pongGameContext_9FD0_w(void* iterPtr) {
+    sgIterRec* iter = reinterpret_cast<sgIterRec*>(iterPtr);
+    uint32_t   nextRaw = 0;
+
+    uint32_t curRaw = iter->m_pCurrent;
+    if (curRaw != 0) {
+        sgNode* cur = reinterpret_cast<sgNode*>(static_cast<uintptr_t>(curRaw));
+
+        // Primary descent: first-child at +12.
+        uint32_t firstChild = cur->m_pFirstChild;
+        if (firstChild != 0) {
+            nextRaw = firstChild;
+        } else {
+            uint32_t rootRaw = iter->m_pRoot;
+            if (curRaw == rootRaw) {
+                // Cursor already sits on the root sentinel → park.
+                nextRaw = 0;
+            } else {
+                // Try right sibling at +8.
+                uint32_t rightRaw = cur->m_pRight;
+                if (rightRaw != 0) {
+                    nextRaw = rightRaw;
+                } else {
+                    // Neither child nor sibling — bubble up through
+                    // left-parent chain. If leftLink itself carries a
+                    // +8 right-sibling we take it directly; else we
+                    // recurse through the deep-leftmost helper, which
+                    // walks the +4 chain until it finds a node with
+                    // a non-null +8 or falls off.
+                    uint32_t leftRaw = cur->m_pLeft;
+                    void* fallback = nullptr;
+                    if (leftRaw != 0 && leftRaw != rootRaw) {
+                        sgNode* leftNode =
+                            reinterpret_cast<sgNode*>(static_cast<uintptr_t>(leftRaw));
+                        if (leftNode->m_pRight != 0) {
+                            fallback = reinterpret_cast<void*>(
+                                static_cast<uintptr_t>(leftNode->m_pRight));
+                        } else {
+                            fallback = pongGameContext_A0F8_h(iter, leftNode);
+                        }
+                    }
+                    nextRaw = fallback
+                        ? static_cast<uint32_t>(
+                              reinterpret_cast<uintptr_t>(fallback))
+                        : 0u;
+                }
+            }
+        }
+    }
+
+    iter->m_pCurrent = nextRaw;
+    pongGameContext_A070(iter);
+}
+
+/**
+ * pongGameContext_A070  @ 0x823DA070 | size: 0x88
+ *
+ * Visit the iterator's current node: VCALL slot 20 (type-gate — byte
+ * offset +80 on the node's vtable). Returns early if the gate reports
+ * nonzero (wrong node type). Otherwise VCALL slot 19 (byte +76, the
+ * node's name getter) and feed it through the debug sink with the
+ * "sgIter - Skipping non-sgNode '%s'" format at 0x82071DC8, then recurse
+ * through pongGameContext_9FD0_w to advance.
+ *
+ * Mutates: none on iter directly (9FD0_w does the store).
+ */
+void pongGameContext_A070(void* iterPtr) {
+    sgIterRec* iter = reinterpret_cast<sgIterRec*>(iterPtr);
+    uint32_t   curRaw = iter->m_pCurrent;
+    if (curRaw == 0) {
+        return;
+    }
+
+    void*  curNode  = reinterpret_cast<void*>(static_cast<uintptr_t>(curRaw));
+    void** curVt    = *reinterpret_cast<void***>(curNode);
+
+    // Slot 20 (byte +80) — returns u8 gate; nonzero ⇒ this is a real
+    // sgNode subtype and we should NOT emit the skip log.
+    using GateFn = uint32_t (*)(void*);
+    uint32_t gate = reinterpret_cast<GateFn>(curVt[20])(curNode) & 0xFFu;
+    if (gate != 0) {
+        return;
+    }
+
+    // Slot 19 (byte +76) — returns const char* node name for the log line.
+    using NameFn = const char* (*)(void*);
+    const char* name = reinterpret_cast<NameFn>(curVt[19])(curNode);
+
+    // Debug log — format @ 0x82071DC8.
+    nop_8240E6D0(reinterpret_cast<void*>(static_cast<uintptr_t>(kSgIterSkipFormat)),
+                 name);
+
+    // Tail-recurse through the advance function.
+    pongGameContext_9FD0_w(iter);
+}
+
+} // extern "C"
+
+// ────────────────────────────────────────────────────────────────────────────
+// Net-exhibition quit shims — both tail-call pg_6B40_w(this=input, r4=1)
+// to drive the PongNetExhibitionCoordinator probe and enqueue UI event
+// 2144 or 2145 via pg_E6E0. Only the gating differs.
+// ────────────────────────────────────────────────────────────────────────────
+
+extern "C" {
+    // pg_6B40_w(flag) — NetExhibitionCoordinator probe that writes
+    // g_input_obj_ptr+48 = flag, then dispatches UI event 2144/2145 via
+    // pg_E6E0 and sets g_input_obj_ptr+27 = 1. Body lives outside this
+    // partition.
+    void pg_6B40_w(int32_t flag);
+}
+
+// g_pongGlobalMode already extern'd at line 85.
+
+/**
+ * pongGameContext_6BD0_p46  @ 0x823D6BD0 | size: 0x20
+ *
+ * Gated net-exhibition quit entry: only fires when g_pongGlobalMode == 1
+ * (single-player / offline). Tails pg_6B40_w(flag=1).
+ */
+extern "C" void pongGameContext_6BD0_p46() {
+    if (g_pongGlobalMode != 1) {
+        return;
+    }
+    pg_6B40_w(/*flag=*/1);
+}
+
+/**
+ * pongGameContext_6BF0_p46  @ 0x823D6BF0 | size: 0x08
+ *
+ * Unconditional net-exhibition quit entry (slot [1] scalar-dtor-style
+ * thunk on the primary vtable path, per pass5 alias to
+ * pongGameState_vfn_0). Always tails pg_6B40_w(flag=1).
+ */
+extern "C" void pongGameContext_6BF0_p46() {
+    pg_6B40_w(/*flag=*/1);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Secondary-vtable RTTI thunk  @ 0x823D7928 | size: 0x08
+//
+// When an rtti/dynamic-cast path hits pongGameContext through the
+// secondary vtable @ 0x82071B50 (offset +0x14 inside the object), the
+// incoming `this` is displaced by the MI offset. The thunk subtracts
+// 20 bytes to recover the primary-base `this` and tail-calls
+// pongGameContext::Dtor (slot 0 @ 0x823D5328) with whatever scalar-dtor
+// flag is in r4. Mirrors the pass5 PPC_FUNC_IMPL exactly.
+// ────────────────────────────────────────────────────────────────────────────
+
+extern "C" void pongGameContext_rtti_1B50_0(void* secondaryThis, int32_t flags) {
+    // Adjust back to primary-base `this`. The secondary vtable sits at
+    // +0x14 inside the object; displacing -20 (-0x14) lands on the start
+    // of the primary layout where Dtor expects r3.
+    uint8_t* raw = reinterpret_cast<uint8_t*>(secondaryThis) - 20;
+    auto*    primary = reinterpret_cast<pongGameContext*>(raw);
+    primary->Dtor(flags);
 }
