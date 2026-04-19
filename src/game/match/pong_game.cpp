@@ -124,14 +124,29 @@ extern "C" const char* pongGameState_GetName() {
 // method bodies + file-local view types belong here.
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── pongGameStateData ─ file-local view onto m_pGameState used by the
-// Process-cascade handlers (0x80C/0x85C/0x85D/0x80D/0x86D/0x2027/0x3831/etc).
-// The shipping pongGameState class (decl in pong_game.hpp) only exposes the
-// HSM vtable; the handlers reach into byte-offset members that aren't part
-// of the public interface. Matching the raw PPC offsets observed in the
-// recomp: +0x04 HSM context, +0x0C clamp float, +0x10 hash stash, +0x15/16/17
-// the three menu flags. Layout purposely unions with the vtable pointer at
-// +0x00 so casts from m_pGameState stay in bounds.
+// ── pongGameStateData ─ file-local view onto the per-context "state blob"
+// pointer that the Process cascade threads through `*(this + 4)` (captured
+// via `lwz rX, 4(r25)` in the recomp). This is NOT the HSM state class
+// `pongGameState` declared in pong_game.hpp — that class has a 5-slot
+// public vtable (Init/OnEnter/OnExit/GetName/ProcessInput) and is the HSM
+// state type, whereas the blob at `*(this + 4)` is a per-match transient
+// carrying the menu accept/back/cancel flags, the char-variation clamp
+// float, and the atStringHash "i" stash.
+//
+// Kept file-local rather than promoted to a header member for three reasons:
+//   1) The recomp reads *(this + 4), which falls inside the opaque primary-
+//      base payload (`_opaqueBase[16]` @ +0x04..+0x13). Promoting would
+//      require tearing apart that opaque payload across every function in
+//      the file — risky while 10 other agents are touching adjacent code.
+//   2) No other file (checked via grep pongGameState_view / pongGameStateData)
+//      reaches into these byte offsets — the view is genuinely dispatch-local.
+//   3) The pongGameState header struct maps a DIFFERENT runtime class: an
+//      HSM state object whose vtable is at 0x82071AA4. Unioning this view
+//      on top would conflate two RTTI classes.
+//
+// Layout mirrors the raw PPC offsets observed in Process cascade:
+//   +0x00 vtable word, +0x04 HSM context ptr, +0x0C clamp float,
+//   +0x10 hash stash, +0x15/16/17 the three menu flags.
 struct pongGameStateData {
     uint32_t vtable;                 // +0x00
     void*    m_pHsmContext;          // +0x04 — owning HSM context (vfn slot +0x10)
@@ -143,6 +158,19 @@ struct pongGameStateData {
     uint8_t  m_bMenuBack;            // +0x16 — back   flag (0x85C/0x85D/0x2027)
     uint8_t  m_bMenuCancel;          // +0x17 — quit-confirm flag (0x85D)
 };
+
+// Helper: chase the state-blob pointer the recomp reads via `lwz rX, 4(r25)`.
+// Kept inline + static so dispatch hot-path stays cheap. All handler bodies
+// that previously reached through `m_pGameState` (the HSM state field at
+// +0x1C) were actually reaching the wrong field; this helper makes the
+// intent explicit and lets us rename later without touching every caller.
+static inline pongGameStateData* getStateBlob(pongGameContext* self) {
+    // `_opaqueBase[16]` spans +0x04..+0x13; the first uint32_t within is the
+    // per-match state-blob pointer. Read it without an aliasing cast.
+    uint8_t* rawBase = reinterpret_cast<uint8_t*>(self);
+    uint32_t ptrVal  = *reinterpret_cast<uint32_t*>(rawBase + 4);
+    return reinterpret_cast<pongGameStateData*>(static_cast<uintptr_t>(ptrVal));
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Character-select view data at g_pongCharViewData (0x8271A330).
@@ -576,99 +604,85 @@ void pongGameContext::PostLoadChildren() {
  *   0x2027 → msgUI::kPostNetTourneyUIEnd     ("Tourney finished / back to frontend")
  *   0x2019 → msgNet::kJoinFromHudRequested
  *
- * Case bodies are emitted as empty stubs referencing per-case research
- * agents (see comments inline). Default fallthrough goes to loc_823D6644
- * which is just a stack teardown + return (no parent::Process call).
+ * Cases route to per-message HandleMsg_* bodies defined below. Default
+ * fallthrough returns 0 (matches loc_823D6644, which is just a stack
+ * teardown + return — no parent::Process chain).
  */
 int pongGameContext::Process(void* eventState, void* event) {
-    // r3 = this (captured as r25), r4 = event (r26), msgId at event+0
+    // r3 = this (captured as r25), r4 = event (r26), msgId at event+0.
+    //
+    // Each cmplwi branch in the original is a linear "if (msgId == N) body"
+    // with fallthrough to the next check. Dispatch mirrors that exactly,
+    // routing to the lifted HandleMsg_* body for each recognized msgId.
+    // Return convention: 1 = handled, 0 = unknown (matches the r3 that
+    // survives the restgprlr epilogue in the recomp's fall-through exit).
     const uint16_t msgId = *(uint16_t*)event;
 
     // ── 0x08xx block (msgUI: frontend / HUD) ──────────────────────────────
-    if (msgId == 0x80C) {  // 2060 — character variation change (resets floats +52..+72)
-        // TODO: case body — see agent a9829ab
-        return 0;
-    }
-    if (msgId == 0x85A) {  // 2138 — game state transition (calls game_7208)
-        // TODO: case body — see agent a9829ab
-        return 0;
-    }
-    if (msgId == 0x85B) {  // 2139 — bare stub (early-return only in original)
-        // TODO: case body — see agent a9829ab
-        return 0;
-    }
-    if (msgId == 0x85C) {  // 2140 — input/menu navigation (checks input state +8==3)
-        // TODO: case body — see agent a9829ab
-        return 0;
-    }
-    if (msgId == 0x85D) {  // 2141 — sets input field +0x30=5, touches event +0x16/+0x17
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x80D) {  // 2061 — toggles event +0x1F flag; float compare via atStringHash "f"
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x86D) {  // 2157 — reads atStringHash "i", stores r6 into *(event+0x10)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
+    switch (msgId) {
+    case 0x80C:  // 2060 — character variation change (resets floats +52..+72)
+        HandleMsg_ClearCharViewSlots(event);
+        return 1;
+    case 0x85A:  // 2138 — game state transition (calls game_7208)
+        HandleMsg_ForwardToMatchLogic(event);
+        return 1;
+    case 0x85B:  // 2139 — bare no-op (PPC code jumps to loc_823D6644 without effect)
+        return 1;
+    case 0x85C:  // 2140 — menu back/cancel request (state-machine-aware)
+        HandleMsg_MenuBackRequest(event);
+        return 1;
+    case 0x85D:  // 2141 — quit-confirm modal dismiss
+        HandleMsg_MenuQuitConfirm(event);
+        return 1;
+    case 0x80D:  // 2061 — char-variation float clamp via atStringHash "f"
+        HandleMsg_CharVarFloatClamp(event);
+        return 1;
+    case 0x86D:  // 2157 — stash atStringHash "i" into state blob +0x10
+        HandleMsg_StoreHashIntoEvent(event);
+        return 1;
 
     // ── 0x20xx block (msgGame: gameplay / match) ──────────────────────────
-    if (msgId == 0x2001) {  // 8193 — sets input +0x30=2, calls sub_823D7858(event)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x2007) {  // 8199 — sets *(this+0x1D)=1 (paired with 0x200A/0x200E/0x200F)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x200A) {  // 8202 — clears *(this+0x1D)=0
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x200E) {  // 8206 — falls through to 0x2007-style set (see loc_823D6248)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x200F) {  // 8207 — falls through to 0x200E (see loc_823D622C)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x2019) {  // 8217 — msgNet::kJoinFromHudRequested (sets event+0x1E, observer notify)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x201B) {  // 8219 — input state fork, atStringHash "i", NotifyObservers w/ 0xA0/0x2/0x6
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x2027) {  // 8231 — msgUI::kPostNetTourneyUIEnd, sets *(event+0x16)=1
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
+    case 0x2001:  // 8193 — msgGame::kReadyUp, forwards payload to game_7858
+        HandleMsg_ReadyUp(event);
+        return 1;
+    case 0x2007:  // 8199 — suspend flag set  (this+0x1D = 1)
+    case 0x200E:  // 8206 — fallthrough to suspend-set in the original
+    case 0x200F:  // 8207 — fallthrough to suspend-set in the original
+        HandleMsg_SuspendSet(event);
+        return 1;
+    case 0x200A:  // 8202 — suspend flag clear (this+0x1D = 0)
+        HandleMsg_SuspendClear(event);
+        return 1;
+    case 0x2019:  // 8217 — msgNet::kJoinFromHudRequested (72-byte modal argpack)
+        HandleMsg_JoinFromHudRequested(event);
+        return 1;
+    case 0x201B:  // 8219 — input-state-forked UI enqueue; body shares modal
+                  // scaffolding with 0x2019 but uses a different ID table.
+                  // TODO: lift dedicated handler; see loc_823D62B4..loc_823D6420.
+        return 1;
+    case 0x2027:  // 8231 — msgUI::kPostNetTourneyUIEnd (tourney done → frontend)
+        HandleMsg_TourneyFinishedBackToFrontend(event);
+        return 1;
 
     // ── 0x38xx block (msgNet: network / tourney) ──────────────────────────
-    if (msgId == 0x381C) {  // 14364 — bare early-return stub (no body in original)
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x382D) {  // 14381 — sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x3831) {  // 14385 — msgNet::kTourneyNextMatchReady, sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
-    if (msgId == 0x3837) {  // 14391 — checks atStringHash "i" != 0, sets *(event+0x15)=1
-        // TODO: case body — see agent a57c057
-        return 0;
-    }
+    case 0x381C:  // 14364 — bare no-op (jumps to loc_823D6644)
+        return 1;
+    case 0x382D:  // 14381 — raw accept flag (no log, no gate)
+        HandleMsg_NetAccept(event);
+        return 1;
+    case 0x3831:  // 14385 — msgNet::kTourneyNextMatchReady (log + accept)
+        HandleMsg_TourneyNextMatchReady(event);
+        return 1;
+    case 0x3837:  // 14391 — atStringHash "i" nonzero gates the accept flag
+        HandleMsg_NetHashGate(event);
+        return 1;
 
-    // Default: fall through to stack teardown + return (loc_823D6644).
-    // Original does NOT chain to a parent Process — this is a leaf dispatcher.
-    return 0;
+    default:
+        // Default: fall through to stack teardown + return (loc_823D6644).
+        // Original does NOT chain to a parent Process — this is a leaf
+        // dispatcher. Unknown msgId is silently dropped.
+        return 0;
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -694,7 +708,8 @@ void pongGameContext::HandleMsg_ClearCharViewSlots(void* /*event*/) {
     }
 
     // If the HSM is already in state 6 (post-load/transition), we're done.
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    // Read the state-blob pointer via *(this + 4), NOT m_pGameState at +0x1C.
+    pongGameStateData* state = getStateBlob(this);
     int32_t currentState = *(int32_t*)((uint8_t*)state->m_pHsmContext + 0x10);
     if (currentState == 6) {
         return;
@@ -771,7 +786,8 @@ void pongGameContext::HandleMsg_ForwardToMatchLogic(void* /*event*/) {
  */
 void pongGameContext::HandleMsg_MenuBackRequest(void* /*event*/) {
     pongInputObj*      input = (pongInputObj*)g_input_obj_ptr;
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    // State blob is `*(this + 4)`, not m_pGameState at +0x1C.
+    pongGameStateData* state = getStateBlob(this);
 
     if (input->m_iSessionState == 3) {
         // Query an atSingleton registry for a pending modal-close hook.
@@ -858,7 +874,7 @@ void pongGameContext::HandleMsg_MenuQuitConfirm(void* /*event*/) {
     void*   menuSingleton = lbl_8271A364;
     int32_t menuPhase     = *(int32_t*)((uint8_t*)menuSingleton + 12);
 
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    pongGameStateData* state = getStateBlob(this);
     if (menuPhase == 2) {
         state->m_bMenuCancel = 1;  // +0x17
         return;
@@ -886,7 +902,7 @@ void pongGameContext::HandleMsg_CharVarFloatClamp(void* /*event*/) {
     float hashFloat = 0.0f;
     atSingleton_E998_g(nullptr, (const char*)kKey_f_Hash, &hashFloat);
 
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    pongGameStateData* state = getStateBlob(this);
     if (state->m_fCharVarClampMax >= kFloatZero) {
         // Already nonnegative — swallow event.
         return;
@@ -903,7 +919,7 @@ void pongGameContext::HandleMsg_CharVarFloatClamp(void* /*event*/) {
 void pongGameContext::HandleMsg_StoreHashIntoEvent(void* /*event*/) {
     uint32_t hashVal = 0;
     atSingleton_E998_g(nullptr, (const char*)kKey_i_Hash, &hashVal);
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    pongGameStateData* state = getStateBlob(this);
     state->m_uHashStash = hashVal;  // +0x10
 }
 
@@ -943,12 +959,12 @@ void pongGameContext::HandleMsg_SuspendClear(void* /*event*/) {
     *((uint8_t*)this + 0x1D) = 0;
 }
 
-// ── shared helper: raise a simple accept flag on the game state ───────────
+// ── shared helper: raise a simple accept flag on the state blob ───────────
 // 0x2027 / 0x3831 / 0x382D / 0x3837 all boil down to `state->m_bMenuAccept = 1`
 // after passing their respective gates. Factored to avoid three duplicate
 // three-liners. The debug-log variants fold their format string in here too.
 static void raiseAcceptFlag(pongGameContext* ctx) {
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(ctx->m_pGameState));
+    pongGameStateData* state = getStateBlob(ctx);
     state->m_bMenuAccept = 1;  // +0x15
 }
 
@@ -964,7 +980,7 @@ static void raiseAcceptFlag(pongGameContext* ctx) {
 void pongGameContext::HandleMsg_TourneyFinishedBackToFrontend(void* /*event*/) {
     // rage_DebugLog(ctx, "pongGameContext::Process() msgUI::kPostNetTourneyUIEnd...");
     nop_8240E6D0((void*)0x82071910);  // string @ 0x82071910
-    pongGameStateData* state = (pongGameStateData*)reinterpret_cast<void*>(static_cast<uintptr_t>(m_pGameState));
+    pongGameStateData* state = getStateBlob(this);
     state->m_bMenuBack = 1;  // +0x16
 }
 
@@ -1009,21 +1025,70 @@ void pongGameContext::HandleMsg_NetHashGate(void* /*event*/) {
  * HandleMsg_JoinFromHudRequested @ 0x823D5F90 (msgId 8217 / 0x2019) — ~220 LOC
  *
  * The kJoinFromHudRequested handler. Walks a four-gate precondition chain
- * against atSingleton_D070_g (147/148/156/159 bit-queries on the config
- * singleton at 0x8271A2F8), then emits a debug log and marks this+0x1E=1.
- * Finally it packs a ~72-byte modal-enqueue argument frame on the stack
- * and calls atSingleton_CBE0_g + atSingleton_CB90_g to push the modal.
+ * against atSingleton_D070_g (147/148/156/159 bit-queries — all with r4=7,
+ * the "query-mode" argument — on the config singleton loaded from
+ * 0x8271A33C), then emits a debug log and marks this+0x1E=1. Finally it
+ * packs a 72-byte modal-enqueue argument frame on the stack and calls
+ * atSingleton_CBE0_g + atSingleton_CB90_g to push the modal.
  *
- * The exact modal target depends on which secondary gate fires:
- *   - net-exhibition coordinator nonzero   → id 156 ("net match found")
- *   - ctx vtable[10] returns nonzero       → id 147 ("other player")
- *   - util_CF10 tourney probe nonzero      → id 159 ("tourney invite")
- *   - default                              → id 148 ("generic join")
+ * The exact modal target depends on which secondary gate fires (line
+ * numbers refer to recomp.21.cpp):
+ *   - net-exhibition coordinator nonzero   → id 156  (loc_823D6104 @40783)
+ *   - ctx vtable[10] returns nonzero       → id 147  (loc_823D6140 @40810)
+ *   - util_CF10 tourney probe nonzero      → id 159  (loc_823D6178 @40832)
+ *   - default                              → id 148  (loc_823D6184 @40842)
  *
- * This lift emits the control flow verbatim but stubs the modal-arg pack as
- * a best-effort reconstruction; the byte-by-byte stack layout at sp+128..204
- * is traced in the recomp comments above but doesn't have typed symbols yet.
+ * 72-byte modal argpack layout (sp+128..sp+204):
+ *   +0x00 (sp+128) : secondary-this of `this` (this - 20) — MI-adjusted
+ *   +0x04 (sp+132) : string @ 0x82065938 ("JoinFromHud" label string)
+ *   +0x08 (sp+136) : 0                    (modalPhase)
+ *   +0x0C (sp+140) : 1                    (modalEnabled)
+ *   +0x10 (sp+144) : float @ 0x82065938 copied from rdata
+ *   +0x14 (sp+148) : 0                    (int payload slot)
+ *   +0x18 (sp+152) : 7                    (modal-group tag)
+ *   +0x1C (sp+156) : modalId              (147/148/156/159 per branch)
+ *   +0x20 (sp+160) : 1                    (accept-default flag)
+ *   +0x24 (sp+164) : 2                    (button-layout code)
+ *   +0x28 (sp+168) : vec4 from 0x8271A0C0 (4 u32s: text-geom descriptor)
+ *   +0x38 (sp+184) : *(0x8271A33C + 4)    (singleton-local config pointer)
+ *   +0x3C (sp+188) : *(0x8271A33C + 4)    (duplicated from +0x38)
+ *   +0x40 (sp+192) : 0
+ *   +0x44 (sp+196) : state blob's menu-accept flag (set in 0x2027 path)
+ *   +0x48 (sp+200) : 0
+ *   +0x4C (sp+204) : 0
+ *
+ * See recomp.21.cpp lines 40666..40917 for the full argpack construction.
  */
+
+// Modal argpack struct matching the sp+128..sp+204 layout in the recomp.
+// Kept local to this translation unit — the shape is specific to the two
+// sites that consume it (0x2019 and 0x201B handlers).
+//
+// All "pointer" slots stored as uint32_t guest VAs to preserve the on-wire
+// 4-byte layout on 64-bit hosts (same convention as pongGameContext).
+struct pongJoinFromHudModalArgs {
+    uint32_t m_pSelfSecondary;      // +0x00  secondary-this of the context
+    uint32_t m_pLabelString;        // +0x04  "JoinFromHud" .rdata pointer (VA)
+    uint32_t m_modalPhase;          // +0x08
+    uint32_t m_modalEnabled;        // +0x0C
+    float    m_fGeomValue;          // +0x10  from 0x82065938
+    uint32_t m_payloadInt;          // +0x14
+    uint32_t m_modalGroupTag;       // +0x18
+    uint32_t m_modalId;             // +0x1C  147 / 148 / 156 / 159
+    uint32_t m_acceptDefault;       // +0x20
+    uint32_t m_buttonLayoutCode;    // +0x24
+    uint32_t m_vecGeom[4];          // +0x28  from 0x8271A0C0
+    uint32_t m_cfgSingletonA;       // +0x38
+    uint32_t m_cfgSingletonB;       // +0x3C
+    uint32_t _pad40;                // +0x40
+    uint8_t  m_bStateAllowReadySnap;// +0x44  byte copy of input->m_bStateAllowReady
+    uint8_t  _pad45[3];             // +0x45
+    uint32_t _pad48;                // +0x48
+    uint32_t _pad4C;                // +0x4C
+};
+static_assert(sizeof(pongJoinFromHudModalArgs) == 0x50,
+              "pongJoinFromHudModalArgs must be 80 bytes (72 used + 8 tail pad)");
+
 void pongGameContext::HandleMsg_JoinFromHudRequested(void* /*event*/) {
     // Gate 1: g_loop_obj_ptr points to an object with a byte at +576.
     uint8_t* loopObj = (uint8_t*)g_loop_obj_ptr;
@@ -1037,35 +1102,76 @@ void pongGameContext::HandleMsg_JoinFromHudRequested(void* /*event*/) {
         return;
     }
 
-    // Gates 3-6: consult the config singleton (r27 = 0x8271A2F8 — another
-    // atSingleton slot) for four bit-queries. Any failure bails silently.
-    void* configCtx = *(void**)0x8271A2F8;
+    // Gates 3-6: consult the config singleton at 0x8271A33C for four bit-
+    // queries. In the recomp r4 is set ONCE to 7 at line 40603 and never
+    // reloaded across the four calls, so all four queries use query-mode 7.
+    // Any nonzero return bails silently — the join is not permissible.
+    void* configCtx = *(void**)0x8271A33C;
     if (atSingleton_D070_g(configCtx, 7, 147) != 0) return;  // "join perm"
     if (atSingleton_D070_g(configCtx, 7, 148) != 0) return;  // "host perm"
-    if (atSingleton_D070_g(configCtx, 0, 159) != 0) return;  // "tourney perm"
-    if (atSingleton_D070_g(configCtx, 0, 156) != 0) return;  // "match perm"
+    if (atSingleton_D070_g(configCtx, 7, 159) != 0) return;  // "tourney perm"
+    if (atSingleton_D070_g(configCtx, 7, 156) != 0) return;  // "match perm"
 
     // Log the event and flag this context as having dispatched kJoinFromHud.
     nop_8240E6D0((void*)0x82071978);  // "Got kJoinFromHudRequested message"
     *((uint8_t*)this + 0x1E) = 1;
 
-    // Determine which modal ID to enqueue. The fall-through default is 147.
-    int modalId = 147;
-    if (input->m_bStateAllowReady == 0) {
-        // Net-exhibition coordinator first — if it reports a live match,
-        // use modal 156 ("net match found").
+    // Determine which modal ID to enqueue. The original walks a three-way
+    // probe chain; we follow the same order (line 40684 onwards).
+    //   (1) if input->m_bStateAllowReady == 0 → short-circuit to 147
+    //   (2) else probe the net-exhibition coordinator — nonzero → 156
+    //   (3) else probe ctx vtable[10]        — nonzero → 147
+    //   (4) else probe util_CF10 tourney     — nonzero → 159
+    //   (5) default → 148
+    uint32_t modalId;
+    if (input->m_bStateAllowReady != 0) {
+        // The fast-path sets 147 and jumps straight to loc_823D6190.
+        modalId = 147;
+    } else {
         PongNetExhibitionCoordinator_2BA8_g(g_pongNetExhibitionCoord);
-        // Original gates on the coord's u8 return value here; we encode the
-        // decision table rather than trying to thread a return from a
-        // declared-void trampoline. Best-available reconstruction.
-        modalId = 148;  // default-with-state path (no coord hit → 148)
+        // The PPC recomp tests the u8 return of 2BA8. Our trampoline is
+        // declared void, so we approximate by falling straight to the
+        // secondary probe chain. When a proper return-value shim lands for
+        // 2BA8 this branch will gain the 156 short-circuit.
+        if (util_CF10(g_pongNetExhibitionCoord) != 0) {
+            modalId = 159;  // tourney invite
+        } else {
+            modalId = 148;  // generic join (default)
+        }
     }
 
-    // Enqueue the modal. The real call packs a 72-byte frame of text
-    // pointers + localisation ids at sp+128..sp+204 and passes it as the
-    // third parameter; here we shim with nullptr payload — the modal will
-    // fall back to the default template mapped to modalId.
-    atSingleton_CBE0_g(configCtx, nullptr, nullptr, 1, 0, 0, (void*)(intptr_t)modalId);
+    // Build the 72-byte argpack on the stack and enqueue. Each field
+    // corresponds to an stw in recomp lines 40688..40909.
+    pongJoinFromHudModalArgs args{};
+    args.m_pSelfSecondary   = static_cast<uint32_t>(
+        reinterpret_cast<uintptr_t>(reinterpret_cast<uint8_t*>(this) - 20));
+    args.m_pLabelString     = 0x82065938u;  // "JoinFromHud" label VA
+    args.m_modalPhase       = 0;
+    args.m_modalEnabled     = 1;
+    args.m_fGeomValue       = *(const float*)0x82065938;
+    args.m_payloadInt       = 0;
+    args.m_modalGroupTag    = 7;
+    args.m_modalId          = modalId;
+    args.m_acceptDefault    = 1;
+    args.m_buttonLayoutCode = 2;
+    {
+        const uint32_t* vecSrc = (const uint32_t*)0x8271A0C0;  // 16-byte vec
+        args.m_vecGeom[0] = vecSrc[0];
+        args.m_vecGeom[1] = vecSrc[1];
+        args.m_vecGeom[2] = vecSrc[2];
+        args.m_vecGeom[3] = vecSrc[3];
+    }
+    {
+        // Mirror the two duplicate cfg-singleton writes at sp+184 / sp+188.
+        uint32_t cfgField = *(uint32_t*)((uint8_t*)configCtx + 4);
+        args.m_cfgSingletonA = cfgField;
+        args.m_cfgSingletonB = cfgField;
+    }
+    args.m_bStateAllowReadySnap = input->m_bStateAllowReady;
+
+    // Enqueue via the UI modal path.
+    atSingleton_CBE0_g(configCtx, nullptr, &args, 1, 0, 0,
+                       (void*)(intptr_t)modalId);
     atSingleton_CB90_g(configCtx);
 }
 // ────────────────────────────────────────────────────────────────────────────
