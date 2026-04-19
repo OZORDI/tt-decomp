@@ -525,6 +525,11 @@ struct phBound {
 
     // debug string: "phBound::Load_v110 - not defined for this bound type (%d)"
     void Load_v110();
+
+    // Per-shape allocator dispatch — @ 0x8228C1F0 (460B switch on type id).
+    // Returns a heap-allocated concrete phBound subclass for the given type
+    // byte, with its shape-specific constructor already invoked.
+    static phBound* AllocateByType(uint8_t boundType);
 };
 
 // ── rage::phBoundBox  [vtable @ 0x82058B8C] ──────────────────────────────────

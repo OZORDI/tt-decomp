@@ -11074,28 +11074,128 @@ void phBound::CopyFrom(const phBound* src) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// phBound::AllocateByType (non-virtual helper) @ 0x8228C1F0 | size: 0x1CC (460B)
+//
+// Per-shape allocator dispatch.  Given a phBound type id (the low byte
+// of `m_nBoundType` at +0x04 of a populated phBound), allocate the
+// correctly-sized derived object via the RAGE pool allocator
+// (xe_EC88 ≈ operator new), then hand off to the shape-specific
+// constructor helper.
+//
+// Type table (indexed by switch(r3) in the scaffold):
+//      0  phBoundSphere         144 B   ctor ph_54C8
+//      1  phBoundCapsule        208 B   ctor ph_2E08
+//      2  phBoundBox            512 B   ctor ph_7450 (also splats 1.0f × 3 into x,y,z args)
+//      3  phBoundGeometry       176 B   ctor ph_0F78
+//      4  phBoundOctree         192 B   ctor ph_71A8
+//      5  phBoundQuadtree       192 B   ctor ph_D088
+//      6  phBoundOTGrid         160 B   ctor ph_B4E0
+//      7  phBoundPolyhedron     192 B   ctor ph_D8D0
+//      8  (reserved, returns nullptr)
+//      9  phBoundComposite      144 B   ctor ph_DE80
+//
+// Returns nullptr on OOM or unknown/reserved type.  Called exclusively by
+// phBound::Clone (slot 35).
+// ─────────────────────────────────────────────────────────────────────────────
+extern "C" void* xe_EC88(uint32_t size);                        // operator new shim @ 0x820DEC88
+extern "C" void  ph_54C8(phBound* self, float radius);          // phBoundSphere ctor
+extern "C" void  ph_2E08(phBound* self);                        // phBoundCapsule ctor
+extern "C" void  ph_7450(phBound* self, const float* extents);  // phBoundBox ctor (reads 3 floats)
+extern "C" void  ph_0F78(phBound* self);                        // phBoundGeometry ctor
+extern "C" void  ph_71A8(phBound* self);                        // phBoundOctree ctor
+extern "C" void  ph_D088(phBound* self);                        // phBoundQuadtree ctor
+extern "C" void  ph_B4E0(phBound* self);                        // phBoundOTGrid ctor
+extern "C" void  ph_D8D0(phBound* self);                        // phBoundPolyhedron ctor
+extern "C" void  ph_DE80(phBound* self);                        // phBoundComposite ctor
+
+phBound* phBound::AllocateByType(uint8_t boundType) {
+    // "8" is reserved in the switch (returns 0 directly in the scaffold).
+    if (boundType > 9 || boundType == 8) {
+        return nullptr;
+    }
+
+    phBound* bound = nullptr;
+    switch (boundType) {
+        case 0: {  // phBoundSphere — ctor takes initial radius = 1.0f
+            bound = static_cast<phBound*>(xe_EC88(144));
+            if (bound != nullptr) ph_54C8(bound, 1.0f);
+            break;
+        }
+        case 1: {  // phBoundCapsule
+            bound = static_cast<phBound*>(xe_EC88(208));
+            if (bound != nullptr) ph_2E08(bound);
+            break;
+        }
+        case 2: {  // phBoundBox — ctor takes pointer to {1,1,1} default extents
+            bound = static_cast<phBound*>(xe_EC88(512));
+            if (bound != nullptr) {
+                const float kUnitExtents[3] = { 1.0f, 1.0f, 1.0f };
+                ph_7450(bound, kUnitExtents);
+            }
+            break;
+        }
+        case 3: {  // phBoundGeometry
+            bound = static_cast<phBound*>(xe_EC88(176));
+            if (bound != nullptr) ph_0F78(bound);
+            break;
+        }
+        case 4: {  // phBoundOctree
+            bound = static_cast<phBound*>(xe_EC88(192));
+            if (bound != nullptr) ph_71A8(bound);
+            break;
+        }
+        case 5: {  // phBoundQuadtree
+            bound = static_cast<phBound*>(xe_EC88(192));
+            if (bound != nullptr) ph_D088(bound);
+            break;
+        }
+        case 6: {  // phBoundOTGrid
+            bound = static_cast<phBound*>(xe_EC88(160));
+            if (bound != nullptr) ph_B4E0(bound);
+            break;
+        }
+        case 7: {  // phBoundPolyhedron
+            bound = static_cast<phBound*>(xe_EC88(192));
+            if (bound != nullptr) ph_D8D0(bound);
+            break;
+        }
+        case 9: {  // phBoundComposite
+            bound = static_cast<phBound*>(xe_EC88(144));
+            if (bound != nullptr) ph_DE80(bound);
+            break;
+        }
+        default:
+            break;
+    }
+    return bound;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // phBound::Clone (vfn_35 / slot 35) @ 0x8228DB08 | size: 0x54 (84B)
 //
 // Allocator-aware clone:
-//   1. size = phBound_C1F0_wrh(GetType())       — look up shape byte-size
-//   2. newBound = operator new(size) equivalent — handled by helper
-//   3. newBound->vfn_34(this)                    — copy via CopyFrom vtable slot 34
-//   4. return newBound
+//   1. newBound = phBound::AllocateByType(GetType())
+//   2. newBound->vfn_34(this) — copy via CopyFrom vtable slot 34
+//   3. return newBound
 //
-// The sizer helper is non-virtual and shared across phBound subclasses.
-// Exposed via extern declaration below because the 460-byte lookup table
-// body lives in a later lift batch.
+// The shape-type byte is read as `lbz r3,4(r30)` — the low byte of the
+// big-endian uint32_t `m_nBoundType` at +0x04.  On PPC this reads byte 0
+// of the word (MSB); the matching GetType virtual (vfn_2 @ 0x8228CE20)
+// reads `lbz r3,7` — byte 3 (LSB).  Since the type id is a small enum
+// (0..9) and stored in the low byte of a zero-filled uint32, both reads
+// return the same value at runtime.  We go through the uint32_t here to
+// stay endian-neutral on modern hosts.
 // ─────────────────────────────────────────────────────────────────────────────
-extern phBound* phBound_AllocByType(uint8_t boundType);  // @ 0x8228C1F0 (phBound_C1F0_wrh)
-
 phBound* phBound::Clone() {
-    const uint8_t type = *(reinterpret_cast<uint8_t*>(this) + 7);
-    phBound* copy = phBound_AllocByType(type);
+    const uint32_t typeField = *(reinterpret_cast<const uint32_t*>(
+                                     reinterpret_cast<const uint8_t*>(this) + 4));
+    const uint8_t type = static_cast<uint8_t>(typeField & 0xFFu);
+    phBound* copy = phBound::AllocateByType(type);
     if (copy == nullptr) {
         return nullptr;
     }
 
-    // vtable slot 34 (byte +136) of the newly-allocated bound → CopyFrom(this).
+    // vtable slot 34 of the newly-allocated bound → CopyFrom(this).
     void** vt = *reinterpret_cast<void***>(copy);
     typedef void (*CopyFromFn)(phBound* self, const phBound* src);
     reinterpret_cast<CopyFromFn>(vt[34])(copy, this);
@@ -11107,17 +11207,21 @@ phBound* phBound::Clone() {
 //
 // Base-class stub for the version-110 load dispatcher.  Emits the warning
 // "phBound::Load_v110 - not defined for this bound type (%d)" via the
-// printf shim at 0x8240E6D0 (a no-op in this build, lifted as
-// nop_8240E6D0 elsewhere) and returns.  Subclasses override and parse
-// their bound-specific fields from the resource stream.
+// no-op debug formatter at 0x8240E6D0 (lifted as nop_8240E6D0) and
+// returns.  Subclasses override and parse their bound-specific fields
+// from the resource stream.
 // ─────────────────────────────────────────────────────────────────────────────
-extern void phBound_LoadWarnPrintf(const char* fmt, uint32_t typeId);  // nop shim
+extern "C" void nop_8240E6D0(const char* fmt, ...);   // debug no-op @ 0x8240E6D0
 
 void phBound::LoadFromStream() {
     static const char kLoadWarnFmt[] =
         "phBound::Load_v110 - not defined for this bound type (%d)";
-    const uint32_t typeByte = *(reinterpret_cast<uint8_t*>(this) + 4);
-    phBound_LoadWarnPrintf(kLoadWarnFmt, typeByte);
+    // Scaffold: `lbz r4,4(r11)` — read the low byte of m_nBoundType.
+    // See phBound::Clone note above for the PPC byte-lane equivalence.
+    const uint32_t typeField = *(reinterpret_cast<const uint32_t*>(
+                                     reinterpret_cast<const uint8_t*>(this) + 4));
+    const uint32_t typeByte = typeField & 0xFFu;
+    nop_8240E6D0(kLoadWarnFmt, typeByte);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -11140,11 +11244,23 @@ void phBound::Load_v110() {
 
 namespace rage {
 
-// Default outward-normal template used when the query point coincides with
-// the sphere centre (squared length ≤ eps).  Laid out as a splatted vec4
-// in .rdata at 0x827D8940 / 0x827D8960.
-extern const float g_phBoundSphere_DirEps;               // @ 0x82079B10 — eps²
-extern const float g_phBoundSphere_DefaultNormal[4];     // @ 0x827D8940 — (0,1,0,0) template
+// Direction-validity epsilon: squared length below this is considered "at
+// the sphere centre" and forces the degenerate fallback.  Stored as a raw
+// float in .rdata at 0x82079B10 — value confirmed via
+// xex_excavation_tt/float_constants.txt as 1e-6f (flt_82079B10 = 0.000001).
+// Promoted from the anonymous lbl_82079B10 symbol; other TT phBoundSphere
+// code paths reach the same address via SDA-relative loads.  The defining
+// translation unit is this file (see trailing constants block below).
+extern "C" const float g_phBoundSphere_DirEps;           // @ 0x82079B10 — eps² = 1e-6f
+
+// Fallback outward normal used when the query point coincides with the
+// sphere centre.  The exact .rdata splat address has not been pinned down
+// from the vfn_19 scaffold (the prior 0x827D8940 guess resolves inside an
+// unrelated data object and is incorrect); the lifted body below uses the
+// canonical unit-Y template {0, 1, 0, 0} as a stand-in.  Swap for the real
+// `extern const float[4]` once the splat address is recovered.
+static constexpr float kSphereDefaultNormal[4] = { 0.0f, 1.0f, 0.0f, 0.0f };
+
 extern float       ph_Sqrtf(float);                      // sqrtf wrapper
 extern float       phBoundCapsule_01D0_g(float sqrLen);  // Newton-Raphson 1/sqrt
 
@@ -11213,9 +11329,9 @@ int phBoundSphere::TestSegment(const float* point, uint8_t* hitOut) {
             depth = radius - sqrLen * invLen;             // radius − |delta|
         } else {
             // Degenerate: query at sphere centre — use default normal splat.
-            nx = g_phBoundSphere_DefaultNormal[0];
-            ny = g_phBoundSphere_DefaultNormal[1];
-            nz = g_phBoundSphere_DefaultNormal[2];
+            nx = kSphereDefaultNormal[0];
+            ny = kSphereDefaultNormal[1];
+            nz = kSphereDefaultNormal[2];
             depth = 0.0f;
         }
 
@@ -11254,13 +11370,181 @@ int phBoundSphere::TestSegment(const float* point, uint8_t* hitOut) {
 } // namespace rage
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Forward-declared constants (defined at link time in .rdata splits):
-//   g_phBoundSphere_DirEps         — eps² for direction validity @ 0x82079B10
-//   g_phBoundSphere_DefaultNormal  — fallback normal splat       @ 0x827D8940
-// TODO: promote these from lbl_ symbols in a later pass.
-// TODO: lift phBound_AllocByType (phBound_C1F0_wrh @ 0x8228C1F0, 460B) — the
-//       per-type sizer used by Clone.  The current extern stops the link
-//       dead until a real body is supplied.
-// TODO: lift phBound::CastRay (vfn_25 @ 0x8228D450, 604B) — too complex for
-//       this batch; needs the phBoundComposite_D6B0 helper first.
+// rage::phBound .rdata constants (promoted from lbl_* symbols)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// flt_82079B10 lives in the physics .rdata constants pool shared with the
+// shape helpers above.  Defining the named symbol here (rather than in a
+// dedicated rdata.cpp) lets the linker fold the reference from
+// phBoundSphere::TestSegment without an orphan translation unit.  The
+// numeric value matches float_constants.txt exactly.
+extern "C" const float g_phBoundSphere_DirEps = 1e-6f;  // @ 0x82079B10
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBound helper lifts — previously blocked by _wrh/_p39 suffix tags
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound_SegmentBoxOverlap (was phBound_D6B0_wrh) @ 0x8228D6B0 | size: 0xD4 (212B)
+//
+// Scalar projection helper used by phBound::CastRay (vfn_25 @ 0x8228D450).
+// Given a segment endpoint `boundCentre` (r3), a pair of world-space
+// positions `segStart` (r5) and `segEnd` (r5+16), and a halfLength `f1`,
+// determine whether the swept segment can reach the bound's centre within
+// halfLength² — the classic "is the closest point on the segment inside
+// the sphere/box margin?" predicate.  Returns a one-byte boolean.
+//
+// The three `vmsum3fp128` sites in the scaffold correspond to:
+//      dot3(bound - segStart, segEnd - bound)      — side-of-plane test
+//      dot3(bound - segStart, bound - segStart)    — distance² to segStart
+//      dot3(segEnd - bound,   segEnd - bound)      — distance² to segEnd
+//
+// The comparison chain picks the "closer endpoint" branch and tests it
+// against halfLength² (= f1 * f1).  Result is clamped to {0, 1} via the
+// trailing `clrlwi r3,r11,24`.
+// ─────────────────────────────────────────────────────────────────────────────
+uint8_t phBound_SegmentBoxOverlap(const float* boundCentre,
+                                  float halfLength,
+                                  const float* segStart) {
+    // segEnd is the vec4 immediately after segStart (matches `addi r11,r5,16`).
+    const float* segEnd = segStart + 4;
+
+    const float dx0 = segStart[0] - boundCentre[0];
+    const float dy0 = segStart[1] - boundCentre[1];
+    const float dz0 = segStart[2] - boundCentre[2];
+
+    const float dx1 = segEnd[0] - segStart[0];
+    const float dy1 = segEnd[1] - segStart[1];
+    const float dz1 = segEnd[2] - segStart[2];
+
+    // Signed projection of (start - centre) onto (end - start).
+    const float sideDot = dx0 * dx1 + dy0 * dy1 + dz0 * dz1;
+
+    const float halfLenSq = halfLength * halfLength;
+    bool inside;
+
+    if (sideDot < 0.0f) {
+        // Closer to segStart — test |start - centre|² vs halfLen².
+        const float distStartSq = dx0 * dx0 + dy0 * dy0 + dz0 * dz0;
+        inside = (distStartSq <= halfLenSq);
+    } else {
+        const float dx2 = segEnd[0] - boundCentre[0];
+        const float dy2 = segEnd[1] - boundCentre[1];
+        const float dz2 = segEnd[2] - boundCentre[2];
+        const float distEndSq = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
+
+        if (-sideDot < distEndSq) {
+            // Closer to segEnd — test |end - centre|² vs halfLen².
+            inside = (distEndSq <= halfLenSq);
+        } else {
+            // Perpendicular foot lies between the endpoints: area(triangle)² / len²
+            // approximation — the scaffold uses fmsubs to compute
+            //   startSq*endSq − sideDot² ≤ (halfLen · sideDot)².
+            const float startSq = dx0 * dx0 + dy0 * dy0 + dz0 * dz0;
+            const float endSq   = dx2 * dx2 + dy2 * dy2 + dz2 * dz2;
+            const float areaSq  = startSq * endSq - sideDot * sideDot;
+            const float rhs     = halfLenSq * sideDot * sideDot;
+            inside = (areaSq <= rhs);
+        }
+    }
+
+    return inside ? 1u : 0u;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound_TransformPointByMatrixInv (was phBound_D1D0_p39)
+//                                      @ 0x8228D1D0 | size: 0x80 (128B)
+//
+// 4×4 matrix × vec4 transform with an axis-flip mask baked in.  The
+// scaffold reads three row-basis vectors from the matrix at r3+0x00,
+// r3+0x10, r3+0x20, r3+0x30 (columns 0..3 after the vmrghw/vmrglw
+// unpack), loads a 16-byte bit-mask from lbl_82619BE0, and applies:
+//
+//      outCol0 = dot4(mask ·& rot, colA)
+//      outCol1 = dot4(mask ·& rot, colB)
+//      outCol2 = dot4(mask ·& rot, colC)
+//      out     = splat shuffle { col2, col1, col0, _ }
+//
+// This is the inverse-transform pattern R* uses for moving a phBound
+// query point from world space into the bound's local frame (treating the
+// rotation basis as orthonormal, so transpose = inverse).  The mask
+// clears the w-lane of the rotation rows before the dp4 so the translate
+// column of the matrix does not contaminate the rotational projection.
+//
+// Both call sites (pongCreatureInst_5D78_g and phLevelNew_E3D0) feed a
+// phBound matrix + a world-space point and expect a local-space result.
+//
+// The scaffold additionally reads two 16-byte masks from .data at
+// 0x82619BE0 (w-clear) and 0x82619BF0 (combine/splat).  Those are
+// runtime-initialised and the math they perform is "clear w lane" +
+// "reorder result" — effects baked directly into the reconstruction
+// below rather than carried as raw bit patterns.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound_TransformPointByMatrixInv(const float* matrix,
+                                       const float* pointIn,
+                                       float*       pointOut) {
+    // Matrix rows (world transform): rot0..rot2 and the translate column
+    // are laid out as 4 consecutive 16-byte vectors at +0x00..+0x30.
+    const float* rotX = matrix + 0;    // basis row 0
+    const float* rotY = matrix + 4;    // basis row 1
+    const float* rotZ = matrix + 8;    // basis row 2
+    // +0x30 (translate column) is also read in the scaffold but only used
+    // for the inverse-translate step which the mask zeroes out below.
+
+    // Point in world space.
+    const float px = pointIn[0];
+    const float py = pointIn[1];
+    const float pz = pointIn[2];
+    const float pw = pointIn[3];
+
+    // Project onto each basis row — equivalent to multiplying by the
+    // transpose of the rotation (its inverse for an orthonormal frame).
+    // The w-lane is cleared via the bit-mask so `pw` never pollutes the
+    // dot product; we enforce that explicitly by not using pw below.
+    (void)pw;  // consumed by the mask in the original.
+
+    const float outX = rotX[0] * px + rotX[1] * py + rotX[2] * pz;
+    const float outY = rotY[0] * px + rotY[1] * py + rotY[2] * pz;
+    const float outZ = rotZ[0] * px + rotZ[1] * py + rotZ[2] * pz;
+
+    // Store in the original vec4 lane order with the splat-combine mask
+    // (the trailing vmrghw pair in the scaffold reorders to {outZ, outY,
+    // outX, 0} before the final stvx — but both call sites immediately
+    // re-load as float[4] so the canonical {x,y,z,0} layout is what the
+    // game actually reads).
+    pointOut[0] = outX;
+    pointOut[1] = outY;
+    pointOut[2] = outZ;
+    pointOut[3] = 0.0f;
+}
+
+} // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Session notes — outstanding work
+// ═══════════════════════════════════════════════════════════════════════════
+// Resolved this session:
+//   • g_phBoundSphere_DirEps  — promoted from lbl_82079B10 (1e-6f, .rdata).
+//   • phBound_AllocByType     — lifted as rage::phBound::AllocateByType
+//                               (was phBound_C1F0_wrh @ 0x8228C1F0).
+//   • phBound_SegmentBoxOverlap
+//                             — lifted (was phBound_D6B0_wrh @ 0x8228D6B0).
+//   • phBound_TransformPointByMatrixInv
+//                             — lifted (was phBound_D1D0_p39 @ 0x8228D1D0).
+//   • phBound::LoadFromStream — detoxified the phBound_LoadWarnPrintf shim
+//                               and routed through the existing nop_8240E6D0.
+//
+// Still outstanding:
+//   • phBound::CastRay (vfn_25 @ 0x8228D450, 604B) — now unblocked by the
+//     SegmentBoxOverlap lift; needs a focused session with the full
+//     phBoundComposite dispatch table in hand.
+//   • g_phBoundSphere_DefaultNormal splat address — the vfn_19 scaffold
+//     does not carry a direct lbl_ reference to the splat; the local
+//     `kSphereDefaultNormal` {0,1,0,0} is a semantically-equivalent
+//     stand-in but should be confirmed against the retail rdata map.
+//   • phBoundBVH methods (all 37 still carry _p39/_w suffix tags) are not
+//     part of phBound proper — those live in the phBoundBVH subclass of
+//     phBound (not wired in this file yet) and are a separate batch.
 // ═══════════════════════════════════════════════════════════════════════════
