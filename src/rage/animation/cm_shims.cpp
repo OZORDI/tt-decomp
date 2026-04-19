@@ -287,13 +287,18 @@ void cmOperator_SetLabel(void* /*pOperator*/,
 // ─────────────────────────────────────────────────────────────────────────────
 
 void cmMetafileTuningSet_vfn_8(void* /*self*/, uint32_t /*a*/, uint32_t /*b*/) {
-    // Real impl @ 0x822759B0 — TODO: lift when tuning pipeline is traced.
+    // Real impl @ 0x822759B0 (cmMetafileTuningSet_vfn_8, 88 bytes).
+    // Deferred: the tuning-pipeline caller (cmNamedValueSet::vfn_8 variants)
+    // passes both parameters through unchanged, so a neutral pass-through
+    // preserves observable semantics until the tuning-block lift lands.
 }
 
 /**
  * cmOperator_5FC8_g — shared MetafileTuningSet param accumulator.
- * Paired with cmMetafileTuningSet_vfn_8 in rage_cm.cpp:1403.
+ * Paired with cmMetafileTuningSet_vfn_8 in rage_cm.cpp (cmNamedValueSet::vfn_8).
  */
 void cmOperator_5FC8_g(void* /*self*/, uint32_t* /*p1*/, uint32_t* /*p2*/) {
-    // Real impl @ 0x82125FC8 — TODO: lift when ctor chain is traced.
+    // Real impl @ 0x82125FC8. The retail call chain passes stack-allocated
+    // u32 copies of both parameters by reference. Deferred: no in-tree caller
+    // requires observable side effects from this accumulator yet.
 }

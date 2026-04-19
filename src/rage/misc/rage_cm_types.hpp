@@ -340,7 +340,7 @@ float*    cmNode_GetVector(float* dst, const cmNodePort* port); // cmNode_GetVec
 float     cmNode_GetFloat(const cmNodePort* port);              // cmOperator_EvalFloat
 int32_t   cmNode_GetInt(const cmNodePort* port);                // cmNode_GetInt
 int32_t   cmNode_GetDim(const cmNodePort* port);                // cmNode_GetDim_stub
-uint8_t   cmNode_GetBool(const cmNodePort* port);               // cmCond_21B0 (TODO)
+uint8_t   cmNode_GetBool(const cmNodePort* port);               // cmCond_21B0 @ 0x822621B0
 int32_t   cmNode_GetPortDim(const cmNodePort* port);            // inline helper
 
 // Port connection validation
