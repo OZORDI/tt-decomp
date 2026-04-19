@@ -510,18 +510,18 @@ struct phArticulatedCollider {
 struct phBound {
     void**      vtable;           // +0x00
 
-    virtual void SetType(uint8_t type);          // [1] @ 0x8228CE18
-    virtual uint8_t GetType();                    // [2] @ 0x8228CE20
-    virtual void CalcAABB();                       // [3] @ 0x8228D0E8  — transform AABB by matrix
-    virtual void SetCentroidOffset();              // [6] @ 0x8228D178  — store centroid, set flag
-    virtual void GetInertia();                     // [9] @ 0x8228CE38  — write inertia to output
-    virtual void DebugDraw();                      // [14] @ 0x8228D2F0 — draw via display object
-    virtual void CastRay();                        // [25] @ 0x8228D450 — ray/bound intersection
-    virtual void CollideDispatch();                // [27] @ 0x8228D978 — dispatch by collision type
-    virtual float GetMargin(void*, bool useOuter); // [33] @ 0x8228D9F8
-    virtual void CopyFrom();                       // [34] @ 0x8228DA18 — copy bound from source
-    virtual void Clone();                          // [35] @ 0x8228DB08 — allocate and copy bound
-    virtual void LoadFromStream();                 // [37] @ 0x8228D438 — load bound version 110
+    virtual void SetType(uint8_t type);                     // [1] @ 0x8228CE18
+    virtual uint8_t GetType();                              // [2] @ 0x8228CE20
+    virtual void CalcAABB();                                // [3] @ 0x8228D0E8  — transform AABB by matrix
+    virtual void SetCentroidOffset(const float* centroid);  // [6] @ 0x8228D178  — store centroid, set flag
+    virtual void GetInertia(float* outInertiaXYZ);          // [9] @ 0x8228CE38  — write inertia to output
+    virtual void DebugDraw();                               // [14] @ 0x8228D2F0 — draw via display object
+    virtual int  CastRay(const void* ray, void* hitOut);    // [25] @ 0x8228D450 — ray/bound intersection
+    virtual int  CollideDispatch(void* other);              // [27] @ 0x8228D978 — dispatch by collision type
+    virtual float GetMargin(void*, bool useOuter);          // [33] @ 0x8228D9F8
+    virtual void CopyFrom(const phBound* src);              // [34] @ 0x8228DA18 — copy bound from source
+    virtual phBound* Clone();                               // [35] @ 0x8228DB08 — allocate and copy bound
+    virtual void LoadFromStream();                          // [37] @ 0x8228D438 — load bound version 110
 
     // debug string: "phBound::Load_v110 - not defined for this bound type (%d)"
     void Load_v110();
@@ -1206,8 +1206,8 @@ struct phBoundSphere {
     virtual void GetMaterialIndex();     // [12] @ 0x82295498
     virtual void SetMaterialIndex();     // [13] @ 0x822954A0
     virtual void DebugDraw();            // [14] @ 0x8233A8F8
-    virtual void ContainsPoint();        // [18] @ 0x82295C70
-    virtual void TestSegment();          // [19] @ 0x82295DC8
+    virtual void ContainsPoint();                           // [18] @ 0x82295C70
+    virtual int  TestSegment(const float* point, uint8_t* hitOut); // [19] @ 0x82295DC8
     virtual void TestMovingSphere();     // [20] @ 0x82295FA0
     virtual void TestAABBOverlap();      // [21] @ 0x82296300
     virtual void TestSweep();            // [22] @ 0x82296438

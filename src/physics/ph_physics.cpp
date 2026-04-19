@@ -10932,3 +10932,335 @@ extern "C" void pongDrawBucket_AddEntry(void* bucket, void* entry,
                                         void* phaseMask) {
     (void)bucket; (void)entry; (void)phaseMask;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBound — base-class virtual method implementations
+//
+// These are the defaults reached when a derived bound (phBoundSphere,
+// phBoundCapsule, phBoundBox, phBoundGeometry, phBoundComposite…) did not
+// override the slot.  The vtable of rage::phBound lives at .rdata 0x82057EF4.
+// Methods already lifted above:  SetType (vfn_1), GetType (vfn_2),
+//                                CalcAABB (vfn_3), GetMargin (vfn_33).
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::SetCentroidOffset (vfn_6 / slot 6) @ 0x8228D178 | size: 0x3c (60B)
+//
+// Stores a centroid-offset vector at +0x30 and records whether any of the
+// XYZ lanes is non-zero in the +0x05 flag byte (m_bHasOffset).  The W lane
+// is masked out via the XYZ mask constant at 0x8202D420 before the compare
+// so pure translation offsets that only live in XYZ correctly toggle the
+// flag.
+//
+//   vand v0,v0,g_phXYZMask    ⇒ keep xyz, clear w
+//   vcmpeqfp. v13,vzero,v0    ⇒ per-lane equals-zero
+//   mfocrf + not + rlwinm 25  ⇒ extract "any non-zero" → {0,1}
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::SetCentroidOffset(const float* centroid) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    // Copy vec4 into the bound's centroid slot at +0x30.
+    float* dst = reinterpret_cast<float*>(self + 0x30);
+    dst[0] = centroid[0];
+    dst[1] = centroid[1];
+    dst[2] = centroid[2];
+    dst[3] = centroid[3];
+
+    // Flag = any-xyz-nonzero (W lane is ignored).
+    const uint32_t* u = reinterpret_cast<const uint32_t*>(centroid);
+    const bool hasOffset = ((u[0] | u[1] | u[2]) != 0u);
+    self[5] = hasOffset ? 1u : 0u;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::GetInertia (vfn_9 / slot 9) @ 0x8228CE38 | size: 0x18 (24B)
+//
+// Default inertia for a bound that did not supply one: writes zero into the
+// first three float slots of the caller-supplied output (diagonal of the
+// inertia tensor).  The constant at 0x8202D108 is float 0.0f.
+//
+//   WAIT — the recomp shows the store target is r3 (this).  In C++ terms
+//   the base writes the self's own inertia cache at +0x00..+0x08.  Subclasses
+//   override and compute a real inertia for their shape.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::GetInertia(float* outInertiaXYZ) {
+    // stfs f0,0(r3) / 4(r3) / 8(r3) — writes go to the first three float
+    // slots of the target.  The header declares the target as an output
+    // param; the recomp actually uses the bound itself as the target, but
+    // both are aligned because r3 == this == outInertiaXYZ at the call site
+    // when subclasses invoke `bound->GetInertia(bound)`.  Accept either
+    // form by honouring the explicit output pointer.
+    float* dst = (outInertiaXYZ != nullptr)
+        ? outInertiaXYZ
+        : reinterpret_cast<float*>(this);
+    dst[0] = 0.0f;
+    dst[1] = 0.0f;
+    dst[2] = 0.0f;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::DebugDraw (vfn_14 / slot 14) @ 0x8228D2F0 | size: 0x18 (24B)
+//
+// Delegates debug rendering of the bound to the global display object's
+// vtable slot 9 (byte offset 36).  The display object ptr lives at SDA
+// g_display_obj_ptr.  The call is a tail-dispatch: this becomes arg1 of
+// the target after the indirect branch.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::DebugDraw() {
+    void* displayObj = g_display_obj_ptr;
+    if (displayObj == nullptr) {
+        return;
+    }
+    void** vt = *reinterpret_cast<void***>(displayObj);
+    typedef void (*DrawBoundFn)(void* disp, phBound* bound);
+    reinterpret_cast<DrawBoundFn>(vt[9])(displayObj, this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::CollideDispatch (vfn_27 / slot 27) @ 0x8228D978 | size: 0x80 (128B)
+//
+// Bound-type-multiplexed collision dispatch.  The type byte is loaded
+// indirectly:  r11 = *(other + 0x42A4);  type = *(r11 + 4);   then vtable
+// slot (28 + type) on THIS bound is tail-called with (this, other).
+// Types > 3 produce no collision (return 0).
+//
+//   type 0  →  vtable[28]   (sphere-vs-X)   byte +112
+//   type 1  →  vtable[29]   (capsule-vs-X)  byte +116
+//   type 2  →  vtable[30]   (box-vs-X)      byte +120
+//   type 3  →  vtable[31]   (geometry-vs-X) byte +124
+//   else    →  return 0
+//
+// The 0x42A4 offset on the "other" pointer indicates the type resolver is
+// a phMaterialHandle or similar proxy embedded inside the opposing object.
+// ─────────────────────────────────────────────────────────────────────────────
+int phBound::CollideDispatch(void* other) {
+    if (other == nullptr) {
+        return 0;
+    }
+
+    // Fetch the bound-type selector the same way the recomp does:
+    //   r11 = *(other + 17060);   type = *(r11 + 4)
+    uint8_t* otherBytes = reinterpret_cast<uint8_t*>(other);
+    void* selector = *reinterpret_cast<void**>(otherBytes + 17060);
+    if (selector == nullptr) {
+        return 0;
+    }
+    const uint8_t type = *(reinterpret_cast<uint8_t*>(selector) + 4);
+    if (type > 3) {
+        return 0;
+    }
+
+    void** vt = *reinterpret_cast<void***>(this);
+    typedef int (*CollideFn)(phBound* self, void* other);
+    const uint32_t slot = 28u + static_cast<uint32_t>(type);
+    return reinterpret_cast<CollideFn>(vt[slot])(this, other);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::CopyFrom (vfn_34 / slot 34) @ 0x8228DA18 | size: 0x34 (52B)
+//
+// Deep-copies the base-bound payload from a source bound via util_DA50
+// (the shared rage::phBound bytewise copy @ 0x8228DA50) and then resets
+// the reference count to 1 at +0x60 (m_nRefCount, 16-bit).  Subclasses
+// (phBoundCapsule::CopyFrom @ 0x822A2F28 …) chain extra field copies
+// after calling this base helper.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::CopyFrom(const phBound* src) {
+    util_DA50(this, src);                       // bytewise base copy
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+    *reinterpret_cast<uint16_t*>(self + 96) = 1u;  // m_nRefCount = 1
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::Clone (vfn_35 / slot 35) @ 0x8228DB08 | size: 0x54 (84B)
+//
+// Allocator-aware clone:
+//   1. size = phBound_C1F0_wrh(GetType())       — look up shape byte-size
+//   2. newBound = operator new(size) equivalent — handled by helper
+//   3. newBound->vfn_34(this)                    — copy via CopyFrom vtable slot 34
+//   4. return newBound
+//
+// The sizer helper is non-virtual and shared across phBound subclasses.
+// Exposed via extern declaration below because the 460-byte lookup table
+// body lives in a later lift batch.
+// ─────────────────────────────────────────────────────────────────────────────
+extern phBound* phBound_AllocByType(uint8_t boundType);  // @ 0x8228C1F0 (phBound_C1F0_wrh)
+
+phBound* phBound::Clone() {
+    const uint8_t type = *(reinterpret_cast<uint8_t*>(this) + 7);
+    phBound* copy = phBound_AllocByType(type);
+    if (copy == nullptr) {
+        return nullptr;
+    }
+
+    // vtable slot 34 (byte +136) of the newly-allocated bound → CopyFrom(this).
+    void** vt = *reinterpret_cast<void***>(copy);
+    typedef void (*CopyFromFn)(phBound* self, const phBound* src);
+    reinterpret_cast<CopyFromFn>(vt[34])(copy, this);
+    return copy;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::LoadFromStream (vfn_37 / slot 37) @ 0x8228D438 | size: 0x14 (20B)
+//
+// Base-class stub for the version-110 load dispatcher.  Emits the warning
+// "phBound::Load_v110 - not defined for this bound type (%d)" via the
+// printf shim at 0x8240E6D0 (a no-op in this build, lifted as
+// nop_8240E6D0 elsewhere) and returns.  Subclasses override and parse
+// their bound-specific fields from the resource stream.
+// ─────────────────────────────────────────────────────────────────────────────
+extern void phBound_LoadWarnPrintf(const char* fmt, uint32_t typeId);  // nop shim
+
+void phBound::LoadFromStream() {
+    static const char kLoadWarnFmt[] =
+        "phBound::Load_v110 - not defined for this bound type (%d)";
+    const uint32_t typeByte = *(reinterpret_cast<uint8_t*>(this) + 4);
+    phBound_LoadWarnPrintf(kLoadWarnFmt, typeByte);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBound::Load_v110 (non-virtual helper) @ 0x8228D438 alias
+//
+// Convenience trampoline named after the debug-string hint so call sites
+// that invoke the non-virtual path reach the same shim.  In the real
+// binary this name is the mangled form of the virtual slot 37; we keep a
+// thin wrapper so existing callers resolve cleanly.
+// ─────────────────────────────────────────────────────────────────────────────
+void phBound::Load_v110() {
+    this->LoadFromStream();
+}
+
+} // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// rage::phBoundSphere — additional virtual methods
+// ═══════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// Default outward-normal template used when the query point coincides with
+// the sphere centre (squared length ≤ eps).  Laid out as a splatted vec4
+// in .rdata at 0x827D8940 / 0x827D8960.
+extern const float g_phBoundSphere_DirEps;               // @ 0x82079B10 — eps²
+extern const float g_phBoundSphere_DefaultNormal[4];     // @ 0x827D8940 — (0,1,0,0) template
+extern float       ph_Sqrtf(float);                      // sqrtf wrapper
+extern float       phBoundCapsule_01D0_g(float sqrLen);  // Newton-Raphson 1/sqrt
+
+// ─────────────────────────────────────────────────────────────────────────────
+// phBoundSphere::TestSegment (vfn_19 / slot 19)
+//                                          @ 0x82295DC8 | size: 0x1D4 (468B)
+//
+// Despite the "TestSegment" naming inferred from the header, the real body
+// implements a degenerate point-inside-sphere test that populates a hit
+// descriptor when the query point is contained.  Caller passes a vec4
+// "point" (treated as a zero-length segment) and a 72-byte hit output.
+// Used by phBoundComposite + the collision manager when building contact
+// lists for sphere-vs-point queries.
+//
+// Algorithm:
+//   1. delta = point - (m_bHasOffset ? centroid : 0)
+//   2. sqrLen = dot3(delta, delta)
+//   3. sqrRad = radius * radius                    (radius @ +0x08)
+//   4. If sqrLen > sqrRad: return 0 (miss — point outside sphere)
+//   5. If hitOut != nullptr, fill the record:
+//        +16..+31 : world contact point = point + normal*depth
+//        +32..+47 : outward normal (unit vector)
+//        +48      : 0.0f
+//        +52      : penetration depth (radius − |delta|)
+//        +56      : material index (sphere stores at +0x80)
+//        +60      : feature id = 0xFFFFFFFF
+//        +64..+70 : flags / body-type code / edge id / reserved
+//   6. return 1
+// ─────────────────────────────────────────────────────────────────────────────
+int phBoundSphere::TestSegment(const float* point, uint8_t* hitOut) {
+    uint8_t* self = reinterpret_cast<uint8_t*>(this);
+
+    // Step 1: delta = point - (optional centroid offset)
+    float dx = point[0];
+    float dy = point[1];
+    float dz = point[2];
+    const float pw = point[3];
+    if (self[5] != 0) {                                   // m_bHasOffset
+        const float* c = reinterpret_cast<const float*>(self + 0x30);
+        dx -= c[0];
+        dy -= c[1];
+        dz -= c[2];
+    }
+
+    // Step 2 & 3: squared-length vs squared-radius (vmsum3fp128 equivalent).
+    const float sqrLen = dx * dx + dy * dy + dz * dz;
+    const float radius = *reinterpret_cast<const float*>(self + 8);
+    const float sqrRad = radius * radius;
+
+    // Step 4: miss?
+    if (sqrLen > sqrRad) {
+        return 0;
+    }
+
+    // Step 5: fill hit record if requested.
+    if (hitOut != nullptr) {
+        float nx, ny, nz;
+        float depth;
+
+        if (sqrLen > g_phBoundSphere_DirEps) {
+            // Newton-Raphson refined reciprocal sqrt.
+            const float invLen = phBoundCapsule_01D0_g(sqrLen);
+            nx = dx * invLen;
+            ny = dy * invLen;
+            nz = dz * invLen;
+            depth = radius - sqrLen * invLen;             // radius − |delta|
+        } else {
+            // Degenerate: query at sphere centre — use default normal splat.
+            nx = g_phBoundSphere_DefaultNormal[0];
+            ny = g_phBoundSphere_DefaultNormal[1];
+            nz = g_phBoundSphere_DefaultNormal[2];
+            depth = 0.0f;
+        }
+
+        float*    hitf = reinterpret_cast<float*>(hitOut);
+        uint32_t* hitu = reinterpret_cast<uint32_t*>(hitOut);
+        uint16_t* hith = reinterpret_cast<uint16_t*>(hitOut);
+
+        // +16..+31 : world contact point.
+        hitf[4] = point[0] + nx * depth;
+        hitf[5] = point[1] + ny * depth;
+        hitf[6] = point[2] + nz * depth;
+        hitf[7] = pw;
+
+        // +32..+47 : outward normal.
+        hitf[8]  = nx;
+        hitf[9]  = ny;
+        hitf[10] = nz;
+        hitf[11] = 0.0f;
+
+        // +48..+55 : pad + depth.
+        hitf[12] = 0.0f;
+        hitf[13] = depth;
+
+        // +56..+71 : material / flags / body-type / reserved.
+        hitu[14] = *reinterpret_cast<uint32_t*>(self + 0x80);  // material idx
+        hitu[15] = 0xFFFFFFFFu;                                // feature id
+        hith[32] = 0x0000;                                     // flags lo
+        hith[33] = 0x0002;                                     // body type = sphere
+        hitOut[68] = 0x00;                                     // edge id
+        hith[35] = 0x0000;                                     // reserved
+    }
+
+    return 1;
+}
+
+} // namespace rage
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Forward-declared constants (defined at link time in .rdata splits):
+//   g_phBoundSphere_DirEps         — eps² for direction validity @ 0x82079B10
+//   g_phBoundSphere_DefaultNormal  — fallback normal splat       @ 0x827D8940
+// TODO: promote these from lbl_ symbols in a later pass.
+// TODO: lift phBound_AllocByType (phBound_C1F0_wrh @ 0x8228C1F0, 460B) — the
+//       per-type sizer used by Clone.  The current extern stops the link
+//       dead until a real body is supplied.
+// TODO: lift phBound::CastRay (vfn_25 @ 0x8228D450, 604B) — too complex for
+//       this batch; needs the phBoundComposite_D6B0 helper first.
+// ═══════════════════════════════════════════════════════════════════════════
