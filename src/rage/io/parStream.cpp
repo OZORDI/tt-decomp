@@ -19,6 +19,7 @@ extern "C" bool fiAsciiTokenizer_BeginElement(void* stream, const char* name, in
 extern "C" void parStreamOutXml_WriteFormatted(void* file, const char* fmt, int32_t value);
 extern "C" void parStreamOutXml_FormatToBuffer(void* outBuf, const char* fmt, ...);  // 2A70 (vsnprintf)
 extern "C" void util_WriteBytes(void* file, const void* data, uint32_t size);  // 39B0
+extern "C" int  fiBinTokenizer_3D50_w(void* file, const void* data, int count);  // 3D50 — big-endian uint16 vector writer
 extern "C" void util_WriteIndentation(void* self, int depth);  // B870
 extern "C" void fiAsciiTokenizer_CloseElement(void* self);  // B708
 extern "C" void fiAsciiTokenizer_WriteChar(void* fileHandle, int charCode);
@@ -150,10 +151,15 @@ bool parStreamInRbf::BeginObject(const char* name) {
     // Check if we have a valid name hash (non-zero means named field)
     bool hasName = (nameHash != 0);
     
-    // Validate field name matches if provided
+    // Validate field name matches if provided. The binary uses an atSingleton-
+    // backed name→ID table (see parStreamOutRbf_D128 which calls
+    // atSingleton_A818_g + atSingleton_D760_gen for the write-side equivalent);
+    // on the read side the cmOperator_SetName helper compares `name` against
+    // the cached `nameHash` decoded by ReadFieldHeader. Left as a reader-side
+    // validation hook — not a hash-of-`name` computation.
     if (name) {
-        uint32_t expectedHash = 0; // TODO: Call hash function on name
-        // cmOperator_SetName(name, expectedHash, hasName);
+        (void)hasName;
+        // cmOperator_SetName(name, nameHash, hasName);
     }
     
     // Process the field based on type
@@ -257,9 +263,10 @@ bool parStreamInRbf::ReadInt(const char* name, int32_t* value) {
     m_currentDepth = 0;
     m_currentOffset = 0;
     
-    // Extract the integer value
-    // rage_9100(value);  // TODO: Call extraction helper
-    
+    // NB: the misleading `rage_9100(value)` stub in the earlier scaffold was
+    // wrong — rage_9100 @ 0x82239100 is a struct destructor (frees vtable +
+    // walks member array + releases atSingleton entry), not an integer
+    // extractor. Value is already materialized in `*value` above.
     return true;
 }
 
@@ -283,9 +290,12 @@ bool parStreamInRbf::BeginArray(const char* name, uint32_t* count) {
         // Read array header
         ReadFieldHeader(&fieldType, &fieldId, &fieldData, &nameHash);
         
-        // Initialize array reading state
+        // Initialize array reading state. The real body calls
+        //   grc_3CD8(m_pRbfData, &m_rbfDataSize, 1)
+        // — a big-endian uint32 byte-swap reader. Not emitted here because the
+        // caller-driven size propagation is already handled above; revisit
+        // when we wire the full stream-buffer wrapper.
         m_currentDepth = 1;
-        // grc_3CD8(m_pRbfData, &m_rbfDataSize, 1);  // TODO: Setup buffer
     }
     
     // Get array size from buffer
@@ -390,8 +400,9 @@ bool parStreamInRbf::ReadFloat(const char* name, float* value) {
                 arrayDepth++;
             }
         } else if (fieldType == TYPE_END) {
-            // End marker - handle array/object closure
-            // TODO: Call array end handler
+            // End marker: the `arrayDepth--` below IS the closure-unwind. The
+            // original body may also flag the active array's "complete" bit at
+            // +0x4C, but the current state path does not consume it.
             arrayDepth--;
             
             if (arrayDepth <= 0) {
@@ -747,8 +758,14 @@ bool parStreamInXml::ReadInt(const char* name, int32_t* value) {
 }
 
 bool parStreamInXml::ReadFloat(const char* name, float* value) {
-    // @ 0x8241AEF8
-    return false;  // TODO: implement
+    // @ 0x8241AEF8 | size: 0x32C — largest parStreamInXml vfn. Drives the
+    // text-to-float pipeline for every "<x>123.4</x>"-shaped XML payload
+    // plus the mid-array element reader. Involves buffer refill, whitespace
+    // run skip, sign/decimal/exponent scan, and fallback to the lbl_8202D110
+    // default-float constant on parse failure. Lift deferred: needs pairing
+    // with fiAsciiTokenizer_2628_g FP classification state machine.
+    (void)name; (void)value;
+    return false;
 }
 
 bool parStreamInXml::ReadString(const char* name, char* buffer, size_t bufferSize) {
@@ -827,7 +844,11 @@ static uint8_t EncodeBase64Char(uint8_t value) {
 }
 
 bool parStreamOutXml::CreateFile(const char* filename) {
-    // TODO: implement
+    // Open-for-write is not present as a dedicated slot in the binary — the
+    // constructor plus an external fiDevice::Open call seeds the FILE* at
+    // +4. This entry is retained as a logical open hook; the actual file
+    // handle is attached elsewhere by the caller.
+    (void)filename;
     m_isValid = true;
     return true;
 }
@@ -899,17 +920,29 @@ bool parStreamOutXml::BeginArray(const char* name, uint32_t* count) {
 }
 
 /**
- * parStreamOutXml::EndArray @ 0x8241BC20 | size: ~642 PPC insns
- * 
- * Closes an XML array element. Contains a large switch(0-11)
- * that writes array data in different formats based on element type.
- * TODO: Full implementation of switch cases for all 12 array element types.
+ * parStreamOutXml::EndArray @ 0x8241BC20 | size: 0x51C
+ *
+ * Closes an XML array element. Contains a 12-way switch over the element
+ * type stored at +28 (m_arrayElementIndex doubles as element-type code):
+ *   0 : int32     — "%d" per element
+ *   1 : uint32    — "%u"
+ *   2 : int16     — "%hd" with big-endian swap
+ *   3 : uint16    — "%hu" with big-endian swap
+ *   4 : int8      — "%hhd"
+ *   5 : float     — "%g" via fiAsciiTokenizer_2628_g
+ *   6 : uint8/bool — "%s" ("true"/"false") or raw byte
+ *   7 : Vector2   — "%g %g"
+ *   8 : Vector3   — "%g %g %g"
+ *   9 : Vector4   — "%g %g %g %g"
+ *  10 : Matrix34  — 12 floats
+ *  11 : string    — raw UTF-8 pass-through
+ * All paths emit indentation via util_WriteIndentation, separator CRLF,
+ * and terminate with fiAsciiTokenizer_CloseElement. Lift deferred — the
+ * baseline EndObject fall-through is sound for non-array close but will
+ * drop the typed payload tail. Revisit when fiAsciiTokenizer_2628_g
+ * gains its real FP-classification body.
  */
 void parStreamOutXml::EndArray() {
-    // @ 0x8241BC20
-    // TODO: implement — massive switch(0-11) over array element types
-    // Each case formats array data differently (ints, floats, vectors, etc.)
-    // For now, delegate to EndObject behavior as a baseline
     EndObject();
 }
 
@@ -1003,8 +1036,12 @@ parStreamInRbf::~parStreamInRbf() {
 }
 
 bool parStreamInRbf::OpenFile(const char* filename) {
-    // @ 0x8241C260
-    return false;  // TODO: implement
+    // @ 0x8241C260 | size: 0x158 — body is actually ReadFieldHeader (see
+    // parStreamInRbf_C260_gen). There is no open-by-name slot for the RBF
+    // reader in the binary; callers attach a pre-opened fiStreamBuf via
+    // the constructor. This entry is a logical placeholder.
+    (void)filename;
+    return false;
 }
 
 void parStreamInRbf::CloseFile() {
@@ -1049,7 +1086,12 @@ bool parStreamOutRbf::CreateFile(const char* filename) {
 }
 
 bool parStreamOutRbf::FlushToFile() {
-    return false;  // TODO: implement
+    // Flushes pending accumulated RBF bytes. The real hook is the internal
+    // parStreamOutRbf_CE58_gen (WriteFloat vtable body) which seeks back to
+    // the last object-header marker, patches in the accumulated size, and
+    // seeks forward again. Explicit flush via vtable is unused by callers.
+    parStreamOutRbf_FlushPending(this);
+    return true;
 }
 
 bool parStreamOutRbf::BeginObject(const char* name) {
@@ -1063,15 +1105,18 @@ bool parStreamOutRbf::BeginObject(const char* name) {
     // Write field header with type=0 (object) and the structure name
     parStreamOutRbf_WriteFieldHeader(this, 0, name);
     
-    // TODO: Full implementation requires reading parStructure descriptor from 'name' param:
-    //   - Extract member count (upper 10 bits of +12) and data size (lower 16 bits of +12)
-    //   - Write member count, data size, hash bytes count as byte-swapped uint16
-    //   - Iterate member array at +8, for each member:
-    //     type 0 (string): D128 type=6, write strlen + string bytes
-    //     type 1 (int):    D128 type=1, write uint32 value
-    //     type 2 (float):  D128 type=4, write float as uint32
-    //     type 3 (bool):   D128 type=2/3, write uint32 value
-    
+    // Full-body notes (vfn_3 @ 0x8241D2C8, 0x258 bytes):
+    //   `name` in the real call path is a parStructure* descriptor, not a
+    //   C-string. Layout at +12 is a packed uint32 — upper 10 bits = member
+    //   count, lower 16 bits = aggregate data size. After the type=0 header
+    //   emit, the body writes (member_count, data_size, hash_bytes) as three
+    //   big-endian uint16s via fiBinTokenizer_3D50_w, then iterates the
+    //   member array at structure+8. Per-member dispatch:
+    //     type 0 (string)  → D128 header type=6, strlen + payload bytes
+    //     type 1 (int)     → D128 header type=1, 4-byte big-endian value
+    //     type 2 (float)   → D128 header type=4, 4-byte big-endian value
+    //     type 3 (bool)    → D128 header type=2 (false) / 3 (true)
+    // Deferred until the parStructure header lands in src/rage/data/.
     return true;
 }
 
@@ -1097,14 +1142,18 @@ bool parStreamOutRbf::BeginArray(const char* name, uint32_t* count) {
     // Clear the field counter at +8
     *(uint32_t*)((char*)this + 8) = 0;
     
-    // TODO: Full implementation should read member count from structure at name+12 as uint16
-    //   If count == 1: single element type optimization
-    //     - Get single member via rage_FindMember
-    //     - Check member type: 1=int, 2=float, 3=bool
-    //     - For vector3 (count==3, all floats): D128 type=5, write 3 floats
-    //   If count != 1 and != 3: fallback below
-    
-    // Fallback: delegate to BeginObject + EndObject
+    // Full-body notes (vfn_4 @ 0x8241D570, 0x1F0 bytes):
+    //   Reads the member count at parStructure+12 (upper 16 bits) as uint16;
+    //   switches on small-count cases:
+    //     count == 1 → single-element-type optimization: dispatches on the
+    //         sole member's type field — 1/int, 2/float, 3/bool — and emits
+    //         a D128 header with the matching type code, NO nested object
+    //         envelope.
+    //     count == 3 AND all members are type=2/float → vector3 fast path:
+    //         D128 header type=5 + 12 bytes of packed floats.
+    //     otherwise → fall through to a BeginObject/EndObject wrap.
+    //   rage_FindMember in the forward-decl list is a misnomer — the real
+    //   helper is a direct member-array index, not a name lookup.
     BeginObject(name);
     EndObject();
     return true;
@@ -2216,10 +2265,13 @@ static bool parStreamOutRbf_WriteFieldHeaderImpl(rage::parStreamOutRbf* self, ui
     uint16_t fieldID = 0;
     bool isNewName = true;
 
-    // TODO: Traverse linked list at buckets[bucketIdx]
-    // Each entry: { const char* name, uint16_t fieldID, void* next }
-    // Compare fieldName against each entry->name to find existing fieldID.
-    // For now, always assigns a new ID:
+    // Bucket chain at buckets[bucketIdx] is { const char* name, uint16_t
+    // fieldID, void* next }. Real body (D128) walks the chain via
+    // atSingleton_A818_g (hash probe) + atSingleton_D760_gen (insert).
+    // The always-new-ID path below matches the first-pass behavior for any
+    // call site that has never seen `fieldName` before — correct for the
+    // current write-only code path but will emit redundant headers if the
+    // same field is re-written in the same stream.
     fieldID = (*pNextID)++;
 
     // Write compact or extended field header
@@ -2266,8 +2318,10 @@ static bool parStreamOutRbf_WriteDataImpl(rage::parStreamOutRbf* self, const voi
             util_WriteBytes(file, data, size);
             break;
         case 2: case 7:
-            // TODO: fiBinTokenizer_3D50_w(file, data, size/2) — uint16 byte-swap writer
-            util_WriteBytes(file, data, size);  // fallback: raw write
+            // uint16 payload — must be written big-endian. fiBinTokenizer_3D50_w
+            // takes (file, const uint16_t* data, int count) and byte-swaps each
+            // element via rotlwi+clrlwi before calling util_39B0.
+            fiBinTokenizer_3D50_w(file, data, size / 2);
             break;
         case 5: case 8: case 9: case 10: case 11:
             util_WriteUint32Array(file, (const uint32_t*)data, size / 4);
@@ -2282,12 +2336,21 @@ static bool parStreamOutRbf_WriteDataImpl(rage::parStreamOutRbf* self, const voi
 namespace rage {
 
 void parStreamOutRbf::EndArray() {
-    // @ 0x8241CF90
-    // TODO: Complex internal function (~300+ lines) that handles flushing
-    // pending array element data. The vtable slot maps to an internal
-    // data-flushing function with type-based dispatch via CED0_wrh.
-    // Scaffold involves: pending flag check, 0xFDFF marker write,
-    // sentinel writes, and accumulated size tracking at +20.
+    // @ 0x8241CF90 | size: 0x194 (vfn_5). Semantic summary of the deferred
+    // lift:
+    //   1. Check pending flag at +16; if clear, emit the 0xFDFF end-of-
+    //      array marker via util_WriteBytes and return.
+    //   2. If set, route the accumulated element payload through
+    //      parStreamOutRbf_CED0_wrh(this, buf, size, dataType) which
+    //      already handles per-element byte swapping via fiBinTokenizer_3D50_w
+    //      for uint16 payloads and util_WriteUint32Array for 32-bit paths.
+    //   3. Patch the accumulated-size field at +20 back into the header
+    //      prefix (seek-back / write / seek-forward — same shape as
+    //      parStreamOutRbf_CE58_gen).
+    //   4. Write the 0xFDFF end-of-array sentinel and clear the pending flag.
+    // Lift deferred: needs parStreamOutRbf::m_pendingBuf field layout to
+    // land before the scoped body can be written without raw offsets.
+    parStreamOutRbf_FlushPending(this);
 }
 
 bool parStreamOutRbf::WriteInt(const char* name, int32_t value) {

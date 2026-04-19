@@ -179,7 +179,7 @@ public:
     virtual void  SkipWhitespaceThenVector2(float outV2[2]);         // slot 25
     virtual void  WriteBlockOpen();                                  // slot 26
     virtual void  SetIndentDepth(int delta);                         // slot 30
-    virtual void  CloseAndFlush();                                   // slot 37
+    virtual void  CloseAndFlush(const char* closingStr);             // slot 37
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -461,25 +461,31 @@ void fiAsciiTokenizer::SetIndentDepth(int delta) {
 // fiAsciiTokenizer::CloseAndFlush()       — vtable slot 37
 // @ 0x822E6D00 | size: 0x14
 //
-// Tail-calls vtable[+144] (= slot 36) passing argument 0 in r5. Slot 36
-// itself is not yet lifted; based on the call shape (2-arg virtual with a
-// bool-ish second parameter), it is the teardown / flush entry that
-// accepts a "keep-open" flag. 0 here requests full close.
+// Tail-calls vtable[+144] (= slot 36, byte offset 4*36) with r5 forced to 0,
+// r4 forwarded through unchanged. Slot 36 is WriteStringWithPadding
+// @ 0x822E6998 | size: 0xA4 — signature (this, const char* str, int padCount):
+// writes `str` to the FILE* at this->[+12], then emits `padCount` tab bytes
+// (0x9) via fiAsciiTokenizer_51F0. Returns bool (bytes written matched).
+// Passing padCount=0 means "flush string, no tab padding", which matches the
+// "close current element" idiom. CloseAndFlush itself takes the string as
+// its caller-supplied argument.
 // ─────────────────────────────────────────────────────────────────────────────
-void fiAsciiTokenizer::CloseAndFlush() {
-    // TODO: when slot 36 is lifted with a proper signature, replace this
-    // with a direct virtual call. For now we emit the same tail shape.
-    using Slot36Fn = void (*)(fiAsciiTokenizer*, int, int);
+void fiAsciiTokenizer::CloseAndFlush(const char* closingStr) {
+    using Slot36Fn = bool (*)(fiAsciiTokenizer*, const char*, int);
     void** vt = *reinterpret_cast<void***>(this);
-    Slot36Fn slot36 = reinterpret_cast<Slot36Fn>(vt[36]);
-    slot36(this, 0, 0);
+    Slot36Fn writeWithPadding = reinterpret_cast<Slot36Fn>(vt[36]);
+    (void)writeWithPadding(this, closingStr, 0);
 }
 
 } // namespace rage
 
-// TODO(fiAsciiTokenizer): slot 3 body is not emitted in the binary — the
-//   vtable entry likely points at a pure-virtual handler. No lift required.
-// TODO(fiAsciiTokenizer): slots 14–17, 21–25, 27–29, 31–36 follow the same
-//   vector/whitespace dispatch templates; they can be batched in a follow-up.
-// TODO(fiAsciiTokenizer): migrate fiAsciiTokenizer_2628_g real body from
-//   stubs.cpp once its 0x24C-byte FP-classification state machine is lifted.
+// Note: slot 3 body is not emitted in the binary — the vtable entry points
+//   at a pure-virtual handler. No lift required.
+// Note: slots 14–17, 21–25, 27–29, 31–35 follow the same vector/whitespace
+//   dispatch templates documented above; they can be batched in a follow-up.
+//   Slot 36 is WriteStringWithPadding @ 0x822E6998 (see CloseAndFlush note
+//   for the resolved signature).
+// Note: fiAsciiTokenizer_2628_g @ 0x82432628 (0x24C bytes) is the FP
+//   formatter state machine — classifies NaN/inf/whole/small/general and
+//   dispatches to the matching %g-variant. Migration from stubs.cpp is
+//   deferred until a dedicated session.

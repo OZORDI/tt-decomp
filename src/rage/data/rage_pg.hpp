@@ -6,8 +6,10 @@
  * Sources: rtti_vtable_map | vtable_layout_map | offset_cluster_map
  *          | debug_string_field_map | rtti_class_hierarchy
  *
- * TODO: fill return types, params, inheritance.
- *       Cross-ref recomp/structured_pass5_final/ for each method.
+ * Status: skeleton only — pgDictionary holds a single virtual destructor
+ * slot @ 0x820c3658. Return types, inheritance (likely deriving from a
+ * rage::datBase analog), and member layout pending dedicated pg* session.
+ * Cross-ref recomp/structured_pass5_final/ for each method.
  */
 #pragma once
 #include <stdint.h>
