@@ -6,7 +6,6 @@
  */
 
 #include "pong_ball.hpp"
-#include "rage/memory.h"
 #include <cstring>   // memcpy, memset
 #include <cmath>     // fabs
 
@@ -717,14 +716,15 @@ const char* pongBallHitData::GetEventName() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// pongBallAudio::~pongBallAudio()  [vtable slot 0 @ 0x8228ABE0]
-// Destructor — destroys base audControl3d, then conditionally frees memory.
+// pongBallAudio::~pongBallAudio()
+//
+// Inline destructor body. The binary only ships the MSVC scalar-deleting
+// wrapper at vtable slot 0 (@ 0x8228ABE0); that wrapper inlines this body.
+// We keep a matching ~pongBallAudio() so both stack-scoped destruction and
+// the ScalarDtor thunk share the same teardown logic.
 // ─────────────────────────────────────────────────────────────────────────────
 pongBallAudio::~pongBallAudio() {
-    extern void audControl3d_Destructor(pongBallAudio* obj);  // @ 0x8228AC30
-    extern void rage_free(void* ptr);                         // @ 0x820C00C0
-
-    // Call base class (audControl3d) destructor
+    extern void audControl3d_Destructor(pongBallAudio* obj);  // @ 0x8228AC30 — base dtor
     audControl3d_Destructor(this);
 }
 
@@ -765,8 +765,10 @@ void pongBallInstance_SecondaryDtorThunk(pongBallInstance* secondaryBase) {
 // Copies ball transform matrix into global ball state array (slot 0 / player 1).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongBallInstance::SnapshotMatrixToGlobalSlot0(pongBallInstance* ball) {
-    // Global ball state structure at 0x825CBCF0
-    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0 (17152 bytes)
+    // Shared physics collision-pair broadphase scratch at 0x825CBCF0.
+    // (See ball collision-pair broadphase seeders section lower in this file
+    // for the layout map — same block, same name.)
+    extern uint8_t g_pairBroadphaseScratch[];  // @ 0x825CBCF0 (17152 bytes)
 
     // Get ball's transform matrix via vtable slot 2 (GetMatrix)
     void* matrixPtr = ball->GetMatrix();
@@ -776,18 +778,18 @@ void pongBallInstance::SnapshotMatrixToGlobalSlot0(pongBallInstance* ball) {
     uint32_t physicsRef = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(flagsObj) + 12);
 
     // Store metadata into global state (slot 0)
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17064) = 0;               // clear status
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17072) = reinterpret_cast<uintptr_t>(ball); // ball ptr
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 16912) = reinterpret_cast<uintptr_t>(
-        reinterpret_cast<uint8_t*>(ball) + 16);                               // ball data ptr
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17056) = physicsRef;       // physics reference
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17064) = 0;               // clear status
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17072) = reinterpret_cast<uintptr_t>(ball); // ball ptr
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 16912) = reinterpret_cast<uintptr_t>(
+        reinterpret_cast<uint8_t*>(ball) + 16);                                       // ball data ptr
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17056) = physicsRef;       // physics reference
 
     // Copy 4x4 transform matrix (4 x 16-byte rows = 64 bytes)
     const uint8_t* src = reinterpret_cast<const uint8_t*>(matrixPtr);
-    memcpy(g_ballStateData + 16928, src,      16);  // row 0
-    memcpy(g_ballStateData + 16944, src + 16, 16);  // row 1
-    memcpy(g_ballStateData + 16960, src + 32, 16);  // row 2
-    memcpy(g_ballStateData + 16976, src + 48, 16);  // row 3
+    memcpy(g_pairBroadphaseScratch + 16928, src,      16);  // row 0
+    memcpy(g_pairBroadphaseScratch + 16944, src + 16, 16);  // row 1
+    memcpy(g_pairBroadphaseScratch + 16960, src + 32, 16);  // row 2
+    memcpy(g_pairBroadphaseScratch + 16976, src + 48, 16);  // row 3
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -795,7 +797,7 @@ void pongBallInstance::SnapshotMatrixToGlobalSlot0(pongBallInstance* ball) {
 // Copies ball transform matrix into global ball state array (slot 1 / player 2).
 // ─────────────────────────────────────────────────────────────────────────────
 void pongBallInstance::SnapshotMatrixToGlobalSlot1(pongBallInstance* ball) {
-    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+    extern uint8_t g_pairBroadphaseScratch[];  // @ 0x825CBCF0
 
     void* matrixPtr = ball->GetMatrix();
 
@@ -803,17 +805,17 @@ void pongBallInstance::SnapshotMatrixToGlobalSlot1(pongBallInstance* ball) {
     uint32_t physicsRef = *reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(flagsObj) + 12);
 
     // Store metadata into global state (slot 1 — offsets shifted by +4/+64 from slot 0)
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17068) = 0;
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17076) = reinterpret_cast<uintptr_t>(ball);
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 16916) = reinterpret_cast<uintptr_t>(
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17068) = 0;
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17076) = reinterpret_cast<uintptr_t>(ball);
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 16916) = reinterpret_cast<uintptr_t>(
         reinterpret_cast<uint8_t*>(ball) + 16);
-    *reinterpret_cast<uint32_t*>(g_ballStateData + 17060) = physicsRef;
+    *reinterpret_cast<uint32_t*>(g_pairBroadphaseScratch + 17060) = physicsRef;
 
     const uint8_t* src = reinterpret_cast<const uint8_t*>(matrixPtr);
-    memcpy(g_ballStateData + 16992, src,      16);  // row 0
-    memcpy(g_ballStateData + 17008, src + 16, 16);  // row 1
-    memcpy(g_ballStateData + 17024, src + 32, 16);  // row 2
-    memcpy(g_ballStateData + 17040, src + 48, 16);  // row 3
+    memcpy(g_pairBroadphaseScratch + 16992, src,      16);  // row 0
+    memcpy(g_pairBroadphaseScratch + 17008, src + 16, 16);  // row 1
+    memcpy(g_pairBroadphaseScratch + 17024, src + 32, 16);  // row 2
+    memcpy(g_pairBroadphaseScratch + 17040, src + 48, 16);  // row 3
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1335,24 +1337,34 @@ void pongLerpQueue_Update(void* queue) { (void)queue; }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Ball-pair matrix snapshot helpers — lifted from pass5_final recomp.
+// Ball collision-pair broadphase seeders — lifted from pass5_final recomp.
 //
-// These build the global ball-state block at 0x825CBCF0 (g_ballStateData,
-// 17152 B). The block holds two "slots" at byte offsets 16912..17076 — slot 0
-// (player / primary) and slot 1 (opponent / secondary). Each slot stores:
+// These fill the 17152 B physics collision-pair scratch block at 0x825CBCF0
+// (also populated by phSimulator::vfn_4 / phArticulatedCollider::vfn_5 /
+// phLevelNew::vfn_27 — hence *not* a ball-specific global, the ball code just
+// re-uses the engine pair buffer). The block holds two "slots" at byte
+// offsets 16912..17076 — slot 0 (primary / chooser side) and slot 1
+// (secondary / opponent side). Each slot stores:
 //   +16912/+16916 : data-area pointer  (ball +16 + 16)
 //   +17056/+17060 : sub-object pointer chained via (ball+16)->+4->+12
 //   +17064/+17068 : flag slot (also cleared / overwritten to 0)
 //   +17072/+17076 : back-reference to the ball instance
 //   +16928..+16976 / +16992..+17040 : 4×16 B matrix rows copied from ball+32
 //
-// Helpers used:
-//   util_4330(&g_ballStateData, arg)  @ 0x82294330 — zeroes/init slot block
-//   pongBallInstance::SnapshotMatrixToGlobalSlot0  @ 0x822CD5F0
-//   pongBallInstance::SnapshotMatrixToGlobalSlot1  @ 0x822CD690
+// The raw engine helper at 0x82294330 still carries its anonymous
+// `util_4330` name in the binary symbol map (no RTTI / string anchor), but
+// its semantic role is "clear the pair-broadphase scratch block". We wrap it
+// in a named extern so call-sites read meaningfully.
 // ─────────────────────────────────────────────────────────────────────────────
 
-extern "C" void util_4330(void* stateBlock, void* arg);  // @ 0x82294330
+// Raw engine symbol — ph/ball pair-broadphase scratch clear.
+// @ 0x82294330 | size: 0xB4. Shared with phSimulator_vfn_4 etc.
+extern "C" void util_4330(void* pairScratch, void* partnerHint);
+
+// Semantic alias — same entry point, readable name at the call site.
+inline void PhysicsPairBroadphase_Clear(void* pairScratch, void* partnerHint) {
+    util_4330(pairScratch, partnerHint);
+}
 
 namespace {
 
@@ -1367,7 +1379,7 @@ inline uint8_t ReadBallPriorityByte(pongBallInstance* ball) {
     return *(subLevel2 + 4);
 }
 
-// Fill slot 0 of g_ballStateData with (ball, matrix-rows, metadata).
+// Fill slot 0 of g_pairBroadphaseScratch with (ball, matrix-rows, metadata).
 inline void WriteBallToSlot0(uint8_t* state, pongBallInstance* ball) {
     auto* ballBytes    = reinterpret_cast<uint8_t*>(ball);
     auto* dataPtr      = *reinterpret_cast<uint8_t**>(ballBytes + 16);
@@ -1386,7 +1398,7 @@ inline void WriteBallToSlot0(uint8_t* state, pongBallInstance* ball) {
     memcpy(state + 16976, mat + 48, 16);
 }
 
-// Fill slot 1 of g_ballStateData.
+// Fill slot 1 of g_pairBroadphaseScratch.
 inline void WriteBallToSlot1(uint8_t* state, pongBallInstance* ball) {
     auto* ballBytes    = reinterpret_cast<uint8_t*>(ball);
     auto* dataPtr      = *reinterpret_cast<uint8_t**>(ballBytes + 16);
@@ -1408,22 +1420,22 @@ inline void WriteBallToSlot1(uint8_t* state, pongBallInstance* ball) {
 } // namespace
 
 /**
- * pongBallInstance::BuildPairedSnapshot @ 0x822CD228 | size: 0x194
+ * BallCollisionPair_SeedFromBothBalls @ 0x822CD228 | size: 0x194
  *
- * Pairwise snapshot: writes both slot 0 and slot 1 of the global ball-state
- * block from (ballA, ballB), ordered by priority byte. The ball with the
- * *smaller* priority tag (lower 3 bits of the chained byte) wins slot 0 —
- * this matches the `blt` branch where a smaller-ranked tag takes the "first"
- * path. Ties fall through to the else branch.
+ * Prepares the physics collision-pair broadphase scratch for a ball-vs-ball
+ * contact. Clears the block, then writes both ball slots (0 and 1) ordered
+ * by the 3-bit priority tag read via the chain (ball+16)->+4->+12+4. The
+ * ball with the *smaller* tag occupies slot 0 (priority branch: `blt`).
  *
- * Passed via r4/r5; 'this' (r3) is unused on entry — the function uses the
- * absolute global `g_ballStateData` exclusively.
+ * NOTE: this is NOT a pongBallInstance member — r3 on entry is the pair
+ * scratch block (g_pairBroadphaseScratch), not a `this` pointer. The two
+ * ball arguments arrive in r4/r5.
  */
-void pongBallInstance_BuildPairedSnapshot(pongBallInstance* ballA,
-                                          pongBallInstance* ballB) {
-    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+void BallCollisionPair_SeedFromBothBalls(pongBallInstance* ballA,
+                                         pongBallInstance* ballB) {
+    extern uint8_t g_pairBroadphaseScratch[];  // @ 0x825CBCF0, 17152 B
 
-    util_4330(g_ballStateData, ballB);
+    PhysicsPairBroadphase_Clear(g_pairBroadphaseScratch, ballB);
 
     const uint8_t tagA = ReadBallPriorityByte(ballA);
     const uint8_t tagB = ReadBallPriorityByte(ballB);
@@ -1439,30 +1451,32 @@ void pongBallInstance_BuildPairedSnapshot(pongBallInstance* ballA,
         slot1Ball = ballA;
     }
 
-    WriteBallToSlot0(g_ballStateData, slot0Ball);
-    WriteBallToSlot1(g_ballStateData, slot1Ball);
+    WriteBallToSlot0(g_pairBroadphaseScratch, slot0Ball);
+    WriteBallToSlot1(g_pairBroadphaseScratch, slot1Ball);
 }
 
 /**
- * pongBallInstance::BuildSingleSnapshot @ 0x822CD3C0 | size: 0x13C
+ * BallCollisionPair_SeedFromOneBall @ 0x822CD3C0 | size: 0x13C
  *
- * Single-ball snapshot variant used when only one ball participates in the
- * current resolution step. The second argument is a payload object whose
- * priority byte (chain: +16 → +4 → +12 → +4) determines which slot the given
- * ball occupies; the companion slot is populated via the matching slot helper
- * (D5F0/D690) from the caller's active ball.
+ * Asymmetric seeder used when only one of the two contact participants is a
+ * ball (the other is a non-ball collider whose priority byte lives one chain
+ * deeper: (other+4)->+12+4). The ball goes to whichever slot the priority
+ * ordering dictates; the non-ball side is populated via the matrix-snapshot
+ * helper for the opposite slot.
  *
- *   if (ball's tag <= other's tag):  ball → slot 0, call ..._D690 for slot 1
- *   else:                            ball → slot 1, call ..._D5F0 for slot 0
+ *   if (ball tag <= other tag):  ball -> slot 0 directly,
+ *                                 SnapshotMatrixToGlobalSlot1(ball) fills slot 1.
+ *   else:                        SnapshotMatrixToGlobalSlot0(ball) fills slot 0,
+ *                                 ball -> slot 1 directly.
+ *
+ * (See pongBallInstance_1FA0 for the parallel control-flow pattern.)
  */
-void pongBallInstance_BuildSingleSnapshot(pongBallInstance* ball,
-                                          pongBallInstance* other) {
-    extern uint8_t g_ballStateData[];  // @ 0x825CBCF0
+void BallCollisionPair_SeedFromOneBall(pongBallInstance* ball,
+                                       pongBallInstance* other) {
+    extern uint8_t g_pairBroadphaseScratch[];  // @ 0x825CBCF0
 
-    util_4330(g_ballStateData, other);
+    PhysicsPairBroadphase_Clear(g_pairBroadphaseScratch, other);
 
-    // Priority byte for 'other' lives one chain deeper — (other+4)->+12+4.
-    // See pongBallInstance_1FA0 call-site for the parallel structure.
     auto* otherBytes  = reinterpret_cast<uint8_t*>(other);
     auto* otherSub1   = *reinterpret_cast<uint8_t**>(otherBytes + 4);
     auto* otherSub2   = *reinterpret_cast<uint8_t**>(otherSub1 + 12);
@@ -1470,11 +1484,11 @@ void pongBallInstance_BuildSingleSnapshot(pongBallInstance* ball,
     const uint8_t tagBall  = ReadBallPriorityByte(ball);
 
     if (tagOther <= tagBall) {
-        WriteBallToSlot0(g_ballStateData, ball);
+        WriteBallToSlot0(g_pairBroadphaseScratch, ball);
         pongBallInstance::SnapshotMatrixToGlobalSlot1(ball);
     } else {
         pongBallInstance::SnapshotMatrixToGlobalSlot0(ball);
-        WriteBallToSlot1(g_ballStateData, ball);
+        WriteBallToSlot1(g_pairBroadphaseScratch, ball);
     }
 }
 
@@ -1488,22 +1502,24 @@ void pongBallInstance_BuildSingleSnapshot(pongBallInstance* ball,
  */
 
 /**
- * pongBallAudio::~pongBallAudio(int flags) — full body   @ 0x8228ABE0 | 0x50
+ * pongBallAudio::ScalarDtor(int flags)   [vtable slot 0 @ 0x8228ABE0 | 0x50]
  *
- * The earlier single-arg stub in this file only invoked the base destructor.
- * The real binary is a scalar-deleting destructor: after running the base
- * audControl3d destructor, it frees the instance iff the low bit of `flags`
- * (r4 on entry) is set. This is the standard MSVC delete-flag convention.
+ * MSVC scalar-deleting destructor: runs the inline ~pongBallAudio() body
+ * (delegated to the base audControl3d destructor) and, if the low bit of
+ * `flags` is set, releases the heap slab. This is the standard two-arg
+ * virtual destructor thunk the compiler emits for classes with virtual dtors.
  *
- * Exposed as a free function to avoid clashing with the existing single-arg
- * definition; recomp callers dispatch through vtable slot 0 with r4 = flags.
+ * Matches the `pongPaddle::ScalarDtor(int flags)` pattern already used
+ * elsewhere in the project (pong_network_classes.cpp).
  */
-void pongBallAudio_ScalarDtor(pongBallAudio* self, int flags) {
+void pongBallAudio::ScalarDtor(int flags) {
     extern void audControl3d_Destructor(pongBallAudio* obj);  // @ 0x8228AC30
     extern void rage_free(void* ptr);                         // @ 0x820C00C0
 
-    audControl3d_Destructor(self);
+    // Inline ~pongBallAudio() — same call the stack-scoped dtor makes.
+    audControl3d_Destructor(this);
+
     if (flags & 1) {
-        rage_free(self);
+        rage_free(this);
     }
 }

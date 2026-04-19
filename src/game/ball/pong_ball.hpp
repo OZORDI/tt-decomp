@@ -74,7 +74,13 @@ struct pongBallAudio {
     void** vtable;  // +0x00
 
     // ── virtual methods ──
-    virtual ~pongBallAudio(); // [0] @ 0x8228abe0
+    // Vtable slot 0 is the MSVC scalar-deleting destructor:
+    //   takes an extra `flags` arg; low bit triggers operator delete.
+    // We expose it as a named method (matches pongPaddle::ScalarDtor).
+    virtual void ScalarDtor(int flags);  // [0] @ 0x8228abe0
+
+    // Actual instance destructor body (invoked internally by ScalarDtor).
+    ~pongBallAudio();
 };
 
 // ── pongBallHit  [vtable @ 0x820573A8] ──────────────────────────────
@@ -190,8 +196,8 @@ struct pongBallInstance {
     void UpdatePhysicsState();             // @ 0x8227FDB0
     void ActivateBall(void* activationContext);  // @ 0x822801B8
     void* InitializeFromData(void* initData);  // @ 0x8227F810
-    void SnapshotMatrixToGlobalSlot0(pongBallInstance* ball);  // @ 0x822CD5F0
-    void SnapshotMatrixToGlobalSlot1(pongBallInstance* ball);  // @ 0x822CD690
+    static void SnapshotMatrixToGlobalSlot0(pongBallInstance* ball);  // @ 0x822CD5F0
+    static void SnapshotMatrixToGlobalSlot1(pongBallInstance* ball);  // @ 0x822CD690
     void* HandlePlayerHitEvent(void* eventData, void* hitContext);  // @ 0x822C3B80
     bool HandleRemotePlayerHit(void* hitContext);  // @ 0x822D5400
 };
