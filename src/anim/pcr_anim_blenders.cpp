@@ -63,9 +63,9 @@ extern void pcrAnimBlender_Initialize(void* obj);
 extern void rage_free(void* ptr);
 
 // Hash-table lookup in pcrCreatureState::m_faceMaterial.
-// Returns a pointer to the matched entry's value cell, or null on miss.
+// Returns a pointer to the matched value cell, or null on miss.
 // @ 0x8234C208
-extern void* atHashMap_Find(void* table, const void* key);
+extern "C" void* atHashMap_Find(void* table, const char* key);
 
 // No-op in release; debug would fire a material-bind notification.
 // @ 0x8240E6D0

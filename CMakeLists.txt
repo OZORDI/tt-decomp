@@ -39,12 +39,14 @@ add_definitions(-DTT_PLATFORM_PC=1)
 # Source files
 set(SOURCES
     # CRT layer
+    src/crt/crt_init.c
     src/crt/entry.c
     src/crt/exit.c
     src/crt/heap.c
     src/crt/memory.c
     src/crt/startup.c
     src/crt/string.c
+    src/crt/xe_tls.c
     src/globals.c
     src/stubs.cpp
 
@@ -52,10 +54,12 @@ set(SOURCES
     src/xam/audio.c
     src/xam/input.c
     src/xam/kernel.c
+    src/xam/kernel_shims.c
     src/xam/network.c
     src/xam/static_init.c
     src/xam/video.c
     src/xam/voice.c
+    src/xam/xam_shims.c
     src/xam/xam_stubs.c
     src/xam/xam_utils.c
     src/xam/xe_buffers.c

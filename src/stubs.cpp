@@ -52,95 +52,23 @@ struct pongAnimState;
 extern "C" {
 
 // ── Xbox 360 Kernel Functions ───────────────────────────────────────────────
-
-void HalReturnToFirmware(int mode) {
-    std::printf("HalReturnToFirmware(%d) - stub\n", mode);
-}
-
-void KeBugCheck(uint32_t code) {
-    std::printf("KeBugCheck(0x%08X) - stub\n", code);
-}
-
-void KeSetAffinityThread(void* thread, uint32_t affinity) {
-    (void)thread; (void)affinity;
-}
-
-void ObDereferenceObject(void* obj) {
-    (void)obj;
-}
-
-int ObReferenceObjectByHandle(void* handle, void* type, void** obj) {
-    (void)handle; (void)type; (void)obj;
-    return 0;
-}
-
-void RtlEnterCriticalSection(void* cs) {
-    (void)cs;
-}
-
-void RtlLeaveCriticalSection(void* cs) {
-    (void)cs;
-}
-
-int _KeTlsAlloc_thunk(void* destructorThunk) {
-    (void)destructorThunk;
-    return 0;
-}
-
-int KeTlsFree_stub(uint32_t tlsIndex) {
-    (void)tlsIndex;
-    return 0;
-}
-
-int KeTlsSetValue_stub(uint32_t tlsIndex, void* value) {
-    (void)tlsIndex; (void)value;
-    return 0;
-}
+// HalReturnToFirmware, KeBugCheck, KeSetAffinityThread, ObDereferenceObject,
+// ObReferenceObjectByHandle, RtlEnterCriticalSection, RtlLeaveCriticalSection
+// → moved to src/xam/kernel_shims.c
+// _KeTlsAlloc_thunk, KeTlsFree_stub, KeTlsSetValue_stub
+// → moved to src/xam/kernel_shims.c
 
 // ── Network Functions (Xbox 360 specific) ───────────────────────────────────
-
-int NetDll_WSACleanup(void) {
-    return 0;
-}
-
-int NetDll_WSAStartup(uint16_t version, void* data) {
-    (void)version; (void)data;
-    return 0;
-}
-
-int NetDll_XNetStartup(void* params) {
-    (void)params;
-    return 0;
-}
+// NetDll_WSACleanup, NetDll_WSAStartup, NetDll_XNetStartup
+// → moved to src/xam/xam_shims.c
 
 // ── Video Functions ─────────────────────────────────────────────────────────
-
-void XGetVideoMode(void* mode) {
-    (void)mode;
-}
+// XGetVideoMode → moved to src/xam/xam_shims.c
 
 // ── CRT Functions ───────────────────────────────────────────────────────────
-
-int __cinit_impl(void) {
-    return 1;
-}
-
-void* __imp_ExLoadedCommandLine = nullptr;
-void* __imp_ExThreadObjectType = nullptr;
-
-void _crt_spinlock_acquire(int id) {
-    (void)id;
-}
-
-void _crt_spinlock_release(int id) {
-    (void)id;
-}
-
-void _crt_tls_fiber_setup(void) {}
-
-void _xe_strcpyn_10(char* dest, const char* src, size_t n) {
-    (void)dest; (void)src; (void)n;
-}
+// __cinit_impl, _crt_spinlock_acquire, _crt_spinlock_release,
+// _crt_tls_fiber_setup, _xe_strcpyn_10
+// → moved to src/crt/crt_init.c
 
 // ── Main Entry Point ────────────────────────────────────────────────────────
 
@@ -166,25 +94,8 @@ void rage_GameLoopThreadEntry(void* singleton) {
 
 // ── File I/O Functions ──────────────────────────────────────────────────────
 
-void* _realloc_crt(size_t newSz, size_t minSz) {
-    (void)newSz; (void)minSz;
-    return nullptr;
-}
-
-void* _calloc_crt(int count, int size) {
-    (void)count; (void)size;
-    return nullptr;
-}
-
-void _crt_fiber_destroy(void) {}
-
-// fiAsciiTokenizer_InitializeTokenizer — moved to src/rage/io/fiAsciiTokenizer.cpp.
-
-void _tls_dtor_cleanup(void) {}
-
-void _crt_tls_callback(int initFlag) {
-    (void)initFlag;
-}
+// _realloc_crt, _calloc_crt, _crt_fiber_destroy, _tls_dtor_cleanup,
+// _crt_tls_callback → moved to src/crt/crt_init.c
 
 void* fiDeviceMemory_AllocateDeviceMemory(size_t size) {
     (void)size;
@@ -324,17 +235,14 @@ void* sysMemAllocator_Alloc(size_t size) {
 
 // ── Utility Functions ───────────────────────────────────────────────────────
 
-void game_CrtFatalExit_thunk(void) {}
+// game_CrtFatalExit_thunk → moved to src/crt/xe_tls.c
 
-void XeTlsBlock_InitStack(void* pXtf, void* stackBase, uint32_t stackSize) {
-    (void)pXtf; (void)stackBase; (void)stackSize;
-}
+// XeTlsBlock_InitStack → moved to src/crt/xe_tls.c
 
 // rage_parStructure_Init_stub — moved to src/rage/data/par_xml_types.cpp.
 
 // ── XAM Functions ───────────────────────────────────────────────────────────
-
-void xam_CreateEvent_c(void) {}
+// xam_CreateEvent_c → moved to src/xam/xam_shims.c
 
 // ── XE Functions ────────────────────────────────────────────────────────────
 
@@ -345,15 +253,11 @@ void* rage_Alloc_c(uint32_t size) {
     return nullptr;
 }
 
-void xe_main_thread_init(void) {}
+// xe_main_thread_init → moved to src/crt/xe_tls.c
 
-void* XePhysicalAlloc_stub(uint32_t sizeBytes, int32_t protectFlags,
-                          uint32_t alignment, uint32_t allocFlags) {
-    (void)sizeBytes; (void)protectFlags; (void)alignment; (void)allocFlags;
-    return nullptr;
-}
+// XePhysicalAlloc_stub → moved to src/crt/xe_tls.c
 
-void XeTlsBlock_BindMainThread(void* ctx) { (void)ctx; }
+// XeTlsBlock_BindMainThread → moved to src/crt/xe_tls.c
 
 // ── XML Functions ───────────────────────────────────────────────────────────
 // xmlNodeStruct_vfn_2 — moved to src/rage/data/par_xml_types.cpp.
@@ -433,26 +337,16 @@ extern "C" int32_t util_2458_FindCharacterIndex(void* a, const char* b) { (void)
 
 // ── Xbox 360 Kernel / XAM ───────────────────────────────────────────────────
 
-extern "C" int KeResetEvent(void* a) { (void)a; return 0; }
-extern "C" int KeSetEvent(void* a, int b, int c) { (void)a; (void)b; (void)c; return 0; }
-extern "C" int KeWaitForSingleObject(void* a, int b, int c, int d, void* e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
-}
-extern "C" int XamInputGetState(int a, int b, void* c) { (void)a; (void)b; (void)c; return 0; }
-extern "C" int XamInputSetState(int a, void* b) { (void)a; (void)b; return 0; }
-extern "C" int XamShowGamerCardUIForXUID(int a, uint64_t b) { (void)a; (void)b; return 0; }
-extern "C" void XamLoaderTerminateTitle(void) {}
-extern "C" uint32_t xam_CreateEvent(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
-    (void)a; (void)b; (void)c; (void)d; return 0;
-}
-extern "C" void ke_EnterCriticalSection(uint32_t a) { (void)a; }
-extern "C" void ke_LeaveCriticalSection(uint32_t a) { (void)a; }
-extern "C" int RtlMultiByteToUnicodeN_6FA8_w(void* a, uint32_t b, uint32_t* c, const char* d, uint32_t e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
-}
-extern "C" int _check_xdk_version(void) { return 0; }
-extern "C" int _heap_init_impl(void) { return 0; }
-extern "C" int _stricmp(const char* a, const char* b) { (void)a; (void)b; return 0; }
+// ── Xbox 360 Kernel / XAM ───────────────────────────────────────────────────
+// KeResetEvent, KeSetEvent, KeWaitForSingleObject → already in src/xam/kernel.c
+// XamInputGetState, XamInputSetState, XamShowGamerCardUIForXUID → already in src/xam/input.c
+// XamLoaderTerminateTitle → already in src/xam/xam_stubs.c
+// xam_CreateEvent → moved to src/xam/xam_shims.c
+// ke_EnterCriticalSection, ke_LeaveCriticalSection → moved to src/xam/kernel_shims.c
+// RtlMultiByteToUnicodeN_6FA8_w → already in src/xam/xam_stubs.c
+// _check_xdk_version → already in src/crt/version.c
+// _heap_init_impl → moved to src/crt/crt_init.c
+// _stricmp → moved to src/crt/crt_init.c
 
 // ── Network ─────────────────────────────────────────────────────────────────
 // NetDll_recvfrom and NetDll_sendto are now implemented in xam/network.c
@@ -827,19 +721,10 @@ void rage_debugLog(const void* ptr, ...) { (void)ptr; }
 
 // phArchetype_Load, phBoundCapsule_01D0_g/01D8_g/02B0_g/0FE0_g/5138_g/A080_g,
 // phInst_A3A0_p33, phObject::vfn_1..31 lifted to src/physics/ph_physics.cpp.
-void* atHashMap_Find(void* a, const void* b) { (void)a; (void)b; return nullptr; }
+extern "C" void* atHashMap_Find(void* table, const char* key);
 
 // ── Physics utility functions ───────────────────────────────────────────────
-
-void ph_59C8(void* a, const char* b, int c) { (void)a; (void)b; (void)c; }
 // phArchetype_Find lifted to src/physics/ph_physics.cpp.
-void ph_9E50(void* a, void* b) { (void)a; (void)b; }
-void* ph_9EC0_1(void* a) { (void)a; return nullptr; }
-void ph_CEE0(void* a, int b) { (void)a; (void)b; }
-void* ph_E010(void* a, void* b, const char* c) { (void)a; (void)b; (void)c; return nullptr; }
-void ph_E088(void* a, void* b, void* c, float d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; }
-void ph_EF40(void* a, void* b) { (void)a; (void)b; }
-void ph_ForwardTarget(void* a) { (void)a; }
 
 // plrPlayerMgr members — lifted to src/game/data/gd_data.cpp
 
@@ -956,9 +841,8 @@ void grcTextureReferenceBase::vfn_3() {}
 
 // hudFlashBase_9CA8_h → src/rage/swf.cpp
 
-void ke_ConstructObject(void* a) { (void)a; }
-void ke_DestroyObjectA(void* a) { (void)a; }
-void ke_DestroyObjectB(void* a) { (void)a; }
+// ke_ConstructObject, ke_DestroyObjectA, ke_DestroyObjectB
+// → moved to src/xam/kernel_shims.c
 
 // phArticulatedCollider_UpdateJointTransforms/ProcessJoints/ProcessColliderState,
 // phCollider_vfn_4, phJoint1Dof_AE38, phJoint1Dof_AFF8_p42, phJoint3Dof_0170_g,
@@ -1022,11 +906,12 @@ void util_D150(void* a, void* b) { (void)a; (void)b; }
 void util_D150(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 // hsmEvent_Init — lifted in src/rage/core/hsm.cpp
 void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
-void* xam_singleton_init_8D60(void* a) { (void)a; return nullptr; }
+// xam_singleton_init_8D60 → already in src/xam/static_init.c (xam_GetInitSingleton)
 
 void* rage_Alloc(int a) { (void)a; return nullptr; }
 void* rage_Alloc(unsigned int a) { (void)a; return nullptr; }
-void xe_GetLoadContext() {}
+// xe_GetLoadContext (2 overloads) → moved to src/crt/xe_tls.c
+// Note: C++ overloads need to stay here since xe_tls.c is C
 void xe_GetLoadContext(void* a) { (void)a; }
 void rage_AssertMainThread() {}
 // xmlNodeStruct_Init / xml_ReadInt / xml_ReadString —
@@ -1051,7 +936,9 @@ void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextStat
 void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
 // _c_pgPageGroup_DispatchEvent (_pg_6F68 alias) → src/rage/swf.cpp
 void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
-void _c_atHashMap_Find(void* a, const void* b) { atHashMap_Find(a,b); }
+void _c_atHashMap_Find(void* a, const void* b) {
+    atHashMap_Find(a, static_cast<const char*>(b));
+}
 void _c_sysCallback_Invoke(void* c, int code) __asm__("_sysCallback_Invoke");
 void _c_sysCallback_Invoke(void* c, int code) { sysCallback_Invoke(c, code); }
 }
