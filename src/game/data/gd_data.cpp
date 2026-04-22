@@ -14,6 +14,7 @@
 extern void rage_free(void* ptr);
 extern void datResourceMgr_RemoveEntry(void* obj);                    // @ 0x820F8EE8 - Object cleanup
 extern void sysMemAllocator_PlatformFree(void* obj, uint32_t flags);    // @ 0x82566C20 - Free/release with flags
+extern void sysMemAllocator_Free(void* ptr);                            // @ 0x82186228 - TLS allocator free
 extern void sysMemAllocator_InitMainThread(void);          // @ 0x820C0038 - Main thread init
 
 namespace rage {
@@ -100,13 +101,12 @@ void plrPlayerMgr_ReleaseResourcePairs(void* subObjectArrayBase) {
         if (subObj->m_pObject2) {
             // Check if object is in singleton registry
             if (!rage::FindSingleton(subObj->m_pObject2)) {
-                // Not in registry - free via allocator.
-                // KNOWN LIMITATION: the scaffold reaches into the PPC r13-
-                // relative TLS slot to fetch the current rage::sysMemAllocator,
-                // then calls vtable slot 2 (Free/Release). TLS-allocator
-                // plumbing is tracked as a shared rage-mem follow-up; the
-                // leak on this path is bounded (only hit during singleton
-                // teardown when the registry is already draining).
+                // Not in singleton registry — free via the thread-local
+                // rage::sysMemAllocator (vtable slot 2). The original PPC
+                // code fetches the allocator from r13+0 → TLS[1] (+4),
+                // then calls allocator->Free(ptr). sysMemAllocator_Free
+                // already wraps this path through rage_free → free().
+                sysMemAllocator_Free(subObj->m_pObject2);
             }
         }
     }

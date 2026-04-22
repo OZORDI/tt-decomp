@@ -489,3 +489,186 @@ void fiAsciiTokenizer::CloseAndFlush(const char* closingStr) {
 //   formatter state machine — classifies NaN/inf/whole/small/general and
 //   dispatches to the matching %g-variant. Migration from stubs.cpp is
 //   deferred until a dedicated session.
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Batch lift: 10 functions from rage::fiAsciiTokenizer
+// vtable slots 14–17, 26, 30 + allocator helpers D588, 76D8, 8598, CC50
+// ═════════════════════════════════════════════════════════════════════════════
+
+namespace rage {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer::MatchVector4Field()   — vtable slot 14
+// @ 0x822E6520 | size: 0x6C
+//
+// Consume the field-name token via GetToken, then forward the output buffer
+// to GetVector4 (slot 6). Used by parStream for "name x y z w" quads.
+// ─────────────────────────────────────────────────────────────────────────────
+void fiAsciiTokenizer::MatchVector4Field(float outV4[4]) {
+    char scratch[64];
+    scratch[0] = '\0';
+    (void)this->GetToken(scratch, static_cast<int>(sizeof(scratch)));
+    this->GetVector4(outV4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer::MatchVector3Field()   — vtable slot 15
+// @ 0x822E64B0 | size: 0x6C
+//
+// Consume the field-name token, then forward the output buffer to
+// GetVector3 (slot 7). Used by parStream for "name x y z" triples.
+// ─────────────────────────────────────────────────────────────────────────────
+void fiAsciiTokenizer::MatchVector3Field(float outV3[3]) {
+    char scratch[64];
+    scratch[0] = '\0';
+    (void)this->GetToken(scratch, static_cast<int>(sizeof(scratch)));
+    this->GetVector3(outV3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer::MatchVector4NoStageField() — vtable slot 16
+// @ 0x822E6440 | size: 0x6C
+//
+// Consume the field-name token, then call GetVector4NoStage (slot 8).
+// Writes each component directly to the output as it is parsed.
+// ─────────────────────────────────────────────────────────────────────────────
+void fiAsciiTokenizer::MatchVector4NoStageField(float outV4[4]) {
+    char scratch[64];
+    scratch[0] = '\0';
+    (void)this->GetToken(scratch, static_cast<int>(sizeof(scratch)));
+    this->GetVector4NoStage(outV4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer::MatchVector3NoStageField() — vtable slot 17
+// @ 0x822E63D0 | size: 0x6C
+//
+// Consume the field-name token, then call GetVector3NoStage (slot 9).
+// Writes each component directly to the output as it is parsed.
+// ─────────────────────────────────────────────────────────────────────────────
+void fiAsciiTokenizer::MatchVector3NoStageField(float outV3[3]) {
+    char scratch[64];
+    scratch[0] = '\0';
+    (void)this->GetToken(scratch, static_cast<int>(sizeof(scratch)));
+    this->GetVector3NoStage(outV3);
+}
+
+} // namespace rage
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Standalone allocator functions (same compilation unit, not class methods)
+// ═════════════════════════════════════════════════════════════════════════════
+
+extern "C" {
+
+// Forward declarations for shared helpers
+void fiAsciiTokenizer_1F08_g(const char* errorMsg);
+[[noreturn]] void fiAsciiTokenizer_FB40_g(int exitCode);
+void* xe_EC88(uint32_t size);
+
+// .rdata string at 0x8202E2B8 — "out of memory"
+static const char* const g_pOutOfMemoryStr = "out of memory";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer_D588_g @ 0x8222D588 | size: 0x60
+//
+// Byte allocator — allocates the requested number of raw bytes via xe_EC88.
+// Returns nullptr if size is zero. The overflow check against 0xFFFFFFFF
+// is dead code in 32-bit context (always passes).
+// ─────────────────────────────────────────────────────────────────────────────
+void* fiAsciiTokenizer_D588_g(uint32_t size) {
+    if (size == 0) {
+        return nullptr;
+    }
+    return xe_EC88(size);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer_76D8_g @ 0x820E76D8 | size: 0x64
+//
+// Array allocator for 4-byte elements — allocates count * 4 bytes. Aborts
+// with "out of memory" if count exceeds 0x3FFFFFFF (~1 billion entries).
+// Returns nullptr if count is zero.
+// ─────────────────────────────────────────────────────────────────────────────
+void* fiAsciiTokenizer_76D8_g(uint32_t count) {
+    if (count > 0x3FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g(g_pOutOfMemoryStr);
+        fiAsciiTokenizer_FB40_g(1);
+    }
+    if (count == 0) {
+        return nullptr;
+    }
+    return xe_EC88(count * 4);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer_8598_g @ 0x82238598 | size: 0x64
+//
+// Array allocator for 16-byte elements — allocates count * 16 bytes. Aborts
+// with "out of memory" if count exceeds 0x0FFFFFFF (~268 million entries).
+// Returns nullptr if count is zero.
+// ─────────────────────────────────────────────────────────────────────────────
+void* fiAsciiTokenizer_8598_g(uint32_t count) {
+    if (count > 0x0FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g(g_pOutOfMemoryStr);
+        fiAsciiTokenizer_FB40_g(1);
+    }
+    if (count == 0) {
+        return nullptr;
+    }
+    return xe_EC88(count * 16);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fiAsciiTokenizer_CC50_g @ 0x8222CC50 | size: 0xA8
+//
+// Initializes a 12-byte dynamic array struct (rage vector-like container)
+// and fills it with a single repeated uint32_t value.
+//
+// Layout of the struct at 'this':
+//   +0x00: uint32_t* m_pBegin      — pointer to first element
+//   +0x04: uint32_t* m_pEnd        — pointer past last written element
+//   +0x08: uint32_t* m_pCapacityEnd — pointer past allocated region
+//
+// Arguments:
+//   r3 = this (12-byte array struct)
+//   r4 = capacity (number of uint32_t slots)
+//   r5 = pointer to fill value (single uint32_t read repeatedly)
+// ─────────────────────────────────────────────────────────────────────────────
+struct DynArrayU32 {
+    uint32_t* m_pBegin;
+    uint32_t* m_pEnd;
+    uint32_t* m_pCapacityEnd;
+};
+
+void fiAsciiTokenizer_CC50_g(DynArrayU32* arr, uint32_t capacity,
+                              const uint32_t* pFillValue) {
+    arr->m_pBegin = nullptr;
+    arr->m_pEnd = nullptr;
+    arr->m_pCapacityEnd = nullptr;
+
+    if (capacity > 0x3FFFFFFFu) {
+        fiAsciiTokenizer_1F08_g(g_pOutOfMemoryStr);
+        fiAsciiTokenizer_FB40_g(1);
+    }
+
+    uint32_t* data = nullptr;
+    if (capacity != 0) {
+        data = static_cast<uint32_t*>(xe_EC88(capacity * 4));
+    }
+
+    arr->m_pBegin = data;
+    arr->m_pEnd = data;
+    arr->m_pCapacityEnd = data + capacity;
+
+    // Fill all slots with the value pointed to by pFillValue
+    uint32_t* dst = data;
+    for (uint32_t i = capacity; i > 0; i--) {
+        *dst = *pFillValue;
+        dst++;
+    }
+    arr->m_pEnd = dst;
+}
+
+} // extern "C"

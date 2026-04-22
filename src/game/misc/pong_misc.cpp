@@ -3506,3 +3506,262 @@ extern "C" void CCalMoviePlayer_D700_p39(void* pDevice, float f1,
     uint64_t* cmdPtr = (uint64_t*)(dev + 48);
     *cmdPtr |= (3ULL << 34);
 }
+
+// -----------------------------------------------------------------------------
+// pg batch lift: async/reset helpers and judge-point dispatch
+// -----------------------------------------------------------------------------
+
+extern "C" void* pg_C2A0_g(void* lookupRoot, uint32_t lookupKey) __asm__("_pg_C2A0_g");
+extern "C" void util_E8E8(void* context, const char* sourceLabel, const char* valueLabel, int32_t mode) __asm__("_util_E8E8");
+extern "C" void pg_1448_g(void* self) __asm__("_pg_1448_g");
+extern "C" void pg_6EB0_g(int32_t mode) __asm__("_pg_6EB0_g");
+extern "C" void pg_6DC0_g(void* handle, int32_t signalState, int32_t pulseMode) __asm__("_pg_6DC0_g");
+extern "C" void* pg_B760(uint32_t accessMask, int32_t inheritHandle, int32_t handleValue) __asm__("_pg_B760");
+extern "C" void pg_6C40_g(void* handle) __asm__("_pg_6C40_g");
+extern "C" void pg_6ED8_g(void* handle) __asm__("_pg_6ED8_g");
+extern "C" void game_7868(uint32_t* singletonSlot, int32_t mode) __asm__("_game_7868");
+extern "C" void xam_3368_g(void* self, void* owner, int32_t reason, int32_t flags) __asm__("_xam_3368_g");
+
+extern void* lbl_8271A310;
+extern const float lbl_8202D110;
+extern const char lbl_8206A888[];  // "jdg_pnt_lft"
+extern const char lbl_8206A894[];  // "jdg_pnt_rgt"
+extern const char lbl_8206A824[];  // "jdg_sit_stn"
+extern const char lbl_820681A0[];  // "Reset() called while read is pending"
+extern const char lbl_820695BC[];  // +4 => "INE_E_FEEDBACK_CANNOT_LOG"
+extern void* g_input_obj_ptr;
+extern uint32_t lbl_826064F4;
+extern void* lbl_82606600;
+extern uint8_t lbl_825EB900[];
+extern uint8_t lbl_825C40FF;
+
+namespace {
+struct PgJudgeDispatchEvent {
+    uint16_t m_eventCode;
+};
+
+struct PgJudgeLookupRecord {
+    uint8_t m_pad00[28];
+    const char* m_pJudgePointName;
+};
+
+struct PgJudgePointNode {
+    uint8_t m_pad00[20];
+    const char* m_pJudgePointName;
+    uint8_t m_pad18[56];
+    float m_threshold;
+    uint8_t m_pad54[100];
+    PgJudgePointNode* m_pNext;
+};
+
+struct PgJudgeDispatchContext {
+    uint8_t m_pad00[20];
+    PgJudgePointNode* m_pJudgePointList;
+};
+
+struct PgInputState {
+    uint8_t m_pad00[40];
+    uint32_t m_registryLookupKey;
+    uint8_t m_pad2C[23];
+    uint8_t m_bJudgeLeftSelected;
+    uint8_t m_bJudgeRightSelected;
+};
+
+struct PgThreadChannelContext {
+    uint8_t m_bHasWorkerThread;
+    uint8_t m_bReadPending;
+    uint8_t m_pad02;
+    uint8_t m_bWritePending;
+    uint8_t m_pad04;
+    uint8_t m_bMarkedIdle;
+    uint8_t m_pad06[26];
+    int32_t m_workerThreadKey;
+    void* m_pWorkerFence;
+    uint8_t m_pad28[4];
+    void* m_pWriteFence;
+    void* m_pReadFence;
+};
+
+struct PgResetRequestPayload {
+    uint32_t m_words[4];
+};
+
+struct PgReadRequestContext {
+    uint8_t m_pad00[4];
+    uint8_t m_bReadPending;
+    uint8_t m_pad05[2];
+    uint8_t m_bRearmSecondaryFence;
+    uint8_t m_pad08[12];
+    void* m_pSecondaryFence;
+    uint8_t m_pad18[4];
+    void* m_pPrimaryFence;
+    uint8_t m_pad20[4];
+    void* m_pReadFence;
+    uint8_t m_pad28[20];
+    PgResetRequestPayload m_resetPayload;
+};
+
+struct PgIoState {
+    uint8_t m_pad00[10376];
+    uint32_t m_resetLatch;
+};
+
+struct PgIoGlobals {
+    uint8_t m_pad00[0x78];
+    PgIoState* m_pIoState;
+};
+
+struct PgResetContext {
+    uint8_t m_pad00[28];
+    uint32_t m_field28;
+    uint32_t m_field32;
+    uint32_t m_field36;
+    uint32_t m_field40;
+    int32_t m_state;
+    void* m_pCompletionFence;
+    void* m_pWorkerHandle;
+};
+}
+
+// @ 0x823D1320 | size: 0x18
+void pg_1320_g(void* netLoadingThread) {
+    pg_1448_g(netLoadingThread);
+    pg_6EB0_g(0);
+}
+
+// @ 0x822E8058 | size: 0xF0
+void pg_8058(void* channelContext) {
+    auto* thisCtx = static_cast<PgThreadChannelContext*>(channelContext);
+    const int32_t kInfiniteTimeout = -1;
+
+    sysThread_WaitTimeout(thisCtx->m_pReadFence, kInfiniteTimeout);
+
+    if (thisCtx->m_bReadPending == 0 && thisCtx->m_bWritePending == 0) {
+        sysThread_WaitTimeout(thisCtx->m_pWriteFence, kInfiniteTimeout);
+        thisCtx->m_bMarkedIdle = 1;
+
+        if (thisCtx->m_bHasWorkerThread != 0 &&
+            thisCtx->m_bReadPending == 0 &&
+            thisCtx->m_workerThreadKey != -1) {
+            sysThread_WaitTimeout(thisCtx->m_pWorkerFence, kInfiniteTimeout);
+
+            void* workerHandle = pg_B760(0x001F03FFu, 0, thisCtx->m_workerThreadKey);
+            if (workerHandle != nullptr) {
+                sysIpcThread_Suspend(workerHandle);
+                sysIpcHandle_Close(workerHandle);
+            }
+
+            pg_6DC0_g(thisCtx->m_pWorkerFence, 1, 0);
+            thisCtx->m_bHasWorkerThread = 0;
+        }
+    }
+
+    pg_6DC0_g(thisCtx->m_pReadFence, 1, 0);
+}
+
+// @ 0x82426708 | size: 0xB8
+void pg_6708_g(void* resetContext) {
+    auto* thisCtx = static_cast<PgResetContext*>(resetContext);
+
+    if (thisCtx->m_state == 1) {
+        rage_debugLog(lbl_820681A0);
+        sysThread_WaitTimeout(thisCtx->m_pCompletionFence, 5000);
+    }
+
+    if (thisCtx->m_pWorkerHandle != nullptr) {
+        sysIpcHandle_Close(thisCtx->m_pWorkerHandle);
+        thisCtx->m_pWorkerHandle = nullptr;
+    }
+
+    thisCtx->m_field36 = 0;
+    thisCtx->m_field32 = 0;
+    thisCtx->m_field40 = 0;
+    thisCtx->m_field28 = 0;
+
+    if (thisCtx->m_state != 0) {
+        thisCtx->m_state = 0;
+        xam_3368_g(thisCtx, thisCtx, 0, 0);
+    }
+}
+
+// @ 0x822C0708 | size: 0xD8
+void pg_0708_g(void* requestContext, const void* resetPayloadRaw, uint8_t rearmSecondaryFence) {
+    auto* thisCtx = static_cast<PgReadRequestContext*>(requestContext);
+    auto* resetPayload = static_cast<const PgResetRequestPayload*>(resetPayloadRaw);
+
+    if (thisCtx->m_bReadPending != 0) {
+        rage_debugLog(lbl_820695BC + 4);
+        return;
+    }
+
+    game_7868(&lbl_826064F4, 1);
+    pg_6ED8_g(lbl_82606600);
+
+    auto* ioGlobals = reinterpret_cast<PgIoGlobals*>(lbl_825EB900);
+    if (ioGlobals->m_pIoState != nullptr) {
+        ioGlobals->m_pIoState->m_resetLatch = 0;
+    }
+
+    thisCtx->m_resetPayload = *resetPayload;
+    thisCtx->m_bRearmSecondaryFence = rearmSecondaryFence;
+
+    pg_6C40_g(thisCtx->m_pPrimaryFence);
+    pg_6C40_g(thisCtx->m_pSecondaryFence);
+    sysThread_WaitTimeout(thisCtx->m_pReadFence, -1);
+
+    if (thisCtx->m_bRearmSecondaryFence != 0) {
+        pg_6C40_g(thisCtx->m_pSecondaryFence);
+    }
+
+    thisCtx->m_bReadPending = 1;
+    lbl_825C40FF = 1;
+}
+
+// @ 0x8237EBC8 | size: 0x160
+void pg_EBC8_h(void* dispatchContext, const void* dispatchEventRaw) {
+    auto* thisCtx = static_cast<PgJudgeDispatchContext*>(dispatchContext);
+    auto* inputState = static_cast<PgInputState*>(g_input_obj_ptr);
+    auto* dispatchEvent = static_cast<const PgJudgeDispatchEvent*>(dispatchEventRaw);
+
+    auto* lookupRecord = static_cast<PgJudgeLookupRecord*>(
+        pg_C2A0_g(lbl_8271A310, inputState->m_registryLookupKey));
+    if (lookupRecord == nullptr || lookupRecord->m_pJudgePointName == nullptr) {
+        return;
+    }
+
+    const char* selectedPointName = lookupRecord->m_pJudgePointName;
+    bool preferLeftPoint = true;
+
+    for (PgJudgePointNode* node = thisCtx->m_pJudgePointList; node != nullptr; node = node->m_pNext) {
+        if (std::strcmp(selectedPointName, node->m_pJudgePointName) != 0) {
+            continue;
+        }
+
+        const float threshold = node->m_threshold;
+        preferLeftPoint = (threshold >= lbl_8202D110) && (threshold == threshold);
+        break;
+    }
+
+    const char* preferredPoint = lbl_8206A888;
+    const char* alternatePoint = lbl_8206A894;
+    if (!preferLeftPoint) {
+        const char* swap = preferredPoint;
+        preferredPoint = alternatePoint;
+        alternatePoint = swap;
+    }
+
+    const uint16_t eventCode = dispatchEvent->m_eventCode;
+    const bool isLeftEvent = (eventCode == 2093);
+    const bool isRightEvent = (eventCode == 2094);
+    if (!isLeftEvent && !isRightEvent) {
+        return;
+    }
+
+    const bool inputGatePassed = isLeftEvent
+        ? (inputState->m_bJudgeLeftSelected != 0)
+        : (inputState->m_bJudgeRightSelected != 0);
+
+    const char* selectedPoint = inputGatePassed ? preferredPoint : alternatePoint;
+    util_E8E8(thisCtx, selectedPointName, selectedPoint, 1);
+    util_E8E8(thisCtx, selectedPointName, lbl_8206A824, 0);
+}

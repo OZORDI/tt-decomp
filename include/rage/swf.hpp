@@ -40,6 +40,22 @@ namespace rage {
 namespace rage {
 
 /**
+ * swfValueType — ActionScript value type constants
+ *
+ * Matches the type IDs used in the SWF virtual machine's {value, type} pairs.
+ * Cross-referenced with gameswf's as_value::type enum.
+ */
+enum swfValueType : uint32_t {
+    SWF_VALUE_UNDEFINED   = 1,  // Undefined value
+    SWF_VALUE_NUMBER      = 2,  // Number (double)
+    SWF_VALUE_DELETED     = 3,  // Deleted/secondary undefined
+    SWF_VALUE_BOOLEAN     = 4,  // Boolean
+    SWF_VALUE_OBJECT      = 5,  // Object (as_object*)
+    SWF_VALUE_NATIVE_FUNC = 6,  // Native C function pointer
+    SWF_VALUE_STRING      = 7   // String
+};
+
+/**
  * swfBASE @ vtable 0x82074CCC
  * 
  * Base class for all SWF objects. Provides fundamental vtable structure
@@ -101,10 +117,6 @@ class swfFILE : public swfBASE {
 public:
     virtual ~swfFILE();  // @ 0x823F8BE0 | size: 0xDC
     virtual float FindExportFrame(float frameRate, const char* labelName, void* context);  // @ 0x823F9DC8 | size: 0xD4
-
-protected:
-    void** m_pResourceArray;  // +0x14 (20) - array of child resources
-    uint16_t m_resourceCount;  // +0x2E (46) - number of resources
 };
 
 /**
@@ -122,7 +134,7 @@ public:
     virtual void MarkDirty();  // @ 0x823FB760 | size: 0x44
     virtual void SetVisible();  // @ 0x823FB150 | size: 0xC
     void EnumerateMembers() override;  // @ 0x823FED18 | size: 0xD0
-    virtual void vfn_7();  // @ 0x823FC908 | size: 0x144
+    virtual void FindOrCreateChildByDepth();  // @ 0x823FC908 | size: 0x144
     int GetMemberCount() override;  // @ 0x823FB160 | size: 0x28
     int VisitMembers() override;  // @ 0x823FBF98 | size: 0x28
     bool GetMember(const char* name, void* result) override;  // @ 0x823FB970 | size: 0x624

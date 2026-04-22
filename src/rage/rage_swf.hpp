@@ -38,10 +38,10 @@ struct swfACTIONFUNC {
     virtual int GetMemberCount();  // [8] @ 0x823ff2a8
     virtual int VisitMembers();  // [9] @ 0x823ff3c0
     virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823ff2f0
-    virtual void vfn_11();  // [11] @ 0x823ff4a0
-    virtual void vfn_12();  // [12] @ 0x823ff4b8
+    virtual void SetMember(const char* name, void* value);  // [11] @ 0x823ff4a0
+    virtual void DeleteMember(const char* name);  // [12] @ 0x823ff4b8
     virtual void Invoke(const char* methodName, void* args, int argCount, void* outResult);  // [13] @ 0x823ff4d0
-    virtual void vfn_14();  // [14] @ 0x823ff590
+    virtual void Execute(void* args, int argCount, void* caller, int flags);  // [14] @ 0x823ff590
 };
 
 // ── rage::swfBASE  [vtable @ 0x82074CCC] ──────────────────────────
@@ -67,10 +67,10 @@ struct swfBUTTON {
     // ── virtual methods ──
     virtual ~swfBUTTON();                  // [0] @ 0x824075a8
     virtual void ScalarDtor(int flags); // [1] @ 0x824077d0
-    virtual void vfn_2();  // [2] @ 0x824076c8
-    virtual void vfn_3();  // [3] @ 0x824075f8
-    virtual void vfn_6();  // [6] @ 0x82407480
-    virtual void vfn_9();  // [9] @ 0x824079b8
+    virtual void NextFrame();  // [2] @ 0x824076c8
+    virtual void PrevFrame();  // [3] @ 0x824075f8
+    virtual void EnumerateMembers();  // [6] @ 0x82407480
+    virtual void VisitMembers();  // [9] @ 0x824079b8
 };
 
 // ── rage::swfCMD  [vtable @ 0x820755FC] ──────────────────────────
@@ -97,7 +97,7 @@ struct swfCMD_DoInitAction {
     // ── virtual methods ──
     virtual ~swfCMD_DoInitAction();                  // [0] @ 0x82407f60
     virtual void ScalarDtor(int flags); // [1] @ 0x82408550
-    virtual void vfn_2();  // [2] @ 0x821efc00
+    virtual void Cleanup();  // [2] @ 0x821efc00
 };
 
 // ── rage::swfCMD_PlaceObject2  [vtable @ 0x8207565C] ──────────────────────────
@@ -106,7 +106,7 @@ struct swfCMD_PlaceObject2 {
 
     // ── virtual methods ──
     virtual ~swfCMD_PlaceObject2();                  // [0] @ 0x82407ff0
-    virtual void vfn_5();  // [5] @ 0x82407fe8
+    virtual uint16_t GetDepth();  // [5] @ 0x82407fe8
 };
 
 // ── rage::swfCMD_PlaceObject2ClipEvent  [vtable @ 0x8207567C] ──────────────────────────
@@ -116,7 +116,7 @@ struct swfCMD_PlaceObject2ClipEvent {
     // ── virtual methods ──
     virtual ~swfCMD_PlaceObject2ClipEvent();                  // [0] @ 0x82408160
     virtual void ScalarDtor(int flags); // [1] @ 0x824083d8
-    virtual void vfn_3();  // [3] @ 0x824084b0
+    virtual void ExecuteClipFrame();  // [3] @ 0x824084b0
 };
 
 // ── rage::swfCMD_RemoveObject2  [vtable @ 0x8207569C] ──────────────────────────
@@ -144,8 +144,8 @@ struct swfEDITTEXT {
     // ── virtual methods ──
     virtual ~swfEDITTEXT();                  // [0] @ 0x824042c8
     virtual void ScalarDtor(int flags); // [1] @ 0x82404bd8
-    virtual void vfn_4();  // [4] @ 0x82405a38
-    virtual void vfn_5();  // [5] @ 0x82405b10
+    virtual bool GetMember(const char* name, void* result);  // [4] @ 0x82405a38
+    virtual void SetMember(const char* name, void* value);  // [5] @ 0x82405b10
 };
 
 // ── rage::swfFILE  [vtable @ 0x82074D6C] ──────────────────────────
@@ -154,7 +154,7 @@ struct swfFILE {
 
     // ── virtual methods ──
     virtual ~swfFILE();                  // [0] @ 0x823f8be0
-    virtual void vfn_2();  // [2] @ 0x82403628
+    virtual void AdvanceDefinitionFrame();  // [2] @ 0x82403628
     virtual float FindExportFrame(float frameRate, const char* labelName, void* context);  // [10] @ 0x823f9dc8
 };
 
@@ -178,7 +178,7 @@ struct swfINSTANCE {
     virtual void MarkDirty();  // [4] @ 0x823fb760
     virtual void SetVisible();  // [5] @ 0x823fb150
     virtual void EnumerateMembers();  // [6] @ 0x823fed18
-    virtual void vfn_7();  // [7] @ 0x823fc908
+    virtual void FindOrCreateChildByDepth();  // [7] @ 0x823fc908
     virtual int GetMemberCount();  // [8] @ 0x823fb160
     virtual int VisitMembers();  // [9] @ 0x823fbf98
     virtual bool GetMember(const char* name, void* result);  // [10] @ 0x823fb970
@@ -230,7 +230,7 @@ struct swfSHAPE {
     // ── virtual methods ──
     virtual ~swfSHAPE();                  // [0] @ 0x824065d0
     virtual void ScalarDtor(int flags); // [1] @ 0x82406c58
-    virtual void vfn_9();  // [9] @ 0x82406008
+    virtual void SetMember(const char* name, void* value);  // [9] @ 0x82406008
 };
 
 // ── rage::swfSPRITE  [vtable @ 0x820753D0] ──────────────────────────

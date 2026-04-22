@@ -11,6 +11,7 @@
 #include "rage/memory.h"
 #include <new>      // For placement new
 #include <cstring>  // For strcmp
+#include <cstdlib>  // For strtol
 
 // External functions
 extern "C" {
@@ -37,6 +38,66 @@ extern void* g_swfInstancePool;      // @ SDA offset 19536
 extern void* g_swfScriptArrayPool;   // @ SDA offset 19552
 
 namespace rage {
+
+namespace {
+constexpr int SWF_INTERN_BUFFER_SIZE = 1024;
+constexpr uint32_t SWF_ACTION_NODE_VISITED_BIT = 1;
+constexpr ptrdiff_t SWF_DEFINITION_OFFSET = 0x04;
+constexpr ptrdiff_t SWF_FILE_TOTAL_FRAMES_OFFSET = 0x08;
+constexpr ptrdiff_t SWF_FILE_FRAME_TABLE_OFFSET = 0x0C;
+constexpr ptrdiff_t SWF_FILE_RESOURCE_ARRAY_OFFSET = 0x14;
+constexpr ptrdiff_t SWF_FILE_RESOURCE_COUNT_OFFSET = 0x2E;
+constexpr ptrdiff_t SWF_INSTANCE_CURRENT_FRAME_OFFSET = 0xA4;
+constexpr ptrdiff_t SWF_INSTANCE_IS_PLAYING_OFFSET = 0xAA;
+constexpr ptrdiff_t SWF_INSTANCE_WRAP_RESET_FLAG_OFFSET = 0xAF;
+constexpr ptrdiff_t SWF_INSTANCE_CHILD_LIST_OFFSET = 0xB4;
+constexpr ptrdiff_t SWF_INSTANCE_NEXT_SIBLING_OFFSET = 0xB8;
+
+struct swfValuePair {
+    uint32_t data;
+    uint32_t type;
+};
+
+inline void* SwfGetDefinition(const void* object) {
+    return *reinterpret_cast<void* const*>(reinterpret_cast<const char*>(object) + SWF_DEFINITION_OFFSET);
+}
+
+inline uint16_t SwfGetTotalFrames(const void* fileDef) {
+    return *reinterpret_cast<const uint16_t*>(reinterpret_cast<const char*>(fileDef) + SWF_FILE_TOTAL_FRAMES_OFFSET);
+}
+
+inline void* SwfGetFrameTable(const void* fileDef) {
+    return *reinterpret_cast<void* const*>(reinterpret_cast<const char*>(fileDef) + SWF_FILE_FRAME_TABLE_OFFSET);
+}
+
+inline void** SwfGetResourceArray(const void* fileDef) {
+    return *reinterpret_cast<void***>(const_cast<char*>(reinterpret_cast<const char*>(fileDef)) + SWF_FILE_RESOURCE_ARRAY_OFFSET);
+}
+
+inline uint16_t SwfGetResourceCount(const void* fileDef) {
+    return *reinterpret_cast<const uint16_t*>(reinterpret_cast<const char*>(fileDef) + SWF_FILE_RESOURCE_COUNT_OFFSET);
+}
+
+inline uint16_t& SwfCurrentFrameRef(swfINSTANCE* instance) {
+    return *reinterpret_cast<uint16_t*>(reinterpret_cast<char*>(instance) + SWF_INSTANCE_CURRENT_FRAME_OFFSET);
+}
+
+inline uint8_t& SwfIsPlayingRef(swfINSTANCE* instance) {
+    return *reinterpret_cast<uint8_t*>(reinterpret_cast<char*>(instance) + SWF_INSTANCE_IS_PLAYING_OFFSET);
+}
+
+inline uint8_t& SwfWrapResetFlagRef(swfINSTANCE* instance) {
+    return *reinterpret_cast<uint8_t*>(reinterpret_cast<char*>(instance) + SWF_INSTANCE_WRAP_RESET_FLAG_OFFSET);
+}
+
+inline swfINSTANCE* SwfChildList(const swfINSTANCE* instance) {
+    return *reinterpret_cast<swfINSTANCE* const*>(reinterpret_cast<const char*>(instance) + SWF_INSTANCE_CHILD_LIST_OFFSET);
+}
+
+inline swfINSTANCE* SwfNextSibling(const swfINSTANCE* instance) {
+    return *reinterpret_cast<swfINSTANCE* const*>(reinterpret_cast<const char*>(instance) + SWF_INSTANCE_NEXT_SIBLING_OFFSET);
+}
+}  // namespace
 
 // ===========================================================================
 // swfBASE — Base class for all SWF objects
@@ -174,12 +235,12 @@ bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
     extern void* g_swfGlobalObject;       // @ 0x82602818
     extern void* g_swfGlobalScope;        // @ 0x8260282C
     // Intern the property name
-    const char* interned = swfInternString(name, &g_swfStringBuffer, 1024);
+    const char* interned = swfInternString(name, &g_swfStringBuffer, SWF_INTERN_BUFFER_SIZE);
 
     // Special case: "this" — return self as object
     if (strcmp(interned, "this") == 0) {
         *(void**)result = this;
-        *((uint32_t*)result + 1) = 5;  // type 5 = object
+        *((uint32_t*)result + 1) = SWF_VALUE_OBJECT;
         return true;
     }
 
@@ -208,7 +269,7 @@ bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
             *(void**)((char*)this + 12) = freeObj;
         }
         // Return prototype
-        *((uint32_t*)result + 1) = 5;  // type 5 = object
+        *((uint32_t*)result + 1) = SWF_VALUE_OBJECT;
         *(void**)result = *(void**)((char*)this + 12);
         return true;
     }
@@ -250,7 +311,7 @@ bool swfSCRIPTOBJECT::GetMember(const char* name, void* result) {
 void swfSCRIPTOBJECT::SetMember(const char* name, void* value) {
     extern void* g_swfStringBuffer;  // @ 0x82604850
 
-    const char* internedName = swfInternString(name, &g_swfStringBuffer, 1024);
+    const char* internedName = swfInternString(name, &g_swfStringBuffer, SWF_INTERN_BUFFER_SIZE);
     swfSymtab_Insert((char*)this + 4, internedName, value);
 }
 
@@ -265,7 +326,7 @@ void swfSCRIPTOBJECT::DeleteMember(const char* name) {
     // Build a stack pair: {name_ptr, type=1 (undefined)}
     struct { uint32_t nameRef; uint32_t type; } undefinedPair;
     undefinedPair.nameRef = (uint32_t)(uintptr_t)name;
-    undefinedPair.type = 1;
+    undefinedPair.type = SWF_VALUE_UNDEFINED;
 
     // Notify via GetMember (virtual slot 10) — virtual dispatch on this
     this->GetMember((const char*)&undefinedPair, &undefinedPair);
@@ -290,9 +351,9 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
 
     // Set up GetMember call: lookupKey = {methodName, type=7 (string)}
     // lookupResult = {0, 0} (will be filled in)
-    struct swfValue { uint32_t data; uint32_t type; };
-    swfValue lookupKey = { (uint32_t)(uintptr_t)methodName, 7 };
-    swfValue lookupResult = { 0, 0 };
+    swfValuePair lookupKey = { (uint32_t)(uintptr_t)methodName, SWF_VALUE_STRING };
+    swfValuePair lookupResult = { 0, 0 };
+    swfValuePair* resultValue = (swfValuePair*)outResult;
 
     // Call GetMember (virtual slot 10) — virtual dispatch on this
     bool found = this->GetMember((const char*)&lookupKey, &lookupResult);
@@ -301,21 +362,21 @@ void swfSCRIPTOBJECT::Invoke(const char* methodName, void* args, int argCount, v
         // Method not found
         extern const char* g_str_swf_unsupportedMethod;  // @ 0x82077054
         rage_DebugLog(g_str_swf_unsupportedMethod, methodName);
-        ((swfValue*)outResult)->data = 0;
-        ((swfValue*)outResult)->type = 3;  // type 3 = undefined
+        resultValue->data = 0;
+        resultValue->type = SWF_VALUE_DELETED;  // undefined
         return;
     }
 
-    // Initialize result to {0, type=5}
-    ((swfValue*)outResult)->data = 0;
-    ((swfValue*)outResult)->type = 5;
+    // Initialize result to {0, type=object}
+    resultValue->data = 0;
+    resultValue->type = SWF_VALUE_OBJECT;
 
-    if (lookupResult.type == 6) {
+    if (lookupResult.type == SWF_VALUE_NATIVE_FUNC) {
         // Type 6: native function pointer — call directly
         typedef void (*NativeFunc)(void*, void*, int, void*);
         NativeFunc fn = (NativeFunc)(uintptr_t)lookupResult.data;
         fn(this, args, argCount, outResult);
-    } else if (lookupResult.type == 5) {
+    } else if (lookupResult.type == SWF_VALUE_OBJECT) {
         // Type 5: script object — call its Execute method (vtable slot 14).
         // Callable script objects are always swfACTIONFUNC (slot 14 is only
         // defined there); virtual dispatch picks the right derived override.
@@ -376,7 +437,7 @@ void swfCONTEXT::ScalarDestructor(int flags) {
 
 void swfCONTEXT::Execute() {
     // External function declaration
-    extern void hudFlashBase_9CA8_h(void* flashObj, void* param1, void* param2);  // @ 0x823F9CA8
+    extern void hudFlashBase_ExecuteFromContext(void* flashObj, void* param1, void* param2);  // @ 0x823F9CA8
     extern void* g_currentSwfContext;  // @ 0x8260281C (SDA offset 10268)
     
     // Store this context as the current global context
@@ -388,7 +449,7 @@ void swfCONTEXT::Execute() {
     void* param1 = *((void**)((char*)this + 28));
     void* param2 = *((void**)((char*)this + 32));
     
-    hudFlashBase_9CA8_h(flashObj, param1, param2);
+    hudFlashBase_ExecuteFromContext(flashObj, param1, param2);
     
     // Clear the global context pointer
     g_currentSwfContext = nullptr;
@@ -409,29 +470,25 @@ void swfCONTEXT::Execute() {
 swfFILE::~swfFILE() {
     // Set vtable pointer (lis r11,-32249; addi r11,r11,19820)
     // Calculation: (-32249 << 16) + 19820 = 0x82074D8C
-    
+
+    void** resourceArray = SwfGetResourceArray(this);
+    uint16_t resourceCount = SwfGetResourceCount(this);
+
     // Destroy all child resources via virtual destructor dispatch.
-    // The resource array holds pointers to swfOBJECT-derived items
-    // (swfSPRITE / swfFONT / swfSHAPE / swfBUTTON / ...).
-    if (m_resourceCount > 0) {
-        for (int i = 0; i < m_resourceCount; i++) {
-            swfOBJECT* resource = (swfOBJECT*)m_pResourceArray[i];
+    // The resource array holds pointers to swfOBJECT-derived items.
+    if (resourceCount > 0) {
+        for (uint16_t i = 0; i < resourceCount; i++) {
+            swfOBJECT* resource = reinterpret_cast<swfOBJECT*>(resourceArray[i]);
             if (resource) {
-                // Virtual scalar-destructor (slot 0) with flags=1 (free).
-                // swfOBJECT does not declare a public ScalarDtor, so the
-                // ABI-shaped typed call below is kept deliberately. Derived
-                // classes (swfSPRITE/swfFONT/swfSHAPE/swfBUTTON/...) all
-                // install a compatible ~T()/scalar-dtor in slot 0.
                 void** vtable = *((void***)resource);
                 typedef void (*DestructorFn)(swfOBJECT*, int);
                 ((DestructorFn)vtable[0])(resource, 1);
             }
         }
     }
-    
-    // Free the resource array itself
-    if (m_pResourceArray) {
-        rage_free(m_pResourceArray);
+
+    if (resourceArray) {
+        rage_free(resourceArray);
     }
 }
 
@@ -558,9 +615,9 @@ void swfCMD_PlaceObject2_ScalarDestructor(swfCMD_PlaceObject2* obj, int flags) {
  * Destructor for PlaceObject2 clip event. Calls cleanup helper first.
  */
 swfCMD_PlaceObject2ClipEvent::~swfCMD_PlaceObject2ClipEvent() {
-    // Call cleanup helper (likely frees event handler list)
-    extern void atSingleton_8068_h(void* ptr);
-    atSingleton_8068_h(this);
+    // Call cleanup helper (frees event handler list)
+    extern void swfPlaceObject2ClipEvent_Cleanup(void* ptr);  // @ 0x82408068
+    swfPlaceObject2ClipEvent_Cleanup(this);
 }
 
 void swfCMD_PlaceObject2ClipEvent_ScalarDestructor(swfCMD_PlaceObject2ClipEvent* obj, int flags) {
@@ -634,7 +691,7 @@ float swfFILE::FindExportFrame(float frameRate, const char* labelName, void* con
     // Not found — log and return zero
     // Error string @ 0x82076C80: "Couldn't find font with which..."
     // (reused for "not found" in this context)
-    rage_DebugLog("Couldn't find frame label '%s'", labelName);  /* UNVERIFIED — string not found in binary */
+    rage_DebugLog("Couldn't find frame label '%s'", labelName);
     return 0.0f;
 }
 
@@ -692,45 +749,33 @@ void swfINSTANCE_ScalarDestructor(swfINSTANCE* obj, int flags) {
  * frame's command list (DoAction tags) if skipActions==0.
  */
 void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
-    void* def = *(void**)((char*)this + 4);   // m_pDefinition
-    uint16_t totalFrames = *(uint16_t*)((char*)def + 8);
+    void* def = SwfGetDefinition(this);
+    uint16_t totalFrames = SwfGetTotalFrames(def);
 
     if (targetFrame >= totalFrames) return;
 
-    uint16_t curFrame = *(uint16_t*)((char*)this + 164);
+    uint16_t& currentFrame = SwfCurrentFrameRef(this);
+    uint16_t curFrame = currentFrame;
     if (curFrame == targetFrame) return;
 
     while (curFrame != targetFrame) {
-        // Advance frame counter
-        uint16_t nextFrame = *(uint16_t*)((char*)this + 164) + 1;
-        nextFrame &= 0xFFFF;
-
-        void* curDef = *(void**)((char*)this + 4);
-        uint16_t maxFrames = *(uint16_t*)((char*)curDef + 8);
+        uint16_t nextFrame = (currentFrame + 1) & 0xFFFF;
+        uint16_t maxFrames = SwfGetTotalFrames(SwfGetDefinition(this));
 
         if (nextFrame >= maxFrames) {
-            // Wrap around: clear all children's dirty flags
-            void* child = *(void**)((char*)this + 180);
-            while (child) {
-                *(uint8_t*)((char*)child + 175) = 0;
-                child = *(void**)((char*)child + 184);
+            for (swfINSTANCE* child = SwfChildList(this); child; child = SwfNextSibling(child)) {
+                SwfWrapResetFlagRef(child) = 0;
             }
             nextFrame = 0;
         }
-        *(uint16_t*)((char*)this + 164) = nextFrame;
+        currentFrame = nextFrame;
 
         if (skipActions == 0) {
-            // Execute frame commands (linked list of swfCMD* — slot 2 Execute)
-            void* curDef2 = *(void**)((char*)this + 4);
-            uint16_t frameIdx = *(uint16_t*)((char*)this + 164);
-            void* frameTable = *(void**)((char*)curDef2 + 12);
+            void* curDef2 = SwfGetDefinition(this);
+            uint16_t frameIdx = currentFrame;
+            void* frameTable = SwfGetFrameTable(curDef2);
             void* cmdList = *(void**)((char*)frameTable + frameIdx * 8 + 4);
             while (cmdList) {
-                // Virtual Execute (slot 2) on swfCMD-derived node.
-                // swfCMD itself only declares the dtor (slot 0); slot 2 is
-                // filled in each concrete command subclass (swfCMD_DoAction,
-                // swfCMD_PlaceObject2, swfCMD_RemoveObject2, ...). Keeping
-                // the raw vtable call avoids forcing Execute onto the base.
                 typedef void (*ExecFunc)(void*, swfINSTANCE*);
                 void** cmdVtable = *(void***)cmdList;
                 ExecFunc exec = (ExecFunc)cmdVtable[2];
@@ -738,19 +783,14 @@ void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
                 cmdList = *(void**)((char*)cmdList + 12);
             }
         } else {
-            // Skip actions: call sprite definition's Execute (slot 2).
-            // curDef2 points to the swfFILE/swfSPRITE definition whose slot 2
-            // happens to be swfFILE::vfn_2 / swfSPRITE's frame-advance hook.
-            // Using the raw vtable call keeps swfOBJECT as the minimal base
-            // it is in the binary (dtor-only).
-            void* curDef2 = *(void**)((char*)this + 4);
+            void* curDef2 = SwfGetDefinition(this);
             typedef void (*DefExecFunc)(void*, swfINSTANCE*);
             void** defVtable = *(void***)curDef2;
             DefExecFunc defExec = (DefExecFunc)defVtable[2];
             defExec(curDef2, this);
         }
 
-        curFrame = *(uint16_t*)((char*)this + 164);
+        curFrame = currentFrame;
     }
 }
 
@@ -761,22 +801,21 @@ void swfINSTANCE::GotoFrame(uint16_t targetFrame, uint8_t skipActions) {
  * m_bIsPlaying flag, calling GotoFrame with play=true.
  */
 void swfINSTANCE::NextFrame(void* context) {
-    void* def = *(void**)((char*)this + 4);
-    uint16_t curFrame = *(uint16_t*)((char*)this + 164);
+    uint16_t curFrame = SwfCurrentFrameRef(this);
     uint16_t nextFrame = (curFrame + 1) & 0xFFFF;
-    uint16_t maxFrames = *(uint16_t*)((char*)def + 8);
+    uint16_t maxFrames = SwfGetTotalFrames(SwfGetDefinition(this));
 
     if (nextFrame >= maxFrames) {
         nextFrame = 0;
     }
 
-    uint8_t savedPlaying = *(uint8_t*)((char*)this + 170);
-    *(uint8_t*)((char*)this + 170) = 1;  // force playing
+    uint8_t& isPlaying = SwfIsPlayingRef(this);
+    uint8_t savedPlaying = isPlaying;
+    isPlaying = 1;
 
-    // Call GotoFrame (virtual slot 1) via virtual dispatch
     this->GotoFrame(nextFrame, (uint8_t)(uintptr_t)context);
 
-    *(uint8_t*)((char*)this + 170) = savedPlaying;  // restore
+    isPlaying = savedPlaying;
 }
 
 /**
@@ -786,13 +825,11 @@ void swfINSTANCE::NextFrame(void* context) {
  * Calls GotoFrame (vtable slot 1) with stop flag.
  */
 void swfINSTANCE::PrevFrame() {
-    uint16_t curFrame = *(uint16_t*)((char*)this + 164);
+    uint16_t curFrame = SwfCurrentFrameRef(this);
 
     if (curFrame == 0) {
-        // Wrap to last frame
-        void* def = *(void**)((char*)this + 4);
-        uint16_t maxFrames = *(uint16_t*)((char*)def + 8);
-        uint16_t lastFrame = (maxFrames + 0x10000 - 1) & 0xFFFF;  // maxFrames - 1 with wrap
+        uint16_t maxFrames = SwfGetTotalFrames(SwfGetDefinition(this));
+        uint16_t lastFrame = (maxFrames + 0x10000 - 1) & 0xFFFF;
         this->GotoFrame(lastFrame, 0);
     } else {
         uint16_t prevFrame = (curFrame + 0x10000 - 1) & 0xFFFF;
@@ -861,16 +898,12 @@ void swfINSTANCE::EnumerateMembers() {
         sprite->EnumerateMembers();
     }
 
-    // Walk action list and mark each node
+    // Walk action list and set the visited bit without clobbering the next link.
     void* actionNode = *(void**)((char*)this + 72);
-    if (actionNode) {
-        while (actionNode) {
-            uint32_t flags = *(uint32_t*)((char*)actionNode + 12);
-            *(uint32_t*)((char*)actionNode + 12) = flags | 1;
-            actionNode = *(void**)((char*)actionNode + 12);
-            // Note: above overwrites actionNode since +12 was just written;
-            // the original code reads +12 before the store, then follows the chain
-        }
+    while (actionNode) {
+        void* nextNode = *(void**)((char*)actionNode + 12);
+        *(uint32_t*)((char*)actionNode + 12) = ((uint32_t)(uintptr_t)nextNode) | SWF_ACTION_NODE_VISITED_BIT;
+        actionNode = nextNode;
     }
 }
 
@@ -905,13 +938,11 @@ int swfINSTANCE::VisitMembers() {
 /**
  * swfACTIONFUNC::SetMember() @ 0x823FF4A0 | size: 0x14
  * 
- * Virtual function slot 11 - forwards to inner object's vfn_11.
+ * Virtual function slot 11 - forwards to inner object's SetMember.
  * The inner object is stored at offset +7332.
  */
 void swfACTIONFUNC::SetMember(const char* name, void* value) {
     // Forward to inner MovieClip's SetMember (virtual slot 11).
-    // Note: original binary discards name/value — it invokes vfn_11 with
-    // no extra args, but a real SetMember takes (name, value).
     swfINSTANCE* innerObj = m_pInnerObject;
     if (innerObj) {
         innerObj->SetMember(name, value);
@@ -921,7 +952,7 @@ void swfACTIONFUNC::SetMember(const char* name, void* value) {
 /**
  * swfACTIONFUNC::DeleteMember() @ 0x823FF4B8 | size: 0x14
  *
- * Virtual function slot 12 - forwards to inner object's vfn_12.
+ * Virtual function slot 12 - forwards to inner object's DeleteMember.
  */
 void swfACTIONFUNC::DeleteMember(const char* name) {
     // Forward to inner MovieClip's DeleteMember (virtual slot 12).
@@ -933,7 +964,7 @@ void swfACTIONFUNC::DeleteMember(const char* name) {
 
 
 // swfINSTANCE overrides for Flash display object properties:
-// vfn_10 = GetMember (770 lines — dispatches "this", "_parent", "_root", textColor,
+// slot 10 = GetMember (770 lines — dispatches "this", "_parent", "_root", textColor,
 //          _name, _width, _height, _xscale, _yscale, _alpha, _rotation, _x, _y, etc.)
 bool swfINSTANCE::GetMember(const char* name, void* result) {
     // Full body @ 0x823FB970 is a 770-line property dispatcher that fans
@@ -944,7 +975,7 @@ bool swfINSTANCE::GetMember(const char* name, void* result) {
     return swfSCRIPTOBJECT::GetMember(name, result);
 }
 
-// vfn_11 = SetMember (736 lines — handles _x, _y, _xscale, _yscale, _alpha,
+// slot 11 = SetMember (736 lines — handles _x, _y, _xscale, _yscale, _alpha,
 //          _rotation, _name, __texturename, __drawcallback, textColor, _visible, etc.)
 void swfINSTANCE::SetMember(const char* name, void* value) {
     // Full body @ 0x823FC1A8 (736 lines) mirrors GetMember on the write side:
@@ -954,12 +985,12 @@ void swfINSTANCE::SetMember(const char* name, void* value) {
     swfSCRIPTOBJECT::SetMember(name, value);
 }
 
-// vfn_12 = DeleteMember (same as base — no special display property handling)
+// slot 12 = DeleteMember (same as base — no special display property handling)
 void swfINSTANCE::DeleteMember(const char* name) {
     swfSCRIPTOBJECT::DeleteMember(name);
 }
 
-// vfn_13 = Invoke (dispatches gotoAndPlay, gotoAndStop, play, nextFrame, prevFrame,
+// slot 13 = Invoke (dispatches gotoAndPlay, gotoAndStop, play, nextFrame, prevFrame,
 //          getBytesLoaded, getBytesTotal, attachMovie + falls through to base)
 void swfINSTANCE::Invoke(const char* methodName, void* args, int argCount, void* outResult) {
     // Full body @ 0x823FE500 dispatches gotoAndPlay, gotoAndStop, play,
@@ -1054,9 +1085,9 @@ void swfACTIONFUNC::EnumerateMembers() {
 // Forwards to inner object's vtable slot 7.
 // ─────────────────────────────────────────────────────────────────────────────
 void swfACTIONFUNC::VisitChildren() {
-    // Forward to inner MovieClip's vfn_7 (virtual slot 7).
+    // Forward to inner MovieClip's child lookup/create helper (virtual slot 7).
     swfINSTANCE* innerObj = m_pInnerObject;
-    if (innerObj) innerObj->vfn_7();
+    if (innerObj) innerObj->FindOrCreateChildByDepth();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1089,9 +1120,9 @@ void swfACTIONFUNC::Invoke(const char* methodName, void* args, int argCount, voi
 // ─────────────────────────────────────────────────────────────────────────────
 bool swfACTIONFUNC::GetMember(const char* name, void* result) {
     // Intern the name string
-    char internBuffer[1024];
+    char internBuffer[SWF_INTERN_BUFFER_SIZE];
     extern const char* swfInternString(const char* name, void* buffer, int maxLen);
-    const char* interned = swfInternString(name, internBuffer, 1024);
+    const char* interned = swfInternString(name, internBuffer, SWF_INTERN_BUFFER_SIZE);
 
     // Search local variable table
     int localCount = m_localCount;  // +132
@@ -1181,19 +1212,19 @@ swfSPRITE::~swfSPRITE() {}
 // ===========================================================================
 
 /**
- * swfCONTEXT_B1F0_w @ 0x823FB1F0 | size: 0x64
+ * swfContext_IsGlobalSlot13AltMode @ 0x823FB1F0 | size: 0x64
  * 
- * Checks if a specific condition is met by comparing byte values.
- * Returns true if the XOR of two bytes exceeds 127, false otherwise.
- * This appears to be a validation or state check function.
+ * Checks if the global SWF object's slot 13 has mismatched sign bits
+ * between byte[0] and byte[3], indicating an alternate execution mode.
+ * Returns true if the XOR of two bytes exceeds 127 (sign bit differs).
  */
-bool swfCONTEXT_B1F0_w() {
+bool swfContext_IsGlobalSlot13AltMode() {
     // External declarations
-    extern void* util_B188(void* obj, int param);  // @ 0x823FB188 - returns pointer
+    extern void* swfGlobalObject_GetSlotValuePtr(void* obj, int slotIndex);  // @ 0x823FB188
     extern void* g_swfGlobalObject;  // @ 0x82604848 (SDA offset 18504)
     
-    // Call utility function with parameter 13
-    uint8_t* result = (uint8_t*)util_B188(g_swfGlobalObject, 13);
+    // Get slot 13 value from the global SWF object
+    uint8_t* result = (uint8_t*)swfGlobalObject_GetSlotValuePtr(g_swfGlobalObject, 13);
     
     // Load bytes at offsets +0 and +3
     uint8_t byte0 = result[0];
@@ -1305,10 +1336,10 @@ void*    g_swfGlobalScope = nullptr;
 void*    g_swfStringBuffer = nullptr;
 void*    g_vtable_swfSCRIPTOBJECT = nullptr;
 
-// ── swfINSTANCE::vfn_7 @ 0x823FC908 size:0x144 ──
-// Member lookup/insert by 16-bit key (+164/+166/+168/+176/+184).
+// ── swfINSTANCE::FindOrCreateChildByDepth @ 0x823FC908 size:0x144 ──
+// Looks up a child instance by 16-bit depth key (+164/+166/+168/+176/+184).
 // Allocates from g_swfInstancePool when missing. Pending full decomp.
-void swfINSTANCE::vfn_7() {}
+void swfINSTANCE::FindOrCreateChildByDepth() {}
 
 } // namespace rage
 
@@ -1316,7 +1347,7 @@ void swfINSTANCE::vfn_7() {}
 // Stubs pending full implementation — pg_/PageGroup/swf*/hudFlashBase/Dialog
 // (moved from src/stubs.cpp and src/stubs_final.cpp). These bodies remain
 // as no-ops until their callees (pg_5B10_fw, pg_5BC8_fw, pg_80D0, pg_C3B8_g,
-// pg_6C40_g, pg_6C80_g, pongCameraMgr_5CE8_2hr, etc.) are themselves lifted.
+// UpdatePageGroup, pg_6C80_g, pongCameraMgr_5CE8_2hr, etc.) are themselves lifted.
 // ============================================================================
 
 // Forward decls for typed params used below.
@@ -1324,28 +1355,38 @@ struct TransitionParams;
 struct TransitionFlags;
 
 // ── pg_* / PageGroup / Dialog / TextEntry / CreditsRoll ─────────────────────
-bool pg_6F68(void* a, void* b, int c, unsigned int* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return false;
+bool PageGroup_DispatchEvent(void* group, void* event, int eventType, unsigned int* outResult, int flags) {
+    (void)group; (void)event; (void)eventType; (void)outResult; (void)flags; return false;
 }
-void* pg_9C00_g(void* a) { (void)a; return nullptr; }
-void* pg_9C00_g(void* a, int b) { (void)a; (void)b; return nullptr; }
-uint8_t pg_ApplyTransition(void* a, TransitionParams* b, int c, TransitionFlags* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; return 0;
+void* PageGroupNames_ResolveByHandle(void* namesMgr) { (void)namesMgr; return nullptr; }
+void* PageGroupNames_ResolveByHandle(void* namesMgr, int handle) { (void)namesMgr; (void)handle; return nullptr; }
+uint8_t PageGroup_ApplyTransition(void* gameState, TransitionParams* params, int transitionType,
+                                  TransitionFlags* flags, int enableFlag) {
+    (void)gameState; (void)params; (void)transitionType; (void)flags; (void)enableFlag; return 0;
 }
-void pg_E6E0(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
-void pg_EDE0_gen(void) {}
+uint8_t pg_ApplyTransition(void* gameState, TransitionParams* params, int transitionType,
+                           TransitionFlags* flags, int enableFlag) {
+    return PageGroup_ApplyTransition(gameState, params, transitionType, flags, enableFlag);
+}
+void PostPageGroupMessage_Internal(int messageId, int param1, int param2, int param3) { (void)messageId; (void)param1; (void)param2; (void)param3; }
+void GeneratePageGroupCommands(void) {}
 
-extern "C" void pg_6C40_g(void* a) { (void)a; }
+extern "C" void UpdatePageGroup(void* group) { (void)group; }
 extern "C" void pgBase_AcquireRef(void* a, int b) { (void)a; (void)b; }
 
-void pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned int* d, int e) {
-    (void)a; (void)b; (void)c; (void)d; (void)e;
+void PageGroup_DispatchEventCompat(void* group, void* event, int eventType,
+                                   unsigned int* outResult, int flags) {
+    (void)group; (void)event; (void)eventType; (void)outResult; (void)flags;
+}
+void pgPageGroup_DispatchEvent(void* group, void* event, int eventType,
+                               unsigned int* outResult, int flags) {
+    PageGroup_DispatchEventCompat(group, event, eventType, outResult, flags);
 }
 
 extern "C" {
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) __asm__("_pg_6F68");
 void _c_pgPageGroup_DispatchEvent(void* a, void* b, int c, unsigned* d, int e) {
-    pg_6F68(a, b, c, d, e);
+    PageGroup_DispatchEvent(a, b, c, d, e);
 }
 } // extern "C"
 
@@ -1358,7 +1399,6 @@ extern "C" {
 void DestroyPageGroup(void* group) { (void)group; }
 int GetPageGroupState(void* group) { (void)group; return 0; }
 void ProcessPageGroupInput(void* group) { (void)group; }
-void UpdatePageGroup(void* group) { (void)group; }
 void NotifyUIEvent(int event) { (void)event; }
 void* GetStateContextName(void* a) { (void)a; return nullptr; }
 void FadePageGroup(void* a, float b, uint32_t c, uint32_t d, uint32_t e) {
@@ -1404,15 +1444,20 @@ void CreditsRoll_Deactivate(void* a, int b, int c) { (void)a; (void)b; (void)c; 
 void* CreditsRoll_NotifyEntry(void* a, uint32_t b) { (void)a; (void)b; return nullptr; }
 
 // ── hudFlashBase_* ──────────────────────────────────────────────────────────
-void hudFlashBase_0F08_g(void* a, int b, float c, float d, int e, int f, int g) {
-    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)g;
+void hudFlashBase_RenderElement(void* hudObj, int modeIndex, float param1, float param2,
+                                int flag1, int flag2, int flag3) {
+    (void)hudObj; (void)modeIndex; (void)param1; (void)param2; (void)flag1; (void)flag2; (void)flag3;
+}
+void hudFlashBase_0F08_g(void* hudObj, int modeIndex, float param1, float param2,
+                         int flag1, int flag2, int flag3) {
+    hudFlashBase_RenderElement(hudObj, modeIndex, param1, param2, flag1, flag2, flag3);
 }
 void hudFlashBase_DrawFlashOverlay(void* a, void* b, void* c, float d, int e) {
     (void)a; (void)b; (void)c; (void)d; (void)e;
 }
 
 namespace rage {
-void hudFlashBase_9CA8_h(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+void hudFlashBase_ExecuteFromContext(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 } // namespace rage
 
 // ── swf* free functions ─────────────────────────────────────────────────────

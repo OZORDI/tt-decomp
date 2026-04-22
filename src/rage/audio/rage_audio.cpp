@@ -1838,4 +1838,266 @@ void audControlGroup::LoadParameters(void* parserRecord) {
 }
 
 
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::audControlGroup — Destructor & ProcessAllControls
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Additional extern declarations for audControlGroup.
+extern "C" void audControlGroup_Finalize(void* self) __asm__("rage_7630");
+extern "C" void audControlGroup_ApplyDirtyFlags(void* group, uint32_t flags) __asm__("audVoiceStream_2758_g");
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControlGroup destructor body  @ 0x82162688 | size: 0x7C
+//
+// Sets vtable to audControlGroup base, frees the group's name string (+56),
+// walks the global singly-linked list (head at g_audCtrlMgrControlListHead,
+// next at +60) to find and unlink this node, then calls the finalize helper.
+// ─────────────────────────────────────────────────────────────────────────────
+static void audControlGroup_DestroyBody(void* self) // @ 0x82162688
+{
+    uint8_t* raw = static_cast<uint8_t*>(self);
+
+    // Free name string at +56
+    void* nameStr = *reinterpret_cast<void**>(raw + 56);
+    rage_free(nameStr);
+
+    // Walk singly-linked list to find and unlink self
+    void** ppLink = &g_audCtrlMgrControlListHead;
+    void* current = *ppLink;
+
+    while (current != nullptr) {
+        if (current == self) {
+            // Unlink: predecessor's next = self's next
+            *ppLink = *reinterpret_cast<void**>(raw + 60);
+            audControlGroup_Finalize(self);
+            return;
+        }
+        uint8_t* currentBytes = static_cast<uint8_t*>(current);
+        ppLink = reinterpret_cast<void**>(currentBytes + 60);
+        current = *ppLink;
+    }
+
+    // Fallthrough: unlink and finalize regardless
+    *ppLink = *reinterpret_cast<void**>(raw + 60);
+    audControlGroup_Finalize(self);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControlGroup::~audControlGroup  [vtable slot 0 @ 0x82162638]
+// Scalar-deleting destructor. Calls body, then conditionally frees.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControlGroup::~audControlGroup @ 0x82162638 | size: 0x50
+ *
+ * Virtual destructor. Frees name, unlinks from global list, finalizes.
+ */
+audControlGroup::~audControlGroup() {
+    audControlGroup_DestroyBody(this);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audControlGroup::ProcessAllControls  [vtable slot 4 @ 0x821628C8]
+// Iterates all control groups in the global linked list, clamps master volume
+// to [0,1] when not paused, then marks volume/pitch/reverb/pan as dirty.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audControlGroup::ProcessAllControls @ 0x821628C8 | size: 0xF0
+ *
+ * Walks every audControlGroup in the global linked list.  For each group:
+ * clamps the master volume to [0.0, 1.0] when unpaused, then signals dirty
+ * flags for volume (1), pitch (4), reverb (8), position (16), and pan (2)
+ * so the audio thread picks up the changes.
+ */
+void audControlGroup::ProcessAllControls() {
+    uint8_t* node = static_cast<uint8_t*>(g_audCtrlMgrControlListHead);
+    if (node == nullptr) {
+        return;
+    }
+
+    while (node != nullptr) {
+        bool muteActive = (g_audMasterMuteFlag != 0);
+
+        // Load master volume at +20
+        float masterVolume;
+        std::memcpy(&masterVolume, node + 20, sizeof(float));
+
+        if (!muteActive) {
+            // Clamp volume to [0.0, 1.0]
+            if (masterVolume < 0.0f) {
+                masterVolume = 0.0f;
+            } else if (masterVolume > 1.0f) {
+                masterVolume = 1.0f;
+            }
+        }
+
+        // Store clamped volume back
+        std::memcpy(node + 20, &masterVolume, sizeof(float));
+
+        // Mark volume dirty
+        audControlGroup_ApplyDirtyFlags(node, 1);
+
+        // Mark pitch dirty
+        audControlGroup_ApplyDirtyFlags(node, 4);
+
+        // Check reverb volume at +32: update if > 0.0 or NaN
+        float reverbVolume;
+        std::memcpy(&reverbVolume, node + 32, sizeof(float));
+        if (reverbVolume > 0.0f || reverbVolume != reverbVolume) {
+            audControlGroup_ApplyDirtyFlags(node, 8);
+        }
+
+        // Mark position dirty
+        audControlGroup_ApplyDirtyFlags(node, 16);
+
+        // Mark pan dirty
+        audControlGroup_ApplyDirtyFlags(node, 2);
+
+        // Advance to next node via +60
+        void* nextPtr;
+        std::memcpy(&nextPtr, node + 60, sizeof(void*));
+        node = static_cast<uint8_t*>(nextPtr);
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::audVoiceSfx — Command-Ring Voice Functions
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::Stop  [vtable slot 5 @ 0x821635B8]
+// Enqueues a Stop command (cmdId 16388) for this voice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::Stop @ 0x821635B8 | size: 0x50
+ *
+ * Sends a stop command to the audio thread via the command ring buffer.
+ */
+void audVoiceSfx::Stop() {
+    uint32_t voiceHandle = *static_cast<uint32_t*>(m_pSfxRef);
+    PushAudioCommand(2, 16388, 1, &voiceHandle);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::StopImmediate  [vtable slot 6 @ 0x82163608]
+// Enqueues a StopImmediate command (cmdId 16389) for this voice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::StopImmediate @ 0x82163608 | size: 0x4C
+ *
+ * Sends an immediate stop command to the audio thread.
+ */
+void audVoiceSfx::StopImmediate() {
+    uint32_t voiceHandle = *static_cast<uint32_t*>(m_pSfxRef);
+    PushAudioCommand(2, 16389, 1, &voiceHandle);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::Play  [vtable slot 7 @ 0x82163658]
+// Enqueues a Play command (cmdId 16387) for this voice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::Play @ 0x82163658 | size: 0x4C
+ *
+ * Sends a play command to the audio thread.
+ */
+void audVoiceSfx::Play() {
+    uint32_t voiceHandle = *static_cast<uint32_t*>(m_pSfxRef);
+    PushAudioCommand(2, 16387, 1, &voiceHandle);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetVolume  [vtable slot 9 @ 0x82163778]
+// Scales the volume to integer and enqueues a SetVolume command (cmdId 16390).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::SetVolume @ 0x82163778 | size: 0x60
+ *
+ * Converts a [0..1] volume to the internal integer scale and sends a
+ * volume-change command to the audio thread.
+ */
+void audVoiceSfx::SetVolume(float vol) {
+    uint32_t voiceHandle = *static_cast<uint32_t*>(m_pSfxRef);
+
+    float offset = g_audVolumeOffset;
+    float scale  = g_audVolumeScaleFactor;
+    int32_t scaledVol = static_cast<int32_t>((vol - offset) * scale);
+
+    uint32_t params[2];
+    params[0] = voiceHandle;
+    params[1] = static_cast<uint32_t>(scaledVol);
+    audCommand_Enqueue(2, 16390, params, 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::SetLooping  [vtable slot 17 @ 0x82163AB0]
+// Enqueues a SetLooping command (cmdId 16400) with handle and loop flag.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::SetLooping @ 0x82163AB0 | size: 0x60
+ *
+ * Sends a looping state change to the audio thread.
+ */
+void audVoiceSfx::SetLooping(uint32_t handle, bool loop) {
+    uint32_t voiceHandle = *static_cast<uint32_t*>(m_pSfxRef);
+
+    uint32_t params[3];
+    params[0] = voiceHandle;
+    params[1] = handle;
+    params[2] = loop ? 1u : 0u;
+    audCommand_Enqueue(2, 16400, params, 3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audVoiceSfx::IsPlaying  [vtable slot 18 @ 0x82163B10]
+// Returns true if the voice is in a playing state (17, 18, 20, 21, 22).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audVoiceSfx::IsPlaying @ 0x82163B10 | size: 0x44
+ *
+ * Checks the SFX reference's playback state to determine if the voice is
+ * currently playing or queued for playback.
+ */
+bool audVoiceSfx::IsPlaying() {
+    uint32_t state = static_cast<uint32_t*>(m_pSfxRef)[1]; // state at sfxRef+4
+    switch (state) {
+        case 17:
+        case 18:
+        case 20:
+        case 21:
+        case 22:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// rage::audBankMgr — Destructor
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────────
+// audBankMgr::~audBankMgr  [vtable slot 0 @ 0x82162CF8]
+// Scalar-deleting destructor. Calls the destroy body, then conditionally frees.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * audBankMgr::~audBankMgr @ 0x82162CF8 | size: 0x50
+ *
+ * Virtual destructor. Tears down internal bank state, frees hash table and
+ * managed resources via audBankMgr_Destroy, then optionally frees self.
+ */
+audBankMgr::~audBankMgr() {
+    audBankMgr_Destroy(this);
+}
+
 } // namespace rage
+
