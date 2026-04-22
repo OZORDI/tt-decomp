@@ -48,7 +48,6 @@ set(SOURCES
     src/crt/string.c
     src/crt/xe_tls.c
     src/globals.c
-    src/stubs.cpp
 
     # XAM (Xbox Application Model)
     src/xam/audio.c

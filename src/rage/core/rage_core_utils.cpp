@@ -838,3 +838,185 @@ extern "C" void util_PackColorRGBA(uint32_t* out, const float* rgba) {
            (static_cast<uint32_t>(b) << 8)  |
            (static_cast<uint32_t>(a));
 }
+
+
+// ============================================================================
+// Entry point — main() and rage_main_stub
+// (moved from stubs.cpp — the real rage_main_stub is in main.c;
+//  this main() just forwards to it)
+// ============================================================================
+
+int main(int argc, char** argv) {
+    // The real entry chain is: __mainCRTStartup → _crt_entry → rage_main_stub
+    // This main() exists as a fallback for host-platform builds where the
+    // CRT startup calls main() directly instead of __mainCRTStartup.
+    extern int rage_main_stub(void* parms, void* base);
+    return rage_main_stub(nullptr, nullptr);
+    (void)argc; (void)argv;
+}
+
+
+// ============================================================================
+// Vtable arrays — link anchors for generated vtable emissions
+// These are referenced by globals_linker.cpp asm-label vtable definitions.
+// ============================================================================
+
+extern "C" {
+void* fsmMachine_vtable[16] = {0};
+void* gameLoop_vtable_derived[16] = {0};
+void* gameLoop_vtable_parent[16] = {0};
+void* grcDisplay_vtable[16] = {0};
+void* grcDisplay_vtable2[16] = {0};
+void* hsmContext_vtable_init[16] = {0};
+void* physicsWorld_vtable[16] = {0};
+void* k_factoryVtable[16] = {0};
+void* rage_datBase_vtable[16] = {0};
+}
+
+
+// ============================================================================
+// Simple no-ops for systems not yet active
+// ============================================================================
+
+extern "C" {
+
+/** Content manager — user content loading not needed for menu boot */
+void contentManager_LoadUserContent(void) {}
+
+/** Frame sync signal — no-op in single-threaded mode */
+void game_FrameSyncSignal(void* event, int signal) {
+    (void)event; (void)signal;
+}
+
+/** Shader preset array allocation — no-op until rendering is active */
+void grmShaderPreset_AllocArray(uint32_t count) { (void)count; }
+
+/** Network system shutdown — no-op until networking is active */
+void netSystem_Shutdown(void) {}
+
+}
+
+
+// ============================================================================
+// sysMemAllocator_InitThreadHeap — thread heap initialization
+// ============================================================================
+
+extern "C" void sysMemAllocator_InitThreadHeap(void) {
+    extern void* g_pAllocatorBase;
+    extern char g_mainThreadXtfStorage[256];
+    extern uint32_t g_allocInitFlag;
+    extern void xe_alloc_thread_ctx_6CA8(void* ctx, uint32_t heapSize, uint32_t flags);
+    extern void xe_get_thread_ctx_36E8(void);
+
+    void** base = (void**)g_pAllocatorBase;
+    if (!base) return;
+    if (base[1] != nullptr) return;
+    void* xtfBlock = (void*)g_mainThreadXtfStorage;
+    if (!(g_allocInitFlag & 1)) {
+        g_allocInitFlag |= 1;
+        xe_alloc_thread_ctx_6CA8(xtfBlock, 0x002C0000u, 0);
+        std::atexit(xe_get_thread_ctx_36E8);
+    }
+    base[1] = xtfBlock;
+    base[2] = xtfBlock;
+}
+
+
+// ============================================================================
+// RtlEnterCriticalSection_D6F0_fw — deferred complex lift (844 bytes)
+// ============================================================================
+
+extern "C" void* RtlEnterCriticalSection_D6F0_fw(void* critSection) {
+    (void)critSection;
+    return nullptr;
+}
+
+
+// ============================================================================
+// xe_GetLoadContext — C++ overload (C version in xe_tls.c)
+// ============================================================================
+
+extern "C" void xe_GetLoadContext(void* context) { (void)context; }
+
+
+// ============================================================================
+// Utility link targets (only referenced from generated code)
+// ============================================================================
+
+extern "C" {
+
+/** util_B188 @ 0x823FB188 | size: 0x64 — SWF context lookup */
+void* util_B188(void* swfContext, int index) {
+    (void)swfContext; (void)index;
+    return nullptr;
+}
+
+/** util_5A70 @ 0x822E5A70 | size: 0x190 — file device operation */
+int util_5A70(void* device, void* buffer, int offset, int size, int flags) {
+    (void)device; (void)buffer; (void)offset; (void)size; (void)flags;
+    return 0;
+}
+
+}
+
+
+// ============================================================================
+// typeinfo for hsmState
+// ============================================================================
+
+namespace { struct FakeTypeInfo { void* vtable; const char* name; }; }
+extern "C" const FakeTypeInfo _ZTI8hsmState = { nullptr, "hsmState" };
+
+
+// ============================================================================
+// C-linkage wrappers for dual-linkage symbols
+// These use __asm__ labels to provide C-mangled names for functions
+// that have C++ implementations.
+// ============================================================================
+
+extern void atArray_Clear(void* arr);
+extern void audControl_Destructor(void* pControl);
+extern void hsmContext_SetNextState(void* ctx, int state);
+extern "C" void* atHashMap_Find(void* table, const char* key);
+extern void sysCallback_Invoke(void* callback, int code);
+
+extern "C" {
+
+void _c_atArray_Clear(void* a) __asm__("_atArray_Clear");
+void _c_atArray_Clear(void* a) { atArray_Clear(a); }
+
+void _c_audControl_Destructor(void* o) __asm__("_audControl_Destructor");
+void _c_audControl_Destructor(void* o) { audControl_Destructor(o); }
+
+void _c_hsmContext_SetNextState(void* c, int s) __asm__("_hsmContext_SetNextState_2800");
+void _c_hsmContext_SetNextState(void* c, int s) { hsmContext_SetNextState(c, s); }
+
+void _c_atHashMap_Find(void* a, const void* b) __asm__("_atHashMap_Find");
+void _c_atHashMap_Find(void* a, const void* b) {
+    atHashMap_Find(a, static_cast<const char*>(b));
+}
+
+// _c_sysCallback_Invoke not needed — sysCallback_Invoke already has extern "C" linkage
+
+}
+
+
+// ============================================================================
+// Namespace rage globals — physics, rendering, animation state
+// ============================================================================
+
+namespace rage {
+
+extern const float g_capsuleVolK1 = 1.5f;
+extern const float g_capsuleVolK2 = 4.18879f;
+uint8_t  g_contextStack[128] = {};
+void*    g_currentGeometry = nullptr;
+uint32_t* g_iccProfilePtr = nullptr;
+uint32_t  g_mmioStoredValue = 0;
+void*    g_phAllocator = nullptr;
+uint32_t g_phCollisionFlags = 0;
+uint16_t g_phDefaultStatusId = 0;
+void*    g_phGlobalState = nullptr;
+void*    g_vtable_cmApproach2 = nullptr;
+
+} // namespace rage
