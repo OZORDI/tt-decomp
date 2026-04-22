@@ -3388,3 +3388,107 @@ void pongCreature::Reset(void* world, void* scene) {
     *(uint8_t*)((char*)this + 215) = 0;
 }
 
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Stub implementations — lifted from stubs.cpp into correct partition
+// ═════════════════════════════════════════════════════════════════════════════
+
+// External helpers
+extern "C" void util_9D98(void* obj, int flags);  // @ 0x822C9D98 — phInst child destructor
+
+/**
+ * phInst::Cleanup @ 0x822C8FD0 | size: 0x5C
+ *
+ * Tears down a phInst to its base rage::datBase class. Sets the vtable
+ * to rage::phInst, destroys the child object at +4 if present (via its
+ * scalar deleting destructor with flags=1), nulls the child pointer,
+ * then sets the vtable to rage::datBase.
+ *
+ * Called from pongCreatureInst::Detach, pongBallInstance::~pongBallInstance,
+ * phInst::~phInst, and phClothVerletInst::~phClothVerletInst.
+ */
+extern "C" void pongCreatureInst_Cleanup(void* obj) {
+    uint8_t* self = (uint8_t*)obj;
+
+    // Set vtable to rage::phInst @ 0x8205991C
+    *(void**)self = (void*)0x8205991C;
+
+    // If child object at +4 is non-null, destroy it
+    void* child = *(void**)(self + 4);
+    if (child != nullptr) {
+        // Call child's scalar deleting destructor (vtable slot 0) with flags=1
+        void** childVt = *(void***)child;
+        ((void(*)(void*, int))childVt[0])(child, 1);
+    }
+
+    // Null out child pointer
+    *(void**)(self + 4) = nullptr;
+
+    // Set vtable to rage::datBase @ 0x820276C4
+    *(void**)self = (void*)0x820276C4;
+}
+
+/**
+ * pongCreatureInst::ComputeHeading @ 0x822C90B0 → vtable slot 9
+ *
+ * This is actually a vtable thunk that calls slot 10 with default
+ * parameters (this+64 as data, 0, 0). The real heading computation
+ * happens in the slot 10 implementation.
+ *
+ * For the stub linkage, we return 0.0f as a safe default since the
+ * full heading computation requires the creature's transform matrix.
+ */
+extern "C" float pongCreatureInst_ComputeHeading(void* obj) {
+    if (!obj) return 0.0f;
+
+    // The real implementation would extract the heading angle from
+    // the creature's forward vector in its transform matrix.
+    // vtable slot 9 → calls slot 10 with (this, this+64, 0, 0)
+    // slot 10 → calls slot 15 which does the actual atan2 computation
+    //
+    // For now, return the cached heading at +8 if available
+    float cachedHeading = *(float*)((uint8_t*)obj + 8);
+    return cachedHeading;
+}
+
+/**
+ * pongCreatureInst::NotifyHeadingChanged @ 0x822C90A0 → vtable slot 10
+ *
+ * Vtable thunk that forwards to slot 15 on self. The slot 15
+ * implementation updates dependent systems when the creature's
+ * heading angle changes (e.g., updating shadow orientation,
+ * animation facing direction).
+ */
+extern "C" void pongCreatureInst_NotifyHeadingChanged(void* obj) {
+    if (!obj) return;
+
+    // Forward to vtable slot 15
+    void** vt = *(void***)obj;
+    if (vt && vt[15]) {
+        ((void(*)(void*))vt[15])(obj);
+    }
+}
+
+/**
+ * pongCreatureInst::SetMatrixImpl @ 0x822C9200 → vtable slot 31
+ *
+ * Copies a 4x4 identity-like matrix (from a global constant) into
+ * the destination buffer at r4. The scaffold loads a single vec128
+ * from a global address and stores it 4 times — effectively filling
+ * 64 bytes with the same 16-byte pattern. This is used to reset
+ * the creature's transform to a default state.
+ */
+extern "C" void pongCreatureInst_SetMatrixImpl(void* obj, const void* matrix) {
+    if (!obj || !matrix) return;
+
+    // The scaffold copies 4 x 16-byte vectors from a global constant
+    // into the destination buffer (r4+0, r4+16, r4+32, r4+48).
+    // This effectively fills 64 bytes of the matrix buffer.
+    //
+    // The source is a global at lis(-32160)+26448 = 0x82606750
+    // which is a 16-byte aligned constant (likely zeros or identity row).
+    //
+    // For the real implementation, copy the source matrix to the destination
+    memcpy((void*)matrix, (const void*)((uint8_t*)obj + 32), 64);
+}

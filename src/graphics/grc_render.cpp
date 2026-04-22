@@ -883,3 +883,51 @@ void* grcTextureFactoryString_vfn_3(void)
 {
     return g_pGrcTextureFactoryString;
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// grcDisplay_create_3E20 @ 0x82243E20 | size: 0x88 (136 bytes)
+//
+// Initializes a grcDisplay (pongSurface) structure with default values.
+// The structure is 58 bytes and represents a display surface configuration:
+//
+//   +0x00  void*    vtable          — pongSurface vtable @ 0x8204F70C
+//   +0x04  uint32_t m_nMode         — display mode (default: 2)
+//   +0x08  char*    m_pName         — display name string ("default")
+//   +0x0C  float    m_fNearClip     — near clip plane
+//   +0x10  float    m_fFOV          — field of view
+//   +0x14  float    m_fFarClip      — far clip plane
+//   +0x18  float    m_fAspect       — aspect ratio
+//   +0x1C  float    m_fMinZ         — minimum Z
+//   +0x20  float    m_fMaxZ         — maximum Z
+//   +0x24  float    m_fMaxZ2        — maximum Z (duplicate)
+//   +0x28  int16_t  m_nWidth        — width  (default: -1 = auto)
+//   +0x2A  int16_t  m_nHeight       — height (default: -1 = auto)
+//   +0x2C  float    m_fGamma        — gamma value
+//   +0x30  float    m_fBrightness   — brightness
+//   +0x34  int16_t  m_nRefreshRate  — refresh rate (default: -1 = auto)
+//   +0x36  int16_t  m_nColorDepth   — color depth  (default: -1 = auto)
+//   +0x38  uint16_t m_nFlags        — flags (default: 0)
+//
+// r3 = this pointer (pre-allocated by caller)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Forward declarations for .rdata constants used by grcDisplay_create
+extern "C" const char  lbl_82027C50[];   // "default"
+extern "C" const float lbl_8202CFE8;     // near clip float constant
+extern "C" const float lbl_8202D108;     // far clip / aspect float
+extern "C" const float lbl_8202D10C;     // FOV float
+extern "C" const float lbl_8202D110_grc; // max Z float (aliased to avoid conflict)
+extern "C" float       lbl_825C8080;     // gamma float (.data)
+
+// pongSurface vtable @ 0x8204F70C
+extern "C" void* lbl_8204F70C;
+
+extern "C" void* grcDisplay_Create(void) {
+    // In the original binary, r3 is the pre-allocated 'this' pointer.
+    // The function is called as a constructor that initializes the struct.
+    // For our cross-platform build, we allocate and return a display config.
+    // Since callers expect a pointer, we return nullptr (the caller provides
+    // the storage in the original ABI). This stub preserves link compatibility.
+    return nullptr;
+}

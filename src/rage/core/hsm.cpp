@@ -27,6 +27,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "game/match/pong_states.hpp"  // hsmState class definition
+
 // ─── hsmContext::SetNextState @ 0x82222800 ────────────────────────────────────
 //
 // Drives the one-hot transition automaton. The layout probed:
@@ -265,3 +267,110 @@ extern "C" void _c_PostStateTransitionRequest(void* m, int e)
 extern "C" void _c_PostStateTransitionRequest(void* m, int e) {
     PostStateTransitionRequest(m, e);
 }
+
+
+// ============================================================================
+// SECTION: hsmState member functions (lifted from stubs.cpp)
+// ============================================================================
+
+/**
+ * hsmState::GetFullStatePath @ 0x823ED290 | size: 0xF8
+ *
+ * Builds the full hierarchical state path by recursing up the parent chain.
+ * For a state hierarchy like Root/Menu/Options, this produces "Root/Menu/Options".
+ *
+ * Algorithm:
+ *   1. If this state has a parent (m_pParentState != null):
+ *      a. Recursively call parent->GetFullStatePath(buffer, bufferSize)
+ *      b. Compute current string length
+ *      c. Append "/<stateName>" using snprintf
+ *   2. If no parent (root state):
+ *      a. Copy GetStateName() directly into buffer
+ *
+ * Uses virtual dispatch for GetStateName() (vtable slot 2) and
+ * GetFullStatePath() (vtable slot 3) to support polymorphic state names.
+ */
+void hsmState::GetFullStatePath(char* buffer, unsigned int bufferSize) const {
+    if (!buffer || bufferSize == 0)
+        return;
+
+    if (m_pParentState) {
+        // Recurse into parent first to build the prefix path
+        m_pParentState->GetFullStatePath(buffer, bufferSize);
+
+        // Compute current string length
+        unsigned int currentLen = 0;
+        const char* p = buffer;
+        while (*p++)
+            ;
+        currentLen = static_cast<unsigned int>(p - buffer - 1);
+
+        if (currentLen >= bufferSize)
+            return;
+
+        // Append "/<stateName>" to the existing path
+        const char* name = GetStateName();
+        std::snprintf(buffer + currentLen, bufferSize - currentLen,
+                      "/%s", name);
+    } else {
+        // Root state — just copy the name directly
+        const char* name = GetStateName();
+        unsigned int remaining = bufferSize - 1;
+        char* dest = buffer;
+        while (remaining > 0 && *name) {
+            *dest++ = *name++;
+            --remaining;
+        }
+        *dest = '\0';
+    }
+}
+
+/**
+ * hsmState::Reset @ 0x823E8D58 | size: 0x50
+ *
+ * Resets this state to its initial condition. First calls the virtual
+ * OnExit() method (vtable slot 6) to perform any cleanup, then zeros
+ * out all state fields:
+ *   +0x10: m_field_10 (flags/timer)
+ *   +0x14: m_field_14 (flags/timer)
+ *   +0x04: m_pManager
+ *   +0x08: m_pParentState
+ *   +0x0C: m_pChildState
+ *
+ * This effectively detaches the state from its hierarchy and manager.
+ */
+void hsmState::Reset() {
+    // Call OnExit to perform cleanup before resetting
+    OnExit();
+
+    // Zero all state fields
+    m_field_10 = 0;
+    m_field_14 = 0;
+    m_pManager = nullptr;
+    m_pParentState = nullptr;
+    m_pChildState = nullptr;
+}
+
+/**
+ * hsmState_AttachChild — Attach a child state to a parent
+ *
+ * Links a child state into the parent's hierarchy by setting the
+ * child's parent pointer and the parent's child pointer.
+ * This is used during HSM construction to build the state tree.
+ *
+ * No binary address — link anchor for HSM construction code.
+ */
+namespace rage {
+void hsmState_AttachChild(void* parent, void* child) {
+    if (!parent || !child)
+        return;
+
+    // Set child's parent pointer (offset +0x08)
+    uint8_t* childPtr = static_cast<uint8_t*>(child);
+    *reinterpret_cast<void**>(childPtr + 0x08) = parent;
+
+    // Set parent's child pointer (offset +0x0C)
+    uint8_t* parentPtr = static_cast<uint8_t*>(parent);
+    *reinterpret_cast<void**>(parentPtr + 0x0C) = child;
+}
+}  // namespace rage

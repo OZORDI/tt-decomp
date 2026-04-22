@@ -11548,3 +11548,223 @@ void phBound_TransformPointByMatrixInv(const float* matrix,
 //     part of phBound proper — those live in the phBoundBVH subclass of
 //     phBound (not wired in this file yet) and are a separate batch.
 // ═══════════════════════════════════════════════════════════════════════════
+
+
+// ============================================================================
+// SECTION: Physics stub implementations (lifted from stubs.cpp)
+// ============================================================================
+
+/**
+ * phInst_BFB8_2hr @ 0x8246BFB8 | size: 0x60
+ *
+ * Computes the maximum required buffer size for a phInst's bone hierarchy.
+ * Iterates over all entries in the bone table, finds the maximum depth
+ * (entry[i].depth + 1), and returns maxDepth * 8.
+ *
+ * The bone table is accessed through a pointer at offset +0 of the phInst,
+ * which points to a descriptor:
+ *   +0x00: uint8_t  numEntries
+ *   +0x04: pointer  to entry array (each entry is 12 bytes, depth at +0)
+ *
+ * Returns 0 if the input is null or the descriptor pointer is null.
+ */
+extern "C" void* phInst_BFB8_2hr(void* obj) {
+    if (!obj)
+        return nullptr;
+
+    // Load descriptor pointer at offset +0
+    uint32_t* objPtr = static_cast<uint32_t*>(obj);
+    void* descriptor = reinterpret_cast<void*>(*objPtr);
+    if (!descriptor)
+        return nullptr;
+
+    uint8_t* desc = static_cast<uint8_t*>(descriptor);
+    uint8_t numEntries = desc[0];
+    if (numEntries == 0)
+        return reinterpret_cast<void*>(static_cast<uintptr_t>(0));
+
+    // Entry array starts at desc + 4 (pointer dereference)
+    uint8_t* entryArray = reinterpret_cast<uint8_t*>(
+        *reinterpret_cast<uint32_t*>(desc + 4));
+
+    // Find maximum (depth + 1) across all entries
+    // Each entry is 12 bytes; depth is at offset +0 (uint8_t)
+    uint32_t maxDepthPlusOne = 0;
+    for (uint8_t i = 0; i < numEntries; i++) {
+        uint8_t depth = entryArray[i * 12];
+        uint32_t depthPlusOne = static_cast<uint32_t>(depth) + 1;
+        if (depthPlusOne > maxDepthPlusOne)
+            maxDepthPlusOne = depthPlusOne;
+    }
+
+    // Return maxDepthPlusOne * 8 (rlwinm r3,r9,3,0,28)
+    return reinterpret_cast<void*>(
+        static_cast<uintptr_t>(maxDepthPlusOne * 8));
+}
+
+/**
+ * phInst_SetMatrix_Impl — Physics instance matrix setter
+ *
+ * Sets the world transform matrix on a physics instance. This is a
+ * forwarding stub that delegates to the instance's internal matrix
+ * update mechanism. The exact semantics depend on the instance type
+ * (rigid body, articulated, etc.).
+ *
+ * Parameters are opaque pointers to the instance and matrix data.
+ * No binary address — this is a synthetic link anchor.
+ */
+extern "C" void phInst_SetMatrix_Impl(void* inst, void* matrix,
+                                       void* param3, void* param4) {
+    (void)inst; (void)matrix; (void)param3; (void)param4;
+    // TODO: Implement when phInst matrix update path is lifted.
+    // This is a synthetic glue function with no direct binary address.
+}
+
+/**
+ * phInst_Cleanup — Physics instance cleanup
+ *
+ * Releases resources held by a physics instance. Called during
+ * scene teardown or when an instance is removed from the world.
+ * No binary address — synthetic link anchor.
+ */
+extern "C" void phInst_Cleanup(void* inst) {
+    (void)inst;
+    // TODO: Implement when phInst lifecycle is fully lifted.
+}
+
+/**
+ * ph_Atan2 — Physics atan2 wrapper
+ *
+ * Computes the arc tangent of y/x, returning the angle in radians.
+ * Used throughout the physics system for direction calculations.
+ * Wraps the standard atan2f function.
+ */
+extern "C" float ph_Atan2(float y, float x) {
+    return atan2f(y, x);
+}
+
+/**
+ * ph_Normalize — Normalize an angle to [-PI, PI] range
+ *
+ * Normalizes a radian angle value to the range [-PI, PI].
+ * Used by the physics system to keep angular values in a
+ * canonical range for comparison and interpolation.
+ */
+extern "C" float ph_Normalize(float x) {
+    const float kTwoPi = 6.2831853f;
+    const float kPi = 3.1415927f;
+
+    // Bring into [-2PI, 2PI] range
+    while (x > kPi)
+        x -= kTwoPi;
+    while (x < -kPi)
+        x += kTwoPi;
+
+    return x;
+}
+
+/**
+ * ke_DispatchPhysics — Kernel physics dispatch
+ *
+ * Dispatches a physics update tick. On Xbox 360 this was a kernel-level
+ * scheduling call that triggered the physics thread. In the cross-platform
+ * build, physics runs single-threaded so this is a no-op.
+ */
+extern "C" void ke_DispatchPhysics(void* context) {
+    (void)context;
+    // No-op: physics runs synchronously in the cross-platform build.
+    // On Xbox 360, this dispatched work to a hardware thread.
+}
+
+/**
+ * phCollider_vfn_4 @ 0x822CAD78 | size: 0xA0
+ *
+ * Resets the accumulated force/velocity vectors on a phArticulatedCollider.
+ * Zeros out 9 SIMD vectors at offsets +288 through +416 (forces, velocities,
+ * torques, impulses), then computes the sum of vectors at +384 and +352
+ * and stores the result at +416.
+ *
+ * This is called at the start of each physics step to clear the force
+ * accumulators before new forces are applied.
+ */
+extern "C" void phCollider_vfn_4(rage::phArticulatedCollider* collider) {
+    if (!collider)
+        return;
+
+    uint8_t* base = reinterpret_cast<uint8_t*>(collider);
+
+    // Zero vectors at offsets 288, 304, 320, 336 (4 × 16-byte vectors)
+    // These are force/torque accumulators
+    memset(base + 288, 0, 16);  // +288
+    memset(base + 304, 0, 16);  // +304
+    memset(base + 320, 0, 16);  // +320
+    memset(base + 336, 0, 16);  // +336
+
+    // Read vectors at +384 and +352, compute sum, store at +416
+    float* vec384 = reinterpret_cast<float*>(base + 384);
+    float* vec352 = reinterpret_cast<float*>(base + 352);
+    float* vec416 = reinterpret_cast<float*>(base + 416);
+
+    vec416[0] = vec352[0] + vec384[0];
+    vec416[1] = vec352[1] + vec384[1];
+    vec416[2] = vec352[2] + vec384[2];
+    vec416[3] = vec352[3] + vec384[3];
+
+    // Zero remaining vectors: +384, +400, +352, +368
+    memset(base + 384, 0, 16);  // +384
+    memset(base + 400, 0, 16);  // +400
+    memset(base + 352, 0, 16);  // +352
+    memset(base + 368, 0, 16);  // +368
+}
+
+/**
+ * fragDrawable_0AA0_2h @ 0x820F0AA0 | size: 0xAC
+ *
+ * SIMD-heavy fragment drawable function that computes bounding box
+ * intersection distances using trigonometric functions. The function
+ * takes a drawable, a bounding box, a flags word, and an output
+ * parameter, and computes the minimum penetration distance.
+ *
+ * This function uses fsel (floating-point select), fabs, and calls
+ * to sub_8243A0B0 (likely sinf/cosf). The sp_wrong flag in IDA
+ * indicates unusual stack frame handling.
+ *
+ * TODO: Full SIMD lift deferred — this is a complex trigonometric
+ * bounding computation. The stub preserves link compatibility.
+ */
+extern "C" void fragDrawable_0AA0_2h(void* drawable, void* bounds,
+                                      uint32_t flags, void* outResult) {
+    (void)drawable; (void)bounds; (void)flags; (void)outResult;
+    // TODO: SIMD-heavy trigonometric bounding box computation.
+    // See pseudocode at 0x820F0AA0 — uses fsel, fabs, sin/cos.
+    // Deferred until SIMD translation infrastructure is in place.
+}
+
+/**
+ * msgMsgSink_Broadcast — Message sink broadcast
+ *
+ * Broadcasts a message through the message sink system. Used by the
+ * networking and event dispatch subsystems to propagate events to
+ * all registered listeners.
+ *
+ * No binary address found — this is a synthetic link anchor for
+ * the message dispatch system.
+ */
+extern "C" void msgMsgSink_Broadcast(void* sink, void* message, void* context) {
+    (void)sink; (void)message; (void)context;
+    // TODO: Implement when message sink dispatch is lifted.
+    // This broadcasts a message to all registered handlers.
+}
+
+/**
+ * phWorld_Construct — Physics world constructor
+ *
+ * Constructs and returns a new physics world instance. The physics
+ * world manages all rigid bodies, constraints, and collision detection.
+ * Returns nullptr until the full physics world is implemented.
+ */
+extern "C" void* phWorld_Construct(void) {
+    // TODO: Implement full physics world construction.
+    // Returns nullptr — physics world not yet operational.
+    return nullptr;
+}

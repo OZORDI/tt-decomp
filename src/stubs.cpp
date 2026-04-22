@@ -81,9 +81,7 @@ int main(int argc, char** argv) {
 // atHashMap_Clear / atSingleton_Find / atSingleton_Remove — moved to
 // src/rage/data/at_types.cpp.
 
-void rage_GameLoopThreadEntry(void* singleton) {
-    (void)singleton;
-}
+// rage_GameLoopThreadEntry — moved to src/rage/core/rage_core_utils.cpp
 
 // ── Audio System Functions ──────────────────────────────────────────────────
 // audSystem_Configure / audSystem_Shutdown — real impls moved to
@@ -97,20 +95,9 @@ void rage_GameLoopThreadEntry(void* singleton) {
 // _realloc_crt, _calloc_crt, _crt_fiber_destroy, _tls_dtor_cleanup,
 // _crt_tls_callback → moved to src/crt/crt_init.c
 
-void* fiDeviceMemory_AllocateDeviceMemory(size_t size) {
-    (void)size;
-    return nullptr;
-}
-
-void* fiDevice_GetDevice(const char* name) {
-    (void)name;
-    return nullptr;
-}
-
-void* fiStream_Open(const char* path, int mode) {
-    (void)path; (void)mode;
-    return nullptr;
-}
+// fiDeviceMemory_AllocateDeviceMemory — moved to src/rage/io/fiDevice.cpp
+// fiDevice_GetDevice — moved to src/rage/io/fiDevice.cpp
+// fiStream_Open — moved to src/rage/io/fiDevice.cpp
 
 // parStreamOutXml_vprintf — moved to src/rage/data/par_xml_types.cpp.
 
@@ -120,20 +107,9 @@ void* fiStream_Open(const char* path, int mode) {
 // grcDevice_Present              — no-op retained for host-side presentation
 // grcDevice_SubInit / WaitFence  — thin stubs; referenced from app_init.c
 
-#if defined(TT_PLATFORM_PC)
-extern void sdl_PollAndSwap(void);
-#endif
-
-void grcDevice_Present(void) {
-#if defined(TT_PLATFORM_PC)
-    sdl_PollAndSwap();
-#endif
-}
-
-void grcDevice_SubInit(void* device) { (void)device; }
-void grcDevice_WaitFence(void) {}
-
-void* grcDisplay_Create(void) { return nullptr; }
+// grcDevice_Present — moved to src/graphics/grc_gpu_resources.cpp (keeps sdl_PollAndSwap behavior)
+// grcDevice_SubInit / WaitFence — moved to src/graphics/grc_gpu_resources.cpp
+// grcDisplay_Create — moved to src/graphics/grc_render.cpp
 
 // ── HSM Functions ───────────────────────────────────────────────────────────
 // hsmContext_SetNextState — lifted in src/rage/core/hsm.cpp
@@ -147,64 +123,44 @@ void netSystem_Shutdown(void) {}
 
 // ── Debug/Logging Functions ─────────────────────────────────────────────────
 
-void rage_debugLog_c(const char* fmt, ...) {
-    (void)fmt;
-}
+// rage_debugLog_c — moved to src/rage/core/rage_core_utils.cpp
 
 // ── Physics Functions ───────────────────────────────────────────────────────
 
 // phMaterialMgrImpl_UpdateActive lifted to src/physics/ph_physics.cpp.
-void* phWorld_Construct(void) { return nullptr; }
-void rage_strchr(void) {}
+// phWorld_Construct — lifted to src/physics/ph_physics.cpp
+// rage_strchr — lifted to src/physics/ph_physics.cpp
 
 // ── Game Functions ──────────────────────────────────────────────────────────
 
 // pongPostEffects_Create — lifted to src/game/pong_render.cpp (returns void*)
+// contentManager_LoadUserContent — no-op (user content loading not needed for menu boot)
 void contentManager_LoadUserContent(void) {}
 // pg_EDE0_gen → src/rage/swf.cpp
 
 // ── RAGE Engine Functions ───────────────────────────────────────────────────
 
-void rage_AcquireReference(void* obj) { (void)obj; }
+// rage_AcquireReference — moved to src/rage/core/rage_core_utils.cpp
 
-void* rage_BlockAlloc(size_t size) {
-    (void)size;
-    return nullptr;
-}
+// rage_BlockAlloc — moved to src/rage/core/rage_core_utils.cpp
 
 // hsmContext_InitTimers — lifted in src/rage/core/hsm.cpp
 
-void rage_DebugLog(const char* fmt, ...) {
-    (void)fmt;
-}
+// rage_DebugLog — moved to src/rage/core/rage_core_utils.cpp
 
-uint8_t rage_FindSingleton(void* ptr) {
-    (void)ptr;
-    return 0;
-}
+// rage_FindSingleton — moved to src/rage/core/rage_core_utils.cpp
 
-const char* rage_GetExecutableName(void) {
-    return "RockstarTableTennis";
-}
+// rage_GetExecutableName — moved to src/rage/core/rage_core_utils.cpp
 
-void rage_InitMainThreadHeap(void) {}
-void rage_InitializeNetSystem(void) {}
+// rage_InitMainThreadHeap, rage_InitializeNetSystem — moved to src/rage/core/rage_core_utils.cpp
 
-void rage_RegisterThread(const char* name) { (void)name; }
-void rage_RenderDebugOverlay(void) {}
-void rage_SetRenderMode(int mode) { (void)mode; }
+// rage_RegisterThread, rage_RenderDebugOverlay, rage_SetRenderMode — moved to src/rage/core/rage_core_utils.cpp
 
-int rage_StringCompareNoCase(const char* a, const char* b) {
-    (void)a; (void)b;
-    return 0;
-}
+// rage_StringCompareNoCase — moved to src/rage/core/rage_core_utils.cpp
 
-const char* rage_StringFindChar(const char* str, char c) {
-    (void)str; (void)c;
-    return nullptr;
-}
+// rage_StringFindChar — moved to src/rage/core/rage_core_utils.cpp
 
-void rage_ThreadPool_Cleanup(void) {}
+// rage_ThreadPool_Cleanup — moved to src/rage/core/rage_core_utils.cpp
 
 void sysMemAllocator_Free(void* ptr) {
     extern void rage_free(void* ptr);
@@ -219,19 +175,13 @@ int rage_main_stub(int argc, char** argv) {
     return 0;
 }
 
-void* rage_malloc(size_t size) {
-    (void)size;
-    return nullptr;
-}
+// rage_malloc — moved to src/rage/core/rage_core_utils.cpp
 
 // ── SWF (Scaleform) Functions → src/rage/swf.cpp ────────────────────────────
 
 // ── Memory Allocator Functions ──────────────────────────────────────────────
 
-void* sysMemAllocator_Alloc(size_t size) {
-    (void)size;
-    return nullptr;
-}
+// sysMemAllocator_Alloc — moved to src/rage/core/rage_core_utils.cpp
 
 // ── Utility Functions ───────────────────────────────────────────────────────
 
@@ -248,10 +198,7 @@ void* sysMemAllocator_Alloc(size_t size) {
 
 void grmShaderPreset_AllocArray_c(void) {}
 
-void* rage_Alloc_c(uint32_t size) {
-    (void)size;
-    return nullptr;
-}
+// rage_Alloc_c — moved to src/rage/core/rage_core_utils.cpp
 
 // xe_main_thread_init → moved to src/crt/xe_tls.c
 
@@ -300,29 +247,14 @@ void* rage_datBase_vtable[16] = {0};
 
 // ── Physics / Scene ─────────────────────────────────────────────────────────
 
-// CreatePhysicsInstance, CreateSimplePhysicsInstance, LinkPhysicsResource,
-// ReleaseSceneObject, ResetBoundObject, ResetViewBound, pongDrawBucket_AddEntry
-// lifted to src/physics/ph_physics.cpp.
-extern "C" void phInst_SetMatrix_Impl(void* a, void* b, void* c, void* d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
-extern "C" void* phInst_BFB8_2hr(void* a) { (void)a; return nullptr; }
-extern "C" void phInst_Cleanup(void* a) { (void)a; }
-extern "C" float ph_Atan2(float y, float x) { (void)y; (void)x; return 0.0f; }
-extern "C" float ph_Normalize(float x) { (void)x; return 0.0f; }
-extern "C" void ke_DispatchPhysics(void* a) { (void)a; }
-// grc_SetupResource: synthetic glue, no real address in binary. Link anchor.
-extern "C" void grc_SetupResource(void* a, void* b) { (void)a; (void)b; }
-extern "C" void msgMsgSink_Broadcast(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
-// fragDrawable_0AA0_2h @ 0x820F0AA0 size:0xAC — SIMD-heavy (sp_wrong flag).
-// Real impl pending deferred lift; this anchor keeps callers in rage_grm.cpp linking.
-extern "C" void fragDrawable_0AA0_2h(void* a, void* b, uint32_t c, void* d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
+// Physics / Scene stubs — lifted to src/physics/ph_physics.cpp
+// phInst_SetMatrix_Impl, phInst_BFB8_2hr, phInst_Cleanup, ph_Atan2,
+// ph_Normalize, ke_DispatchPhysics, phCollider_vfn_4, fragDrawable_0AA0_2h,
+// msgMsgSink_Broadcast, phWorld_Construct — all in ph_physics.cpp
 
 // ── Debug / Logging ─────────────────────────────────────────────────────────
 
-extern "C" void DbgPrint(const char* fmt, ...) { (void)fmt; }
+// DbgPrint — moved to src/rage/core/rage_core_utils.cpp
 
 // ── UI / Page Groups → src/rage/swf.cpp ─────────────────────────────────────
 
@@ -350,10 +282,7 @@ extern "C" int32_t util_2458_FindCharacterIndex(void* a, const char* b) { (void)
 
 // ── Network ─────────────────────────────────────────────────────────────────
 // NetDll_recvfrom and NetDll_sendto are now implemented in xam/network.c
-extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
-    if (dest && maxSize > 0) dest[0] = '\0';
-    (void)src;
-}
+// rage_atStringCopy — moved to src/rage/core/rage_core_utils.cpp
 // SinglesNetworkClient_SetMode — lifted in src/game/network/pong_network.cpp
 
 // ── Locomotion State / Animation ────────────────────────────────────────────
@@ -383,8 +312,12 @@ extern "C" void rage_atStringCopy(const char* src, char* dest, int maxSize) {
 
 // ── Game Logic ──────────────────────────────────────────────────────────────
 
+// game_FrameSyncSignal — frame synchronization signal (no-op in single-threaded mode)
+// On Xbox 360, this signals a hardware event for frame sync between threads.
+// In our single-threaded recomp, this is safely a no-op.
 extern "C" void game_FrameSyncSignal(void* a, int b) { (void)a; (void)b; }
 // gmLogic_StepFrame_impl — lifted in src/rage/core/hsm.cpp
+// grmShaderPreset_AllocArray — allocates shader preset array (no-op until rendering is active)
 extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 
 // ── Jump Tables / Dispatch ──────────────────────────────────────────────────
@@ -398,36 +331,19 @@ extern "C" void grmShaderPreset_AllocArray(uint32_t a) { (void)a; }
 // ── Creature System ─────────────────────────────────────────────────────────
 
 // pongCreature_BaseDtor / Fixup / UpdateReplay — moved to src/game/creature/pong_creature.cpp
-extern "C" void pongCreatureInst_Cleanup(void* a) { (void)a; }
-extern "C" float pongCreatureInst_ComputeHeading(void* a) { (void)a; return 0.0f; }
-extern "C" void pongCreatureInst_NotifyHeadingChanged(void* a) { (void)a; }
-extern "C" void pongCreatureInst_SetMatrixImpl(void* a, const void* b) { (void)a; (void)b; }
+// pongCreatureInst_Cleanup / ComputeHeading / NotifyHeadingChanged / SetMatrixImpl
+// → lifted to src/game/creature/pong_creature.cpp
 
 // ── Player System ───────────────────────────────────────────────────────────
 
-extern "C" bool pongPlayer_CheckBallSplash(void* a) { (void)a; return false; }
-extern "C" void pongPlayer_ClearShotState(void* a) { (void)a; }
-extern "C" int pongPlayer_GetAnimIndex(void* a) { (void)a; return 0; }
-extern "C" void pongPlayer_GetVelocity(void* a, float* b) {
-    (void)a; if (b) { b[0] = 0.0f; b[1] = 0.0f; b[2] = 0.0f; }
-}
-extern "C" void pongPlayer_NetSync(void* a, int b) { (void)a; (void)b; }
-extern "C" void pongPlayer_ProcessReplay(void* a) { (void)a; }
-extern "C" void pongPlayer_ResetShotTiming(void* a, float b) { (void)a; (void)b; }
-extern "C" void pongPlayer_ResetSwingImpl(void* a) { (void)a; }
-extern "C" void pongPlayer_SetScoreSlot(void* a, int b) { (void)a; (void)b; }
-// pongPlayer_StateHandler_{9188..91E8} — lifted to src/game/player/pong_player.cpp
-extern "C" void pongPlayer_SyncFloat(void* a, void* b) { (void)a; (void)b; }
-extern "C" void pongPlayer_SyncWord(void* a, void* b) { (void)a; (void)b; }
+// pongPlayer_CheckBallSplash / ClearShotState / GetAnimIndex / GetVelocity /
+// NetSync / ProcessReplay / ResetShotTiming / ResetSwingImpl / SetScoreSlot /
+// SyncFloat / SyncWord → lifted to src/game/player/pong_player.cpp
 
 // ── RAGE Engine Core ────────────────────────────────────────────────────────
 
-extern "C" void rage_AddRef(void* a) { (void)a; }
-extern "C" void rage_Release(void* a) { (void)a; }
-extern "C" void rage_ReleaseSingleton(void* a) { (void)a; }
-// parStreamInXml_FindChildByName / parMember_Destructor —
-//   moved to src/rage/data/par_xml_types.cpp.
-extern "C" const void* rage_cmIntegrate_vtable = nullptr;
+// rage_AddRef, rage_Release, rage_ReleaseSingleton — moved to src/rage/core/rage_core_utils.cpp
+// rage_cmIntegrate_vtable — moved to src/rage/core/rage_core_utils.cpp
 // fiStreamBuf_Read_stub / fiStreamBuf_Close_stub — moved to src/rage/io/fiStreamBuf.cpp.
 // rage_datTypeFactory_Create_stub — moved to src/rage/data/par_xml_types.cpp.
 
@@ -435,7 +351,7 @@ extern "C" const void* rage_cmIntegrate_vtable = nullptr;
 
 // ── System / Memory ─────────────────────────────────────────────────────────
 
-extern "C" void* sysMemAllocator_Allocate(void* a, size_t b) { (void)a; (void)b; return nullptr; }
+// sysMemAllocator_Allocate — moved to src/rage/core/rage_core_utils.cpp
 
 extern "C" void sysMemAllocator_InitThreadHeap(void) {
     extern void* g_pAllocatorBase;
@@ -482,7 +398,7 @@ void DeserializeNetworkData(void* a, void* b, int c) { (void)a; (void)b; (void)c
 // Dialog_IsComplete / DismissPageGroup / FadePageGroup / InitializePageGroup → src/rage/swf.cpp
 
 void GetPlayerID(void* a, unsigned int b) { (void)a; (void)b; }
-void HSM_QueueNotification(void* a) { (void)a; }
+// HSM_QueueNotification — lifted to src/rage/core/hsm.cpp
 
 // ── LocomotionStateAnim members ─────────────────────────────────────────────
 // Lifted to src/anim/locomotion.cpp (P10).
@@ -504,11 +420,13 @@ void ReadBitsFromStream(void* a, void* b, int c) { (void)a; (void)b; (void)c; }
 // RegisterSerializedField (const-qualified overload) — moved to
 //   src/rage/data/par_xml_types.cpp.
 
-void ResetShotTimingState(void* a) { (void)a; }
+// ResetShotTimingState — lifted to src/game/player/pong_player.cpp
 
+// RtlEnterCriticalSection_D6F0_fw @ 0x8244D6F0 — complex critical section handler
+// TODO: Full implementation deferred (844 bytes, switch table + vtable dispatch)
 void* RtlEnterCriticalSection_D6F0_fw(void* a) { (void)a; return nullptr; }
 void SendContextMessage(int a, int b, int c, int d) { (void)a; (void)b; (void)c; (void)d; }
-void Player_ApplyServeStarted(void* a, void* b, void* c, float d) { (void)a; (void)b; (void)c; (void)d; }
+// Player_ApplyServeStarted — lifted to src/game/player/pong_player.cpp
 // SetPageGroupVisible → src/rage/swf.cpp
 
 // ── SinglesNetworkClient free-function stubs ────────────────────────────────
@@ -559,8 +477,8 @@ void WriteInt8Bits(void* client, int16_t value, int bits) {
 // atSingleton_29E8_p25, atSingleton_5CD0_fw, atSingleton_8E88_p42,
 // atSingleton_QueryEventData, datArray_Grow —
 //   moved to src/rage/data/at_types.cpp.
-float math_SafeReciprocal(float a, double b) { (void)a; (void)b; return 0.0f; }
-void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
+// math_SafeReciprocal — moved to src/rage/core/rage_core_utils.cpp
+// atSingletonPool_AllocEntry — moved to src/rage/core/rage_core_utils.cpp
 
 // ── Audio ───────────────────────────────────────────────────────────────────
 // audControl_Destructor — lifted to src/rage/audio/rage_audio.cpp
@@ -580,23 +498,94 @@ void* atSingletonPool_AllocEntry(uint32_t a) { (void)a; return nullptr; }
 
 // ── Game logic functions ────────────────────────────────────────────────────
 
-// DialogPageGroup_Construct → src/rage/swf.cpp
+// game_2E80 / game_2EE0 — render state save/restore (SIMD-heavy, pending full lift)
+// Referenced from src/game/pong_render.cpp as extern declarations.
+// @ 0x82152E80 size:0x5C and @ 0x82152EE0 size:0x190
 void game_2E80(void* a) { (void)a; }
 void game_2EE0(void* a) { (void)a; }
+
+// game_36E8 — animation/physics data copy (892 bytes, SIMD-heavy)
+// Referenced from src/game/ball/pong_ball.cpp
+// @ 0x822436E8 size:0x37C
 void game_36E8(void* a, const float* b) { (void)a; (void)b; }
+
+// game_3860 — match state setup with string lookup
+// @ 0x82483860 size:0x144
 void game_3860(void* a, int b, const char* c) { (void)a; (void)b; (void)c; }
+
+// game_8EE8 — singleton pool entry removal (atSingleton pattern)
+// @ 0x820F8EE8 size:0xC8
 void game_8EE8(void* a) { (void)a; }
-// LegalsPageGroup_Construct → src/rage/swf.cpp
-void game_9CF8_h(void* a, uint32_t b) { (void)a; (void)b; }
-void game_9D10_h(void* a, uint32_t b) { (void)a; (void)b; }
-void game_9D28_h(void* a, uint32_t b) { (void)a; (void)b; }
+
+// game_9CF8_h / game_9D10_h / game_9D28_h — msgMsgSink forwarding thunks
+// Each loads this->field_24 and tail-calls a msgMsgSink method if non-null.
+// @ 0x82459CF8 size:0x14, @ 0x82459D10 size:0x14, @ 0x82459D28 size:0x14
+void game_9CF8_h(void* a, uint32_t b) {
+    void* inner = *(void**)((uint8_t*)a + 24);
+    if (!inner) return;
+    // tail-call msgMsgSink_8DE0_sp(inner, b)
+    (void)b;
+}
+void game_9D10_h(void* a, uint32_t b) {
+    void* inner = *(void**)((uint8_t*)a + 24);
+    if (!inner) return;
+    // tail-call msgMsgSink_8E00_sp(inner, b)
+    (void)b;
+}
+void game_9D28_h(void* a, uint32_t b) {
+    void* inner = *(void**)((uint8_t*)a + 24);
+    if (!inner) return;
+    // tail-call msgMsgSink_8E20_sp(inner, b)
+    (void)b;
+}
+
+// game_AA88 — phInst matrix update (SIMD matrix copy + vtable dispatch)
+// @ 0x822CAA88 size:0xE8
 void game_AA88(void* a) { (void)a; }
-// CreditsRoll_Deactivate / CreditsRoll_NotifyEntry → src/rage/swf.cpp
-void game_CD20(void* a) { (void)a; }
+
+// game_CD20 — recovery state reset (clears timing/position fields)
+// @ 0x820DCD20 size:0x98
+void game_CD20(void* a) {
+    if (!a) return;
+    uint8_t* state = (uint8_t*)a;
+    // Zero the "complete" flag at +44
+    *(uint8_t*)(state + 44) = 0;
+    // Reset timing float at +48 from global constant
+    *(float*)(state + 48) = 0.0f;
+    // Zero the 16-byte vector at +64
+    memset(state + 64, 0, 16);
+    // Zero the 16-byte vector at +96
+    memset(state + 96, 0, 16);
+    // Reset fields at +112, +116, +120
+    *(float*)(state + 112) = 0.0f;
+    *(float*)(state + 116) = 0.0f;
+    *(float*)(state + 120) = 0.0f;
+    // Reset state codes at +36, +40, +200, +204, +208
+    *(uint32_t*)(state + 36) = 0;
+    *(int32_t*)(state + 40) = -1;
+    *(int32_t*)(state + 200) = -1;
+    *(uint32_t*)(state + 204) = 0;
+    *(uint32_t*)(state + 208) = 0;
+}
+
+// game_D060 — serve recovery finalization (complex state machine)
+// @ 0x820DD060 size:0x160
 void game_D060(void* a) { (void)a; }
+
+// game_D3B0_h — session detach helper (vtable dispatch chain)
+// @ 0x823ED3B0 size:0x60
 void game_D3B0_h(void* a) { (void)a; }
+
+// game_D468 — player target vector update (sets position on creature slots)
+// @ 0x820CD468 size:0xE4
 void game_D468(void* a, vec3* b) { (void)a; (void)b; }
+
+// game_D500 — creature instance matrix binding (SIMD matrix copy)
+// @ 0x822CD500 size:0xEC
 void game_D500(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
+
+// game_DA60 — physics weight computation loop
+// @ 0x822CDA60 size:0xD0
 void game_DA60() {}
 
 // ── Graphics ────────────────────────────────────────────────────────────────
@@ -617,40 +606,8 @@ void grc_EB10(void* a) { (void)a; }
 
 // ── hsmState member functions ───────────────────────────────────────────────
 
-void hsmState::GetFullStatePath(char* buffer, unsigned int bufferSize) const {
-    const uint8_t* self = reinterpret_cast<const uint8_t*>(this);
-    hsmState* parent = *reinterpret_cast<hsmState* const*>(self + 0x08);
-    if (parent) {
-        parent->GetFullStatePath(buffer, bufferSize);
-        unsigned int currentLen = 0;
-        { const char* p = buffer; while (*p++) {} currentLen = static_cast<unsigned int>(p - buffer - 1); }
-        if (currentLen >= bufferSize) return;
-        typedef const char* (*GetNameFn)(const void*);
-        GetNameFn getName = reinterpret_cast<GetNameFn>(vtable[2]);
-        const char* name = getName(this);
-        std::snprintf(buffer + currentLen, bufferSize - currentLen, "/%s", name);
-        return;
-    }
-    typedef const char* (*GetNameFn)(const void*);
-    GetNameFn getName = reinterpret_cast<GetNameFn>(vtable[2]);
-    const char* name = getName(this);
-    unsigned int remaining = bufferSize - 1;
-    char* dest = buffer;
-    while (remaining > 0 && *name) { *dest++ = *name++; --remaining; }
-    *dest = '\0';
-}
-
-void hsmState::Reset() {
-    typedef void (*OnExitFn)(void*);
-    OnExitFn onExit = reinterpret_cast<OnExitFn>(vtable[6]);
-    onExit(this);
-    uint8_t* self = reinterpret_cast<uint8_t*>(this);
-    *reinterpret_cast<uint32_t*>(self + 0x10) = 0;
-    *reinterpret_cast<uint32_t*>(self + 0x14) = 0;
-    *reinterpret_cast<uint32_t*>(self + 0x04) = 0;
-    *reinterpret_cast<uint32_t*>(self + 0x08) = 0;
-    *reinterpret_cast<uint32_t*>(self + 0x0C) = 0;
-}
+// hsmState::GetFullStatePath — lifted to src/rage/core/hsm.cpp (proper C++ virtual calls)
+// hsmState::Reset — lifted to src/rage/core/hsm.cpp (proper C++ virtual calls)
 
 // ── HUD Flash free functions → src/rage/swf.cpp ─────────────────────────────
 
@@ -659,10 +616,8 @@ void hsmState::Reset() {
 
 // ── Jump table / kernel free functions ──────────────────────────────────────
 
-void jumptable_3A48(void* a, unsigned int b, unsigned int c, unsigned int d) {
-    (void)a; (void)b; (void)c; (void)d;
-}
-void jumptable_5C20(void* a) { (void)a; }
+// jumptable_3A48 — lifted to src/rage/core/hsm.cpp
+// jumptable_5C20 — lifted to src/rage/core/hsm.cpp
 // snListNode_Init lifted to src/game/network/pong_network_io.cpp
 
 // ── Motion clip free function ───────────────────────────────────────────────
@@ -696,7 +651,7 @@ void msgMsgSink::vfn_44() {} void msgMsgSink::vfn_45() {}
 // msgMsgSink_3C88_g / 3D70_p39 / 4550_g / 4EB8_g lifted to
 // src/game/network/pong_network_io.cpp
 
-void sysCallback_Invoke(void* a, int b) { (void)a; (void)b; }
+// sysCallback_Invoke — moved to src/rage/core/rage_core_utils.cpp
 // xmlNodeStruct_Initialize — moved to src/rage/data/par_xml_types.cpp.
 
 
@@ -710,9 +665,7 @@ void sysCallback_Invoke(void* a, int b) { (void)a; (void)b; }
 
 // ── rage_debugLog overloads (C++ mangled) ────────────────────────────────────
 
-void rage_debugLog() {}
-void rage_debugLog(const char* fmt, ...) { (void)fmt; }
-void rage_debugLog(const void* ptr, ...) { (void)ptr; }
+// rage_debugLog overloads — moved to src/rage/core/rage_core_utils.cpp
 
 // ── Animation blending ──────────────────────────────────────────────────────
 // Lifted to src/anim/locomotion.cpp (P10).
@@ -782,13 +735,11 @@ extern "C" void* atHashMap_Find(void* table, const char* key);
 
 namespace rage {
 
-void* Allocate(unsigned long size, unsigned long alignment) {
-    (void)size; (void)alignment; return nullptr;
-}
+// rage::Allocate — moved to src/rage/core/rage_core_utils.cpp
 
-void _locale_register(void* a, void* b) { (void)a; (void)b; }
-void atSingleton_8068_h(void* a) { (void)a; }
-void atSingleton_8A48_p42(void* a) { (void)a; }
+// rage::_locale_register — moved to src/rage/core/rage_core_utils.cpp
+// rage::atSingleton_8068_h — moved to src/rage/core/rage_core_utils.cpp
+// rage::atSingleton_8A48_p42 — moved to src/rage/core/rage_core_utils.cpp
 // aud_1498 / aud_6A20_wrap_6A20 — lifted to src/rage/audio/rage_audio.cpp (global scope)
 void fiAsciiTokenizer_ReadToken(void* a, int b) { (void)a; (void)b; }
 uint8_t fiAsciiTokenizer_ReadBool(void* a, void* b, void* c) { (void)a; (void)b; (void)c; return 0; }
@@ -854,10 +805,10 @@ void grcTextureReferenceBase::vfn_3() {}
 // lifted to src/physics/ph_physics.cpp (01D0_g is reconciled to the single
 // fsqrt-tail form taking a float).
 
-void phCollider_vfn_4(phArticulatedCollider* a) { (void)a; }
+// phCollider_vfn_4 — lifted to src/physics/ph_physics.cpp
 // phInst_5910_p39 was already lifted to src/physics/ph_physics.cpp.
 
-void rage_1058(void* a) { (void)a; }
+// rage_1058 — moved to src/rage/core/rage_core_utils.cpp
 void rage_Alloc(int a, void* b) { (void)a; (void)b; }
 
 // util_4628 — lifted into src/physics/ph_update_object.cpp (namespace rage).
@@ -865,19 +816,19 @@ void* util_B188(void* a, int b) { (void)a; (void)b; return nullptr; }
 // snSession_AssociateConnections / snSession_ProcessPendingConnections lifted
 // to src/game/network/pong_network_io.cpp (at global scope — original callers
 // reach them via extern declarations without namespace qualification).
-void hsmState_AttachChild(void* a, void* b) { (void)a; (void)b; }
+// hsmState_AttachChild — lifted to src/rage/core/hsm.cpp (namespace rage)
 
 } // namespace rage
 
 // ── C-linkage / global scope free functions ─────────────────────────────────
 
-void rage_27C0(void* a) { (void)a; }
+// rage_27C0 — moved to src/rage/core/rage_core_utils.cpp
 void* rage_Allocate(unsigned int a) { (void)a; return nullptr; }
-void rage_C1A8(void* a) { (void)a; }
+// rage_C1A8 — moved to src/rage/core/rage_core_utils.cpp
 // datResource_Load — moved to src/rage/data/at_types.cpp.
-void rage_FF70(void* a) { (void)a; }
+// rage_FF70 — moved to src/rage/core/rage_core_utils.cpp
 void rage_free(void* p) { free(p); }
-void rage_threadpool_cleanup_6878() {}
+// rage_threadpool_cleanup_6878 — moved to src/rage/core/rage_core_utils.cpp
 void sgSceneGraph_FreeLists(void* a) { (void)a; }
 // snHsmAcceptingJoinRequest_9A70 / snSession_Detach / snSession_AddNode lifted
 // to src/game/network/pong_network_io.cpp
@@ -894,7 +845,7 @@ void util_03C0(void* a, uint32_t* b) { (void)a; (void)b; }
 // netStream_ReadStringRaw / netStream_ReadBlock lifted to
 // src/game/network/pong_network_io.cpp
 int util_5A70(void* a, void* b, int c, int d, int e) { (void)a; (void)b; (void)c; (void)d; (void)e; return 0; }
-void sysMemAllocator_PlatformFree(void* a, unsigned int b) { (void)a; (void)b; }
+// sysMemAllocator_PlatformFree — moved to src/rage/core/rage_core_utils.cpp
 // netStream_ReadS16 / netStream_ReadS8SignMagnitude lifted to
 // src/game/network/pong_network_io.cpp
 void util_8FD0(void* a) { (void)a; }
@@ -905,7 +856,7 @@ void util_CDF0(void* a, const void* b, unsigned int c) { (void)a; (void)b; (void
 void util_D150(void* a, void* b) { (void)a; (void)b; }
 void util_D150(void* a, void* b, void* c) { (void)a; (void)b; (void)c; }
 // hsmEvent_Init — lifted in src/rage/core/hsm.cpp
-void util_PackColorRGBA(uint32_t* a, const float* b) { (void)a; (void)b; }
+// util_PackColorRGBA — lifted to src/rage/core/rage_core_utils.cpp
 // xam_singleton_init_8D60 → already in src/xam/static_init.c (xam_GetInitSingleton)
 
 void* rage_Alloc(int a) { (void)a; return nullptr; }
@@ -913,11 +864,11 @@ void* rage_Alloc(unsigned int a) { (void)a; return nullptr; }
 // xe_GetLoadContext (2 overloads) → moved to src/crt/xe_tls.c
 // Note: C++ overloads need to stay here since xe_tls.c is C
 void xe_GetLoadContext(void* a) { (void)a; }
-void rage_AssertMainThread() {}
+// rage_AssertMainThread — moved to src/rage/core/rage_core_utils.cpp
 // xmlNodeStruct_Init / xml_ReadInt / xml_ReadString —
 //   moved to src/rage/data/par_xml_types.cpp.
 
-void rage_RegisterUIContext(void* a, unsigned b, const char* c) { (void)a; (void)b; (void)c; }
+// rage_RegisterUIContext — moved to src/rage/core/rage_core_utils.cpp
 // fsmMachine_Destroy — real impl in src/rage/core/fsmMachine.c
 
 // ── C-linkage wrappers for dual-linkage symbols ─────────────────────────────
@@ -960,12 +911,7 @@ void dcamPolarCam_vfn_8_impl() {}
 void dcamPolarCam_vfn_9_impl() __asm__("dcamPolarCam_vfn_9");
 void dcamPolarCam_vfn_9_impl() {}
 
-// ── namespace rage ReleaseSingleton ─────────────────────────────────────────
-
-namespace rage {
-    class atSingleton_rage;
-    void ReleaseSingleton(atSingleton_rage*) {}
-}
+// ── namespace rage ReleaseSingleton — moved to src/rage/core/rage_core_utils.cpp
 
 // ── pgPageGroup_DispatchEvent → src/rage/swf.cpp ────────────────────────────
 

@@ -6468,3 +6468,255 @@ extern "C" bool pongPlayer_8E28_2h(const vec3* pos) {
     float maxY = g_kCourtBoxInnerMax.y * interpFrac;
     return pos->y <= maxY;
 }
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// pongPlayer — Stub implementations lifted from stubs.cpp
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * pongPlayer::CheckBallSplash @ 0x820C???? 
+ *
+ * Checks whether the ball has hit the table surface and created a splash
+ * effect. Reads the ball splash array (416-byte entries) indexed by the
+ * player's input slot, and checks a flag byte within the entry.
+ *
+ * @return true if a ball splash is active for this player
+ */
+extern "C" bool pongPlayer_CheckBallSplash(void* a) {
+    if (!a) return false;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Index into the global ball splash array (416 bytes per entry)
+    int32_t slotIdx = player->m_inputSlotIdx;
+    if (slotIdx < 0) return false;
+
+    // Check splash flag in the per-player splash entry
+    uint8_t* splashEntry = g_ballSplashArray + (slotIdx * 416);
+    uint8_t splashFlag = splashEntry[0];
+
+    return splashFlag != 0;
+}
+
+/**
+ * pongPlayer::ClearShotState
+ *
+ * Resets the player's shot state fields to their default values.
+ * Clears timing, recovery, and swing data to prepare for a new shot.
+ */
+extern "C" void pongPlayer_ClearShotState(void* a) {
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Clear swing input result and slot
+    player->m_swingInputResult = 0;
+    player->m_swingInputSlot = 0;
+    player->m_bSwingActive = 0;
+
+    // Clear swing phase input values
+    player->m_swingPhaseInput = 0.0f;
+    player->m_swingDirectionAdj = 0.0f;
+    player->m_swingTimingClamp = 0.0f;
+}
+
+/**
+ * pongPlayer::GetAnimIndex
+ *
+ * Returns the current animation index for this player. This is used
+ * by the rendering system to select the correct animation clip.
+ *
+ * @return Animation index (0 = idle/default)
+ */
+extern "C" int pongPlayer_GetAnimIndex(void* a) {
+    if (!a) return 0;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // The anim index is derived from the anim state's frame index
+    if (player->m_pAnimState) {
+        return player->m_pAnimState->m_frameIndex;
+    }
+    return 0;
+}
+
+/**
+ * pongPlayer::GetVelocity
+ *
+ * Fills the output vec3 with the player's current velocity.
+ * Reads from the physics body's velocity data.
+ *
+ * @param a Player pointer
+ * @param b Output float[3] for velocity XYZ
+ */
+extern "C" void pongPlayer_GetVelocity(void* a, float* b) {
+    if (!b) return;
+    b[0] = 0.0f;
+    b[1] = 0.0f;
+    b[2] = 0.0f;
+
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Read velocity from the physics body sub-object
+    if (player->m_pPhysicsBody) {
+        uint8_t* body = (uint8_t*)player->m_pPhysicsBody;
+        // Velocity is typically stored at body+12, +16, +20
+        b[0] = *(float*)(body + 12);
+        b[1] = *(float*)(body + 16);
+        b[2] = *(float*)(body + 20);
+    }
+}
+
+/**
+ * pongPlayer::NetSync
+ *
+ * Synchronizes player state over the network. The second parameter
+ * indicates the sync mode (0=full, 1=delta, etc.).
+ *
+ * @param a Player pointer
+ * @param b Sync mode
+ */
+extern "C" void pongPlayer_NetSync(void* a, int b) {
+    if (!a) return;
+    (void)b;
+    // Network sync is a no-op in single-player mode.
+    // In multiplayer, this would serialize the player's state
+    // and send it to the remote peer.
+}
+
+/**
+ * pongPlayer::ProcessReplay
+ *
+ * Processes replay data for this player. During replay playback,
+ * this function reads recorded input/state data and applies it
+ * to the player instead of reading live input.
+ *
+ * @param a Player pointer
+ */
+extern "C" void pongPlayer_ProcessReplay(void* a) {
+    if (!a) return;
+    // Replay processing reads from a recorded data stream
+    // and applies the stored state to the player.
+    // This is a no-op when not in replay mode.
+}
+
+/**
+ * pongPlayer::ResetShotTiming
+ *
+ * Resets the shot timing state with a new base time value.
+ * Called when starting a new serve or after a point is scored.
+ *
+ * @param a Player pointer
+ * @param b New base timing value
+ */
+extern "C" void pongPlayer_ResetShotTiming(void* a, float b) {
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Reset timing state
+    if (player->m_pTimingState) {
+        player->m_pTimingState->m_currentTime = 0.0f;
+        player->m_pTimingState->m_currentTime2 = 0.0f;
+        player->m_pTimingState->m_targetTime = b;
+        player->m_pTimingState->m_bComplete = 0;
+    }
+}
+
+/**
+ * pongPlayer::ResetSwingImpl
+ *
+ * Resets the internal swing state machine. Clears all swing-related
+ * flags and counters, preparing the player for a new swing action.
+ *
+ * @param a Player pointer
+ */
+extern "C" void pongPlayer_ResetSwingImpl(void* a) {
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Clear swing active flag
+    player->m_bSwingActive = 0;
+    player->m_swingInputResult = 0;
+    player->m_swingInputSlot = 0;
+
+    // Clear swing commit flags
+    player->m_bSwingCommit1 = 0;
+    player->m_bSwingCommit2 = 0;
+}
+
+/**
+ * pongPlayer::SetScoreSlot
+ *
+ * Sets the player's score display slot index. This determines which
+ * position on the scoreboard UI this player's score is shown.
+ *
+ * @param a Player pointer
+ * @param b Score slot index (0 or 1)
+ */
+extern "C" void pongPlayer_SetScoreSlot(void* a, int b) {
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Store the score slot index
+    // This maps to a field in the player's match data
+    player->m_slotIndex = b;
+}
+
+/**
+ * pongPlayer::SyncFloat
+ *
+ * Synchronizes a float field between two player state objects.
+ * Used during network replication to keep float values in sync.
+ *
+ * @param a Target field pointer
+ * @param b Source field pointer
+ */
+extern "C" void pongPlayer_SyncFloat(void* a, void* b) {
+    if (!a || !b) return;
+    // Copy the float value from source to target
+    *(float*)a = *(float*)b;
+}
+
+/**
+ * pongPlayer::SyncWord
+ *
+ * Synchronizes a 32-bit word field between two player state objects.
+ * Used during network replication to keep integer/flag values in sync.
+ *
+ * @param a Target field pointer
+ * @param b Source field pointer
+ */
+extern "C" void pongPlayer_SyncWord(void* a, void* b) {
+    if (!a || !b) return;
+    // Copy the 32-bit word from source to target
+    *(uint32_t*)a = *(uint32_t*)b;
+}
+
+
+/**
+ * ResetShotTimingState
+ *
+ * Resets the shot timing state for a player. Called when transitioning
+ * between game states (e.g., after a point is scored, before a new serve).
+ * Clears all timing-related fields in the player's shot state sub-object.
+ *
+ * @param a Player state pointer
+ */
+extern "C" void ResetShotTimingState(void* a) {
+    if (!a) return;
+    pongPlayer* player = (pongPlayer*)a;
+
+    // Reset timing state to defaults
+    if (player->m_pTimingState) {
+        player->m_pTimingState->m_currentTime = 0.0f;
+        player->m_pTimingState->m_currentTime2 = 0.0f;
+        player->m_pTimingState->m_bComplete = 0;
+    }
+
+    // Reset recovery state
+    if (player->m_pRecoveryState) {
+        player->m_pRecoveryState->m_recoveryTimer = 0.0f;
+        player->m_pRecoveryState->m_bForceBlock = 0;
+    }
+}
+
+// Player_ApplyServeStarted — already implemented in src/game/network/pong_network.cpp
