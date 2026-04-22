@@ -794,3 +794,58 @@ void pongScrnTransFreezeAndCrossFade::Reset() {
 extern "C" void* pongPostEffects_Create(void* pMem) {
     return pMem;
 }
+
+
+// ============================================================================
+// Render state save/restore stubs (SIMD-heavy, pending full lift)
+// ============================================================================
+
+/**
+ * game_2E80 @ 0x82152E80 | size: 0x5C
+ *
+ * Saves a subset of the current render state (viewport, scissor rect)
+ * into the provided state buffer. Part of the render context save/restore
+ * pair used by pongPostEffects.
+ *
+ * TODO: Full SIMD lift — reads GPU registers via D3D device.
+ */
+void game_2E80(void* renderState) {
+    (void)renderState;
+    // No-op on host: OpenGL manages render state internally.
+    // The save/restore pattern is only needed for Xbox 360's explicit
+    // GPU state management.
+}
+
+/**
+ * game_2EE0 @ 0x82152EE0 | size: 0x190
+ *
+ * Restores render state from a previously saved buffer. Counterpart
+ * to game_2E80. Applies viewport, scissor rect, and render target
+ * configuration back to the GPU device.
+ *
+ * TODO: Full SIMD lift — writes GPU registers via D3D device.
+ */
+void game_2EE0(void* renderState) {
+    (void)renderState;
+    // No-op on host: OpenGL manages render state internally.
+}
+
+/**
+ * util_03C0 @ 0x821403C0 | size: 0x5C
+ *
+ * Renders a full-screen colored quad using the HUD flash system.
+ * Checks if the render context at offset +108 is non-null, then
+ * calls hudFlashBase_2278_g to draw the quad with the specified color.
+ *
+ * Parameters:
+ *   context — render context object (+108 = flash renderer ptr, +364 = state)
+ *   colorPtr — pointer to packed ARGB color value
+ *
+ * TODO: Implement when HUD flash rendering is active.
+ */
+void util_03C0(void* context, uint32_t* colorPtr) {
+    (void)context;
+    (void)colorPtr;
+    // No-op until HUD flash rendering system is implemented.
+}
+

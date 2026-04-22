@@ -1525,3 +1525,87 @@ void pongBallAudio::ScalarDtor(int flags) {
         rage_free(this);
     }
 }
+
+
+// ============================================================================
+// Ball/physics utility stubs (SIMD-heavy, pending full lift)
+// Moved from stubs.cpp to their correct source file.
+// ============================================================================
+
+/**
+ * game_36E8 @ 0x822436E8 | size: 0x37C
+ * Animation/physics data copy — copies 892 bytes of SIMD-aligned data
+ * between ball state buffers. Used during ball trajectory computation.
+ * TODO: Full SIMD lift.
+ */
+void game_36E8(void* dest, const float* src) {
+    (void)dest; (void)src;
+}
+
+/**
+ * game_AA88 @ 0x822CAA88 | size: 0xE8
+ * phInst matrix update — copies a 4x4 SIMD matrix and dispatches
+ * a vtable call to update the physics instance transform.
+ * TODO: Full SIMD lift.
+ */
+void game_AA88(void* physInst) {
+    (void)physInst;
+}
+
+/**
+ * game_D500 @ 0x822CD500 | size: 0xEC
+ * Creature instance matrix binding — copies a SIMD matrix from source
+ * to the creature instance's transform slot.
+ * TODO: Full SIMD lift.
+ */
+void game_D500(void* creatureInst, void* srcMatrix, void* destSlot) {
+    (void)creatureInst; (void)srcMatrix; (void)destSlot;
+}
+
+/**
+ * game_DA60 @ 0x822CDA60 | size: 0xD0
+ * Physics weight computation loop — iterates over physics instances
+ * and computes interpolation weights for ball trajectory prediction.
+ * TODO: Full SIMD lift.
+ */
+void game_DA60() {
+    // No-op until physics interpolation is active
+}
+
+/**
+ * util_D150 @ 0x8227D150 | size: 0xCC
+ * datResource_Load — loads a 4x4 matrix from a resource data block into
+ * the object's transform at offset +32, stores the data pointer at +20,
+ * and optionally notifies a global physics manager via vtable dispatch.
+ * TODO: Full SIMD lift (4 vector loads + stores).
+ */
+void util_D150(void* obj, void* resourceData) {
+    if (!obj || !resourceData) return;
+    // Store resource data pointer at +20
+    *reinterpret_cast<void**>(static_cast<uint8_t*>(obj) + 20) = resourceData;
+    // TODO: Copy 4x vec4 from resourceData to obj+32 (SIMD)
+    // TODO: Check resource status ID and notify physics manager
+}
+
+// 3-arg overload used by some callers
+void util_D150(void* obj, void* a, void* b) {
+    (void)obj; (void)a; (void)b;
+}
+
+/**
+ * util_8FD0 @ 0x822C8FD0 | size: 0x5C
+ * pongCreatureInst cleanup — resets vtable to base class, releases
+ * the child object at +4 if present, then sets the base vtable.
+ * Alias: pongCreatureInst_9030_g
+ */
+void util_8FD0(void* obj) {
+    if (!obj) return;
+    uint8_t* self = static_cast<uint8_t*>(obj);
+    // Clear child pointer at +4
+    void* child = *reinterpret_cast<void**>(self + 4);
+    if (child) {
+        // TODO: Call util_9D98(child, 1) to release child
+    }
+    *reinterpret_cast<void**>(self + 4) = nullptr;
+}
+

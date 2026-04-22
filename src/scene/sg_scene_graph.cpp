@@ -7,7 +7,11 @@ extern void rage_free(void* ptr);               // @ 0x820C00C0
 // Frees the seven traverse-list pointers at offsets +0x10..+0x2C
 // (skipping +0x1C), then calls atArray_Clear (rage::gameObject base dtor).
 // Named after its address in the translation unit that contains sgSceneGraph.
-extern void sgSceneGraph_FreeLists(void* obj);  // @ 0x823D9AF8
+// rage_8070 — rage::gameObject base destructor (clears atArray-like state)
+extern void rage_8070(void* obj);  // @ 0x821A8070
+
+// Forward declaration
+void sgSceneGraph_FreeLists(void* obj);
 
 /**
  * sgSceneGraph::~sgSceneGraph
@@ -20,6 +24,31 @@ extern void sgSceneGraph_FreeLists(void* obj);  // @ 0x823D9AF8
  */
 sgSceneGraph::~sgSceneGraph() {
     sgSceneGraph_FreeLists(this);
+}
+
+/**
+ * sgSceneGraph_FreeLists @ 0x823D9AF8 | size: 0x74
+ *
+ * Frees the seven traversal-list allocations stored at offsets
+ * +0x10, +0x14, +0x18, +0x20, +0x24, +0x28, +0x2C (skipping +0x1C).
+ * After freeing, resets the vtable to rage::gameObject and calls
+ * the base destructor (rage_8070 @ 0x821A8070).
+ */
+void sgSceneGraph_FreeLists(void* obj) {
+    uint8_t* self = static_cast<uint8_t*>(obj);
+
+    // Free traversal list pointers at known offsets
+    // Order matches the recomp: +20, +24, +32, +36, +40, +44, +16
+    rage_free(*reinterpret_cast<void**>(self + 20));  // m_pTraverseList2
+    rage_free(*reinterpret_cast<void**>(self + 24));  // m_pTraverseList3
+    rage_free(*reinterpret_cast<void**>(self + 32));  // m_pTraverseList4
+    rage_free(*reinterpret_cast<void**>(self + 36));  // m_pTraverseList5
+    rage_free(*reinterpret_cast<void**>(self + 40));  // m_pTraverseList6
+    rage_free(*reinterpret_cast<void**>(self + 44));  // m_pTraverseList7
+    rage_free(*reinterpret_cast<void**>(self + 16));  // m_pTraverseList1
+
+    // Call rage::gameObject base destructor
+    rage_8070(obj);
 }
 
 // ---------------------------------------------------------------------------

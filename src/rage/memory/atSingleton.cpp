@@ -2159,3 +2159,9 @@ extern "C" int atSingleton_2688_forward(void* pBitStream)
 
 } // namespace rage
 
+
+
+// game_8EE8 @ 0x820F8EE8 | size: 0xC8 — singleton pool entry removal
+// Moved from stubs.cpp. TODO: Full lift.
+void game_8EE8(void* singletonEntry) { (void)singletonEntry; }
+

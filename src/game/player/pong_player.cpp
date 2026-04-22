@@ -6720,3 +6720,52 @@ extern "C" void ResetShotTimingState(void* a) {
 }
 
 // Player_ApplyServeStarted — already implemented in src/game/network/pong_network.cpp
+
+
+// ============================================================================
+// Player utility stubs — moved from stubs.cpp
+// ============================================================================
+
+/**
+ * game_CD20 @ 0x820DCD20 | size: 0x98
+ * Recovery state reset — clears timing, position, and state fields
+ * on a player's recovery state structure.
+ */
+void game_CD20(void* recoveryState) {
+    if (!recoveryState) return;
+    uint8_t* state = static_cast<uint8_t*>(recoveryState);
+    *reinterpret_cast<uint8_t*>(state + 44) = 0;
+    *reinterpret_cast<float*>(state + 48) = 0.0f;
+    memset(state + 64, 0, 16);
+    memset(state + 96, 0, 16);
+    *reinterpret_cast<float*>(state + 112) = 0.0f;
+    *reinterpret_cast<float*>(state + 116) = 0.0f;
+    *reinterpret_cast<float*>(state + 120) = 0.0f;
+    *reinterpret_cast<uint32_t*>(state + 36) = 0;
+    *reinterpret_cast<int32_t*>(state + 40) = -1;
+    *reinterpret_cast<int32_t*>(state + 200) = -1;
+    *reinterpret_cast<uint32_t*>(state + 204) = 0;
+    *reinterpret_cast<uint32_t*>(state + 208) = 0;
+}
+
+/**
+ * game_D060 @ 0x820DD060 | size: 0x160
+ * Serve recovery finalization — complex state machine transition
+ * for completing a serve recovery sequence.
+ * TODO: Full lift (352 bytes, state machine logic).
+ */
+void game_D060(void* playerState) {
+    (void)playerState;
+}
+
+/**
+ * game_D468 @ 0x820CD468 | size: 0xE4
+ * Player target vector update — sets the target position on the
+ * player's creature slots for movement interpolation.
+ * TODO: Full SIMD lift.
+ */
+struct vec3;
+void game_D468(void* player, vec3* targetPos) {
+    (void)player; (void)targetPos;
+}
+

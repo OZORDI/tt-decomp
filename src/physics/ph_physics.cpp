@@ -112,7 +112,7 @@ extern void phArticulatedCollider_8450(void* jointData);
 extern void ph_Sqrtf_joint(rage::phJoint3Dof*, float);
 extern void ph_ApplyAngularVelocity(void* capsule);
 extern void phBoundCapsule_ACB0_p45(void* capsule);
-extern void phCollider_vfn_4(rage::phArticulatedCollider* collider);
+extern "C" void phCollider_vfn_4(rage::phArticulatedCollider* collider);
 extern void phInst_5910_p39(void* obj);
 extern void phJoint1Dof_AFF8_p42(rage::phJoint3Dof*, int, float*);
 extern void phJoint_1388(rage::phJoint3Dof*, int, float, float*, float*);

@@ -23,9 +23,11 @@
 #include <cmath>
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Forward declarations for functions defined elsewhere
+// Forward declarations
 // ─────────────────────────────────────────────────────────────────────────────
-extern "C" void rage_free(void* ptr);
+// rage_free is defined below in this file (C++ linkage).
+// The C-linkage version lives in src/crt/heap.c.
+void rage_free(void* p);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION 1: Memory Allocation
@@ -120,16 +122,58 @@ extern "C" void sysMemAllocator_PlatformFree(void* a, unsigned int b) {
 }
 
 /**
- * rage_free — Free memory allocated by RAGE allocators
+ * rage_free — Free memory allocated by RAGE allocators (C++ linkage)
  *
  * On Xbox 360 @ 0x820C00C0 (rage_free_00C0), this checked if the pointer
  * was tracked by the singleton pool (atSingleton_Find_90D0), and if not,
  * freed it via the global allocator's vtable slot 2 (Free).
  * On the host, we use standard free().
  *
- * NOTE: This is already defined in stubs.cpp as: void rage_free(void* p) { free(p); }
- * We do NOT redefine it here to avoid duplicate symbols.
+ * This is the C++ linkage version. The C linkage version lives in heap.c.
  */
+void rage_free(void* p) {
+    free(p);
+}
+
+/**
+ * sysMemAllocator_Free — Free memory through the system allocator
+ *
+ * Thin wrapper that routes to rage_free. On Xbox 360, this went through
+ * the TLS allocator's vtable slot 2 (Free) after checking thread ownership.
+ */
+extern "C" void sysMemAllocator_Free(void* ptr) {
+    rage_free(ptr);
+}
+
+/**
+ * rage_Alloc — Allocate memory (int size overload)
+ *
+ * General-purpose allocation wrapper used by various RAGE subsystems.
+ * Routes through rage_malloc for host platform.
+ */
+void* rage_Alloc(int a) {
+    if (a <= 0) return nullptr;
+    return rage_malloc((size_t)a);
+}
+
+/**
+ * rage_Alloc — Allocate memory (unsigned int size overload)
+ */
+void* rage_Alloc(unsigned int a) {
+    if (a == 0) return nullptr;
+    return rage_malloc((size_t)a);
+}
+
+/**
+ * rage_Allocate — Allocate memory (unsigned int size)
+ *
+ * Another allocation entry point used by RAGE subsystems.
+ * Routes through rage_malloc for host platform.
+ */
+void* rage_Allocate(unsigned int a) {
+    if (a == 0) return nullptr;
+    return rage_malloc((size_t)a);
+}
 
 /**
  * rage_Alloc_c — C-linkage allocation wrapper
@@ -533,6 +577,20 @@ void ReleaseSingleton(atSingleton_rage* a) {
     // No-op on host
 }
 
+/**
+ * rage::rage_Alloc — Two-argument allocation (size + hint pointer)
+ *
+ * Used by some RAGE subsystems that pass an allocation hint or context
+ * alongside the size. On the host, the hint is ignored.
+ */
+void rage_Alloc(int a, void* b) {
+    (void)a; (void)b;
+    // On Xbox 360, this allocated from a specific pool based on the hint.
+    // On the host, this is a no-op since the caller doesn't use the return value.
+}
+
+
+
 } // namespace rage
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -779,16 +837,4 @@ extern "C" void util_PackColorRGBA(uint32_t* out, const float* rgba) {
            (static_cast<uint32_t>(g) << 16) |
            (static_cast<uint32_t>(b) << 8)  |
            (static_cast<uint32_t>(a));
-}
-
-/**
- * math_SafeReciprocal — Safe reciprocal with fallback
- *
- * Returns 1.0f / a if a is non-zero, otherwise returns (float)b as fallback.
- * Used in physics and animation to avoid division by zero.
- */
-extern "C" float math_SafeReciprocal(float a, double b) {
-    if (a == 0.0f)
-        return static_cast<float>(b);
-    return 1.0f / a;
 }

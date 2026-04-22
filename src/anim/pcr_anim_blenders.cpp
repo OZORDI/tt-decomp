@@ -672,3 +672,20 @@ bool pcrPostPointBlender::IsFinished() const
     if (!subActive) return false;
     return m_pActiveClipObj != nullptr;
 }
+
+
+// ============================================================================
+// Animation utility stubs — moved from stubs.cpp
+// ============================================================================
+
+/** util_CDF0 @ 0x8224CDF0 | size: 0xB4 — animation data copy */
+void util_CDF0(void* dest, const void* src, unsigned int size) {
+    (void)dest; (void)src; (void)size;
+}
+
+/** util_C930 @ 0x8224C930 | size: 0x4C0 — animation blend state update */
+void util_C930(void* blendState) { (void)blendState; }
+
+/** util_B8A0 @ 0x8225B8A0 | size: 0x118 — animation interpolation */
+void util_B8A0(void* animState) { (void)animState; }
+

@@ -173,3 +173,10 @@ void datRef_Release(void* ref)                      { (void)ref; }
 void datResource_Load(void* a, const char* b)       { (void)a; (void)b; }
 
 } // extern "C"
+
+
+// sub_821A8F58 — data registration helper (moved from stubs.cpp)
+void sub_821A8F58(void* registry, const char* name, void* data, void* schema, int flags) {
+    (void)registry; (void)name; (void)data; (void)schema; (void)flags;
+}
+

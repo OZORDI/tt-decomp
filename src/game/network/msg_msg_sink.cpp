@@ -3289,6 +3289,8 @@ void msgMsgSink::vfn_128() {
 
     RtlLeaveCriticalSection(cs);
     (void)err;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BATCH: msgMsgSink vtable slots 8, 9, 11, 13, 14, 17, 18, 19
 // Lifted from recomp/structured_pass5_final/tt-decomp_recomp.26.cpp
@@ -3647,5 +3649,36 @@ int32_t msgMsgSink::BuildAllEvents(uint32_t userParam)
         msgMsgSink_46B8_g(this, kBuildPhase_Committed);
     }
     return finalizeResult;
+}
+
+
+
+// ============================================================================
+// msgMsgSink forwarding thunks — moved from stubs.cpp
+// ============================================================================
+
+/**
+ * game_9CF8_h @ 0x82459CF8 | size: 0x14
+ * Loads this->field_24 and tail-calls msgMsgSink method if non-null.
+ */
+void game_9CF8_h(void* self, uint32_t param) {
+    void* inner = *reinterpret_cast<void**>(static_cast<uint8_t*>(self) + 24);
+    if (!inner) return;
+    // TODO: tail-call msgMsgSink_8DE0_sp(inner, param)
+    (void)param;
+}
+
+/** game_9D10_h @ 0x82459D10 | size: 0x14 */
+void game_9D10_h(void* self, uint32_t param) {
+    void* inner = *reinterpret_cast<void**>(static_cast<uint8_t*>(self) + 24);
+    if (!inner) return;
+    (void)param;
+}
+
+/** game_9D28_h @ 0x82459D28 | size: 0x14 */
+void game_9D28_h(void* self, uint32_t param) {
+    void* inner = *reinterpret_cast<void**>(static_cast<uint8_t*>(self) + 24);
+    if (!inner) return;
+    (void)param;
 }
 

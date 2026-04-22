@@ -7168,3 +7168,12 @@ void NetDataQuery_InitNested(void* a) {
 // are provided so the linker resolves both mangled names.
 void util_AA38(void* self) { (void)self; }
 void util_AA38(NetDataQuery* self) { (void)self; }
+
+
+// ============================================================================
+// Network stubs — moved from stubs.cpp
+// ============================================================================
+
+/** game_D3B0_h @ 0x823ED3B0 | size: 0x60 — session detach helper */
+void game_D3B0_h(void* session) { (void)session; }
+

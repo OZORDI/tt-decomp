@@ -760,3 +760,111 @@ void plrPlayerMgr::vfn_29() {}                // @ 0x82189a70 — forwards to po
 void plrPlayerMgr::vfn_30() {}                // @ 0x82189ad0 — tail-call to pcrPostPointBlender_4DA0_2hr
 void plrPlayerMgr::vfn_31() {}                // @ 0x82189600 — 358+ lines — dispatch for slot 5/8/12 vcalls
 void plrPlayerMgr::vfn_32() {}                // @ 0x82189738 — 358+ lines — RequestPlayerLoad / FinishLoad path
+
+
+////////////////////////////////////////////////////////////////////////////////
+// FindCharacterByName / util_2458_FindCharacterIndex
+// @ 0x821D2458 | size: 0xA4
+//
+// Searches the game data manager's character array for a character whose
+// name matches the given string. Each character entry has a pointer at
+// offset +44 to a name table containing 2 groups of 5 name pointers
+// (stride 20 bytes per group, starting at +16 within the name table).
+//
+// The function compares the input name against each of the 10 possible
+// name strings (2 groups × 5 names) for each character. Returns the
+// 0-based character index on match, or -1 if not found.
+//
+// Parameters:
+//   gameDataMgr — game data manager object:
+//     +24 (0x18): void** m_pCharArray — array of character entry pointers
+//     +28 (0x1C): int32_t m_numChars  — number of entries
+//   name — character name string to search for
+//
+// Returns: character index (0-based), or -1 if not found
+////////////////////////////////////////////////////////////////////////////////
+
+extern "C" int32_t FindCharacterByName(void* gameDataMgr, const char* name) {
+    if (!gameDataMgr || !name)
+        return -1;
+
+    uint8_t* mgr = static_cast<uint8_t*>(gameDataMgr);
+    void**   charArray = *reinterpret_cast<void***>(mgr + 24);
+    int32_t  numChars  = *reinterpret_cast<int32_t*>(mgr + 28);
+
+    if (numChars <= 0 || !charArray)
+        return -1;
+
+    for (int32_t i = 0; i < numChars; i++) {
+        uint8_t* entry = static_cast<uint8_t*>(charArray[i]);
+        if (!entry) continue;
+
+        // Name table pointer at entry+44
+        uint8_t* nameTable = *reinterpret_cast<uint8_t**>(entry + 44);
+        if (!nameTable) continue;
+
+        // Name pointers start at nameTable+16, in 2 groups of 5 (stride 20 bytes)
+        const char** nameGroup = reinterpret_cast<const char**>(nameTable + 16);
+
+        for (int32_t group = 0; group < 2; group++) {
+            for (int32_t slot = 0; slot < 5; slot++) {
+                const char* candidate = nameGroup[group * 5 + slot];
+                if (!candidate) continue;
+
+                // Inline strcmp
+                const char* a = candidate;
+                const char* b = name;
+                while (*a && *a == *b) {
+                    a++;
+                    b++;
+                }
+                if (*a == *b) {
+                    // Match found — return character index
+                    return i;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+// C++ alias for callers that use the util_2458 name
+extern "C" int32_t util_2458_FindCharacterIndex(void* gameDataMgr, const char* name) {
+    return FindCharacterByName(gameDataMgr, name);
+}
+
+
+/**
+ * LookupEffectId — resolves an effect name string to a numeric effect ID.
+ *
+ * On Xbox 360, this searches the global effect name table (populated during
+ * asset loading) for a matching string and returns the corresponding uint16
+ * effect ID. The effect table is not yet reconstructed in the host build.
+ *
+ * Returns 0 (no effect) until the effect table is implemented.
+ */
+extern "C" uint16_t LookupEffectId(const char* name) {
+    (void)name;
+    // TODO: Implement effect name table lookup once the effect system is lifted.
+    // The original binary searches a global array of {name, id} pairs.
+    return 0;
+}
+
+/**
+ * SetupCharViewDisplay — initializes the character view display surface.
+ *
+ * On Xbox 360, this is a complex function (SinglesNetworkClient_A6B0_g
+ * @ 0x8230A6B0, 484 bytes) that sets up the character selection screen's
+ * 3D viewport, camera, and lighting. It interacts with the pongSurface
+ * system, the streaming profiler, and the character model loader.
+ *
+ * For the host platform, this is a no-op until the character view system
+ * is fully reconstructed.
+ */
+extern "C" void SetupCharViewDisplay(void* screenObj) {
+    (void)screenObj;
+    // TODO: Implement character view display setup.
+    // Requires: pongSurface system, character model loader, camera setup.
+}
+

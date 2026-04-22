@@ -1481,3 +1481,19 @@ void gdaiComeBackLogic_BuildShotLists(void* self) { // @ 0x821ea1b8
         node = *(void**)((char*)node + 8);
     }
 }
+
+
+// ============================================================================
+// Match state stubs — moved from stubs.cpp
+// ============================================================================
+
+/**
+ * game_3860 @ 0x82483860 | size: 0x144
+ * Match state setup with string lookup — initializes a match state
+ * context with the given parameters and name string.
+ * TODO: Full lift (324 bytes).
+ */
+void game_3860(void* matchState, int stateId, const char* stateName) {
+    (void)matchState; (void)stateId; (void)stateName;
+}
+

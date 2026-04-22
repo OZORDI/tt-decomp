@@ -753,4 +753,31 @@ void grcTextureFactoryXenon_EFE8(void* pDevice, void* pSrc, void* pParam)
 
 
 // NOTE: ForwardSlot5..ForwardSlot16 duplicate definitions removed
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// grcTextureReferenceBase — vtable link anchors for unoverridden slots
+//
+// These vtable slots (1, 2, 3, 10, 19, 23, 24, 25) are not overridden by
+// any concrete subclass in the binary. They exist in the vtable as
+// placeholders that forward to the inner texture or are pure no-ops.
+// The implementations are empty because the base class never has a bound
+// texture — concrete subclasses (grcTextureReference) override GetTexture()
+// to provide the actual texture, and the forwarding slots above (5-18, 20)
+// handle the delegation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace rage {
+
+void grcTextureReferenceBase::vfn_1()  {}  // slot  1 — abstract placeholder
+void grcTextureReferenceBase::vfn_2()  {}  // slot  2 — abstract placeholder
+void grcTextureReferenceBase::vfn_3()  {}  // slot  3 — abstract placeholder
+void grcTextureReferenceBase::vfn_10() {}  // slot 10 — abstract placeholder
+void grcTextureReferenceBase::vfn_19() {}  // slot 19 — abstract placeholder
+void grcTextureReferenceBase::vfn_23() {}  // slot 23 — abstract placeholder
+void grcTextureReferenceBase::vfn_24() {}  // slot 24 — abstract placeholder
+void grcTextureReferenceBase::vfn_25() {}  // slot 25 — abstract placeholder
+
+} // namespace rage
+
 // (already defined above inside namespace rage block)

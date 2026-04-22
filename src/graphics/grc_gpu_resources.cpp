@@ -209,4 +209,67 @@ void grmShaderPreset_AllocArray_c(void) {
     // No-op: shader presets managed by OpenGL on host platform
 }
 
+
+/**
+ * grcDevice_Present @ 0x8214F088 | size: 0xC0
+ *
+ * Presents the rendered frame to the display. On Xbox 360, this submits
+ * the final GPU command buffer with resolve/present parameters (flags,
+ * dimensions, scale, flip). On the host platform, this calls SDL2's
+ * swap-buffers path via sdl_PollAndSwap.
+ *
+ * Parameters:
+ *   flags  — present flags (bit 0 = enable, bit 4 = flip mode)
+ *   width  — backbuffer width (1 = use default)
+ *   height — backbuffer height (1 = use default)
+ *   scale  — resolution scale factor (0.0 = native)
+ *   flip   — true to flip the backbuffer vertically
+ *   a6     — reserved (always 0)
+ */
+extern void sdl_PollAndSwap(void);
+
+void grcDevice_Present(uint32_t flags, int width, int height,
+                        float scale, bool flip, int a6) {
+    (void)flags; (void)width; (void)height;
+    (void)scale; (void)flip; (void)a6;
+
+    // On the host platform, presentation is handled by SDL2.
+    // The Xbox 360 GPU command buffer submission is not needed.
+    sdl_PollAndSwap();
+}
+
+/**
+ * grcDevice_SubInit @ 0x821513A0 | size: 0x148
+ *
+ * Secondary GPU device initialization. On Xbox 360, this creates render
+ * targets, allocates EDRAM tiles, and sets up the shader constant pool.
+ * On the host platform, OpenGL handles these resources natively through
+ * the default framebuffer and shader uniform system.
+ *
+ * Called from app_init during the render subsystem bootstrap phase,
+ * after the primary device (SDL window + GL context) is already created.
+ */
+void grcDevice_SubInit(void) {
+    // No-op on host platform: OpenGL manages render targets and shader
+    // constants through its own API. The Xbox 360 EDRAM tile setup and
+    // shader constant pool allocation are not applicable.
+}
+
+/**
+ * grcDevice_WaitFence @ 0x8214FC30 | size: 0x60
+ *
+ * Waits for the GPU to finish processing all submitted commands up to
+ * the current fence point. On Xbox 360, this polls the GPU fence register
+ * and spins until the hardware signals completion. On the host platform,
+ * OpenGL's implicit synchronization handles this — glSwapBuffers acts
+ * as a natural sync point.
+ *
+ * Called before grcDevice_Present to ensure all rendering is complete.
+ */
+void grcDevice_WaitFence(void) {
+    // No-op on host platform: OpenGL provides implicit synchronization.
+    // The SDL_GL_SwapWindow call in sdl_PollAndSwap acts as a fence.
+}
+
+
 } // extern "C"
